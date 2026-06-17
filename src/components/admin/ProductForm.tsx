@@ -107,7 +107,7 @@ export default function ProductForm({ categories, product }: { categories: Categ
     router.refresh();
   };
 
-  const imageList = form.images.split("\n").map(s => s.trim()).filter(Boolean);
+  const imageList = form.images.split("\n").map((s: string) => s.trim()).filter(Boolean);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
