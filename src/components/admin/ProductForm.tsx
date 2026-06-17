@@ -202,11 +202,11 @@ export default function ProductForm({ categories, product }: { categories: Categ
         {/* Preview */}
         {imageList.length > 0 && (
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-            {imageList.map((src, i) => (
+            {imageList.map((src: string, i: number) => (
               <div key={i} style={{ position: "relative" }}>
                 <img src={src} alt="" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: "0.5rem", border: "1px solid rgba(140,100,20,0.15)" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
                 <button type="button" onClick={() => {
-                  const list = form.images.split("\n").map(s => s.trim()).filter(Boolean);
+                  const list = form.images.split("\n").map((s: string) => s.trim()).filter(Boolean);
                   list.splice(i, 1);
                   setForm({ ...form, images: list.join("\n") });
                 }} style={{ position: "absolute", top: -6, right: -6, backgroundColor: "#c04040", color: "#fff", border: "none", borderRadius: "999px", width: 18, height: 18, fontSize: "0.65rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
