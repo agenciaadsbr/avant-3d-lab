@@ -1,19 +1,33 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
 
-function createPrismaClient() {
-  if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) {
-    const adapter = new PrismaLibSql({
-      url: process.env.TURSO_DATABASE_URL,
-      authToken: process.env.TURSO_AUTH_TOKEN,
-    });
-    return new PrismaClient({ adapter } as any);
-  }
-  return new PrismaClient({ log: process.env.NODE_ENV === "development" ? ["query"] : [] });
+declare global {
+  // eslint-disable-next-line no-var
+  var prismaGlobal: PrismaClient | undefined;
 }
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
+function createPrismaClient(): PrismaClient {
+  const tursoUrl = process.env.TURSO_DATABASE_URL;
+  const tursoToken = process.env.TURSO_AUTH_TOKEN;
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+  if (tursoUrl && tursoToken) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { createClient } = require("@libsql/client");
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { PrismaLibSql } = require("@prisma/adapter-libsql");
+      const libsql = createClient({ url: tursoUrl, authToken: tursoToken });
+      const adapter = new PrismaLibSql(libsql);
+      return new PrismaClient({ adapter } as any);
+    } catch {
+      // fallback to local sqlite
+    }
+  }
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+  return new PrismaClient({
+    log: process.env.NODE_ENV === "development" ? ["query"] : [],
+  });
+}
+
+export const prisma: PrismaClient = global.prismaGlobal ?? createPrismaClient();
+
+if (process.env.NODE_ENV !== "production") global.prismaGlobal = prisma;
