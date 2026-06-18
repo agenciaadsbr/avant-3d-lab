@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -74,7 +74,7 @@ export default function CadastroPage() {
             {[
               { label: "Nome completo", key: "name", type: "text", placeholder: "Seu nome" },
               { label: "E-mail", key: "email", type: "email", placeholder: "seu@email.com" },
-              { label: "Senha", key: "password", type: "password", placeholder: "MÃ­nimo 6 caracteres" },
+              { label: "Senha", key: "password", type: "password", placeholder: "Mínimo 6 caracteres" },
             ].map(({ label, key, type, placeholder }) => (
               <div key={key} style={{ marginBottom: "1.25rem" }}>
                 <label style={{ display: "block", color: "#a8a8a8", fontSize: "0.875rem", fontWeight: 500, marginBottom: "0.5rem" }}>
@@ -104,7 +104,7 @@ export default function CadastroPage() {
           </form>
 
           <p style={{ textAlign: "center", color: "#505050", fontSize: "0.875rem", marginTop: "1.5rem" }}>
-            JÃ¡ tem conta?{" "}
+            Já tem conta?{" "}
             <Link href="/login" style={{ color: "#c9a227", fontWeight: 600, textDecoration: "none" }}>
               Entrar
             </Link>
@@ -114,4 +114,3 @@ export default function CadastroPage() {
     </div>
   );
 }
-

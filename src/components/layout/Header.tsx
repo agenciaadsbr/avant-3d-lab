@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 
 const navLinks = [
-  { href: "/produtos", label: "ColeÃ§Ã£o" },
+  { href: "/produtos", label: "Coleção" },
   { href: "/produtos?categoria=leggings", label: "Leggings" },
   { href: "/produtos?categoria=tops", label: "Tops" },
   { href: "/produtos?categoria=conjuntos", label: "Conjuntos" },
@@ -77,7 +77,7 @@ export default function Header() {
                     {session ? (
                       <>
                         <div style={{ padding: "0.75rem 1rem", borderBottom: "1px solid rgba(140,100,20,0.1)", backgroundColor: "#FAF6EE" }}>
-                          <p style={{ color: "#9a8060", fontSize: "0.7rem" }}>OlÃ¡,</p>
+                          <p style={{ color: "#9a8060", fontSize: "0.7rem" }}>Olá,</p>
                           <p style={{ color: "#b8891a", fontSize: "0.9rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {session.user?.name}
                           </p>
@@ -85,7 +85,7 @@ export default function Header() {
                         {[
                           { label: "Minha Conta", href: "/conta" },
                           { label: "Meus Pedidos", href: "/conta/pedidos" },
-                          ...((session.user as any)?.role === "admin" ? [{ label: "âš™ Painel Admin", href: "/admin" }] : []),
+                          ...((session.user as any)?.role === "admin" ? [{ label: "⚙ Painel Admin", href: "/admin" }] : []),
                         ].map(item => (
                           <Link key={item.href} href={item.href} onClick={() => setUserOpen(false)}
                             style={{ display: "block", padding: "0.65rem 1rem", color: "#3a2a10", fontSize: "0.875rem", textDecoration: "none" }}
@@ -156,4 +156,3 @@ export default function Header() {
     </>
   );
 }
-

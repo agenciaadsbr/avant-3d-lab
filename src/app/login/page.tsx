@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
@@ -98,7 +98,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* BotÃ£o */}
+            {/* Botão */}
             <button
               type="submit"
               disabled={loading}
@@ -111,7 +111,7 @@ export default function LoginPage() {
           </form>
 
           <p style={{ textAlign: "center", color: "#505050", fontSize: "0.875rem", marginTop: "1.5rem" }}>
-            NÃ£o tem conta?{" "}
+            Não tem conta?{" "}
             <Link href="/cadastro" style={{ color: "#c9a227", fontWeight: 600, textDecoration: "none" }}>
               Criar conta
             </Link>
@@ -121,4 +121,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

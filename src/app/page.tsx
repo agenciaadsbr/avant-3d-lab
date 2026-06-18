@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import ProductCard from "@/components/products/ProductCard";
 import { ArrowRight, Truck, RefreshCw, Shield } from "lucide-react";
@@ -15,7 +15,7 @@ export default async function HomePage() {
   return (
     <div style={{ backgroundColor: "#FAF6EE" }}>
 
-      {/* â”€â”€ HERO â”€â”€ */}
+      {/* ── HERO ── */}
       <section style={{ background: "linear-gradient(135deg, #FAF6EE 0%, #F0E8D0 50%, #FAF6EE 100%)", padding: "5rem 1.5rem 4rem", position: "relative", overflow: "hidden" }}>
         {/* Decorative circle */}
         <div style={{ position: "absolute", right: "-5%", top: "50%", transform: "translateY(-50%)", width: "min(480px, 50vw)", height: "min(480px, 50vw)", borderRadius: "50%", background: "radial-gradient(circle, rgba(180,130,20,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
@@ -23,7 +23,7 @@ export default async function HomePage() {
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr auto", alignItems: "center", gap: "2rem" }}>
           <div style={{ maxWidth: 580 }}>
             <span style={{ display: "inline-block", border: "1px solid rgba(140,100,20,0.3)", color: "#b8891a", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", padding: "0.4rem 1rem", borderRadius: "999px", marginBottom: "1.5rem", backgroundColor: "rgba(180,130,20,0.06)" }}>
-              âœ¦ Nova ColeÃ§Ã£o
+              ✦ Nova Coleção
             </span>
             <h1 style={{ fontSize: "clamp(2rem, 5.5vw, 4rem)", fontWeight: 900, lineHeight: 1.1, color: "#1a1510", marginBottom: "1.25rem" }}>
               Desbloqueie{" "}
@@ -31,11 +31,11 @@ export default async function HomePage() {
               <br />infinita.
             </h1>
             <p style={{ color: "#7a6030", fontSize: "clamp(0.95rem, 2vw, 1.1rem)", lineHeight: 1.75, marginBottom: "2.5rem", maxWidth: 460 }}>
-              Cada peÃ§a criada para despertar a forÃ§a que existe em vocÃª. Vista-se com intenÃ§Ã£o, mova-se com poder.
+              Cada peça criada para despertar a força que existe em você. Vista-se com intenção, mova-se com poder.
             </p>
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
               <Link href="/produtos" style={{ backgroundColor: "#b8891a", color: "#fff", fontWeight: 900, padding: "0.875rem 2rem", borderRadius: "0.75rem", textDecoration: "none", fontSize: "0.95rem", display: "inline-flex", alignItems: "center", gap: "0.5rem", boxShadow: "0 4px 16px rgba(140,100,20,0.25)" }}>
-                Ver ColeÃ§Ã£o <ArrowRight size={16} />
+                Ver Coleção <ArrowRight size={16} />
               </Link>
               <Link href="/produtos?categoria=conjuntos" style={{ border: "1.5px solid rgba(140,100,20,0.35)", color: "#8a6510", fontWeight: 700, padding: "0.875rem 2rem", borderRadius: "0.75rem", textDecoration: "none", fontSize: "0.95rem", backgroundColor: "transparent" }}>
                 Conjuntos
@@ -52,14 +52,14 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* â”€â”€ TICKER â”€â”€ */}
+      {/* ── TICKER ── */}
       <div style={{ backgroundColor: "#EDE4CC", borderTop: "1px solid rgba(140,100,20,0.12)", borderBottom: "1px solid rgba(140,100,20,0.12)", padding: "0.65rem 0" }}>
         <p style={{ color: "#9a7a3a", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", textAlign: "center" }}>
-          âœ¦ &nbsp; Desbloqueie sua energia infinita &nbsp; âœ¦ &nbsp; ForÃ§a. Estilo. Movimento. &nbsp; âœ¦ &nbsp; Vista-se e transforme-se
+          ✦ &nbsp; Desbloqueie sua energia infinita &nbsp; ✦ &nbsp; Força. Estilo. Movimento. &nbsp; ✦ &nbsp; Vista-se e transforme-se
         </p>
       </div>
 
-      {/* â”€â”€ CATEGORIES â”€â”€ */}
+      {/* ── CATEGORIES ── */}
       {categories.length > 0 && (
         <section style={{ maxWidth: 1200, margin: "0 auto", padding: "3.5rem 1.5rem" }}>
           <h2 style={{ fontSize: "1.5rem", fontWeight: 900, color: "#1a1510", marginBottom: "1.5rem" }}>
@@ -76,12 +76,12 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* â”€â”€ FEATURED â”€â”€ */}
+      {/* ── FEATURED ── */}
       <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 1.5rem 3.5rem" }}>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
           <div>
             <h2 style={{ fontSize: "1.5rem", fontWeight: 900, color: "#1a1510" }}>
-              PeÃ§as em <span className="gold-text">destaque</span>
+              Peças em <span className="gold-text">destaque</span>
             </h2>
             <p style={{ color: "#9a8060", fontSize: "0.8rem", marginTop: "0.2rem" }}>Selecionadas para ampliar sua energia</p>
           </div>
@@ -94,7 +94,7 @@ export default async function HomePage() {
           <div style={{ textAlign: "center", padding: "4rem 1rem", backgroundColor: "#fff", borderRadius: "1rem", border: "1.5px dashed rgba(140,100,20,0.2)" }}>
             <p style={{ color: "#9a8060", fontSize: "1rem", marginBottom: "0.5rem" }}>Nenhum produto cadastrado ainda.</p>
             <Link href="/admin/produtos/novo" style={{ color: "#b8891a", fontSize: "0.875rem", fontWeight: 700, textDecoration: "none" }}>
-              Adicionar primeiro produto â†’
+              Adicionar primeiro produto →
             </Link>
           </div>
         ) : (
@@ -104,27 +104,27 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* â”€â”€ QUOTE â”€â”€ */}
+      {/* ── QUOTE ── */}
       <section style={{ backgroundColor: "#F0E8D0", borderTop: "1px solid rgba(140,100,20,0.1)", borderBottom: "1px solid rgba(140,100,20,0.1)", padding: "4rem 1.5rem", textAlign: "center" }}>
         <div style={{ maxWidth: 580, margin: "0 auto" }}>
           <div style={{ width: 64, height: 64, position: "relative", margin: "0 auto 1.25rem", borderRadius: "50%", overflow: "hidden", mixBlendMode: "multiply", opacity: 0.6 }}>
             <Image src="/logo.png" alt="" fill style={{ objectFit: "cover" }} />
           </div>
           <blockquote style={{ color: "#3a2a10", fontSize: "clamp(1.1rem, 3vw, 1.4rem)", fontWeight: 700, lineHeight: 1.55 }}>
-            "A roupa certa Ã© o <span className="gold-text">ritual</span> que prepara seu corpo e mente para o movimento."
+            "A roupa certa é o <span className="gold-text">ritual</span> que prepara seu corpo e mente para o movimento."
           </blockquote>
           <p style={{ color: "#9a7a3a", fontSize: "0.7rem", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700, marginTop: "1.25rem" }}>
-            Access Fit â€” Desbloqueie sua energia infinita
+            Access Fit — Desbloqueie sua energia infinita
           </p>
         </div>
       </section>
 
-      {/* â”€â”€ BENEFITS â”€â”€ */}
+      {/* ── BENEFITS ── */}
       <section style={{ maxWidth: 1200, margin: "0 auto", padding: "3rem 1.5rem" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
           {[
-            { icon: <Truck size={20} />, title: "Frete GrÃ¡tis", desc: "Nas compras acima de R$ 299" },
-            { icon: <RefreshCw size={20} />, title: "Troca FÃ¡cil", desc: "30 dias para trocar ou devolver" },
+            { icon: <Truck size={20} />, title: "Frete Grátis", desc: "Nas compras acima de R$ 299" },
+            { icon: <RefreshCw size={20} />, title: "Troca Fácil", desc: "30 dias para trocar ou devolver" },
             { icon: <Shield size={20} />, title: "Compra Segura", desc: "Pagamento 100% protegido" },
           ].map((item) => (
             <div key={item.title} style={{ display: "flex", alignItems: "flex-start", gap: "0.875rem", backgroundColor: "#fff", padding: "1.25rem", borderRadius: "0.875rem", border: "1px solid rgba(140,100,20,0.1)", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
@@ -138,12 +138,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* â”€â”€ NEWSLETTER â”€â”€ */}
+      {/* ── NEWSLETTER ── */}
       <section style={{ backgroundColor: "#EDE4CC", borderTop: "1px solid rgba(140,100,20,0.12)", padding: "3.5rem 1.5rem", textAlign: "center" }}>
         <div style={{ maxWidth: 460, margin: "0 auto" }}>
           <h2 style={{ color: "#1a1510", fontSize: "1.5rem", fontWeight: 900, marginBottom: "0.5rem" }}>Seja a primeira a saber</h2>
           <p style={{ color: "#7a6030", fontSize: "0.875rem", marginBottom: "1.5rem", lineHeight: 1.6 }}>
-            Novas peÃ§as e energias novas. Cadastre-se e receba em primeira mÃ£o.
+            Novas peças e energias novas. Cadastre-se e receba em primeira mão.
           </p>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center" }}>
             <input type="email" placeholder="seu@email.com"
@@ -157,4 +157,3 @@ export default async function HomePage() {
     </div>
   );
 }
-
