@@ -5,7 +5,7 @@ type OrderItem = { id: string; quantity: number; price: number; size?: string; p
 type Order = {
   id: string; status: string; paymentStatus: string; paymentMethod: string; amountPaid: number;
   total: number; subtotal: number; shipping: number; discount: number; notes?: string;
-  createdAt: string;
+  createdAt: string; dueDate?: string | null; installments: number;
   user: { id: string; name: string; email: string; phone?: string };
   items: OrderItem[];
 };
@@ -57,6 +57,8 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
   const [editAmountPaid, setEditAmountPaid] = useState("");
   const [editPaymentStatus, setEditPaymentStatus] = useState("");
   const [editPaymentMethod, setEditPaymentMethod] = useState("");
+  const [editDueDate, setEditDueDate] = useState("");
+  const [editInstallments, setEditInstallments] = useState(1);
 
   const filtered = useMemo(() => {
     return localOrders.filter(o => {
@@ -94,17 +96,22 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
     setEditAmountPaid(String(order.amountPaid));
     setEditPaymentStatus(order.paymentStatus);
     setEditPaymentMethod(order.paymentMethod || "pix");
+    setEditDueDate(order.dueDate ? new Date(order.dueDate).toISOString().slice(0, 10) : "");
+    setEditInstallments(order.installments || 1);
   };
 
   const savePayment = async (orderId: string) => {
     const amountPaid = parseFloat(editAmountPaid) || 0;
     const res = await fetch(`/api/admin/pedidos/${orderId}`, {
       method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ paymentStatus: editPaymentStatus, paymentMethod: editPaymentMethod, amountPaid }),
+      body: JSON.stringify({
+        paymentStatus: editPaymentStatus, paymentMethod: editPaymentMethod, amountPaid,
+        dueDate: editDueDate || null, installments: editInstallments,
+      }),
     });
     if (res.ok) {
       setLocalOrders(prev => prev.map(o => o.id === orderId
-        ? { ...o, paymentStatus: editPaymentStatus, paymentMethod: editPaymentMethod, amountPaid }
+        ? { ...o, paymentStatus: editPaymentStatus, paymentMethod: editPaymentMethod, amountPaid, dueDate: editDueDate || null, installments: editInstallments }
         : o));
     }
     setEditingPayment(null);
@@ -316,21 +323,45 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
                                       </select>
                                     </div>
                                     {editPaymentStatus !== "paid" && (
-                                      <div>
-                                        <label style={{ fontSize: "0.72rem", color: "#9a8060", display: "block", marginBottom: "0.2rem" }}>Valor já pago (R$)</label>
-                                        <input type="number" step="0.01" value={editAmountPaid} onChange={e => setEditAmountPaid(e.target.value)}
-                                          style={{ ...inp, width: "100%", boxSizing: "border-box" as const }} />
-                                      </div>
+                                      <>
+                                        <div>
+                                          <label style={{ fontSize: "0.72rem", color: "#9a8060", display: "block", marginBottom: "0.2rem" }}>Valor já pago (R$)</label>
+                                          <input type="number" step="0.01" value={editAmountPaid} onChange={e => setEditAmountPaid(e.target.value)}
+                                            style={{ ...inp, width: "100%", boxSizing: "border-box" as const }} />
+                                        </div>
+                                        <div>
+                                          <label style={{ fontSize: "0.72rem", color: "#9a8060", display: "block", marginBottom: "0.2rem" }}>Vencimento</label>
+                                          <input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)}
+                                            style={{ ...inp, width: "100%", boxSizing: "border-box" as const }} />
+                                        </div>
+                                        <div>
+                                          <label style={{ fontSize: "0.72rem", color: "#9a8060", display: "block", marginBottom: "0.2rem" }}>Parcelas</label>
+                                          <select value={editInstallments} onChange={e => setEditInstallments(Number(e.target.value))}
+                                            style={{ ...inp, width: "100%", boxSizing: "border-box" as const }}>
+                                            {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}x</option>)}
+                                          </select>
+                                        </div>
+                                      </>
                                     )}
                                   </div>
                                 ) : (
-                                  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                                  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
                                     <span style={{ backgroundColor: mc.bg, color: mc.color, fontSize: "0.75rem", fontWeight: 700, padding: "0.3rem 0.75rem", borderRadius: "999px" }}>
                                       {METHOD_LABEL[order.paymentMethod] || order.paymentMethod}
                                     </span>
                                     <span style={{ backgroundColor: pc.bg, color: pc.color, fontSize: "0.75rem", fontWeight: 700, padding: "0.3rem 0.75rem", borderRadius: "999px" }}>
                                       {PAY_LABEL[order.paymentStatus] || order.paymentStatus}
                                     </span>
+                                    {order.installments > 1 && (
+                                      <span style={{ backgroundColor: "#f0e8ff", color: "#6a30b8", fontSize: "0.75rem", fontWeight: 700, padding: "0.3rem 0.75rem", borderRadius: "999px" }}>
+                                        {order.installments}x
+                                      </span>
+                                    )}
+                                    {order.dueDate && (
+                                      <span style={{ backgroundColor: "#fff8e1", color: "#b8891a", fontSize: "0.75rem", fontWeight: 700, padding: "0.3rem 0.75rem", borderRadius: "999px" }}>
+                                        📅 Vence {new Date(order.dueDate).toLocaleDateString("pt-BR")}
+                                      </span>
+                                    )}
                                   </div>
                                 )}
                               </div>

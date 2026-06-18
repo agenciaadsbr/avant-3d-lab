@@ -26,6 +26,8 @@ export default function NovoPedidoPage() {
   const [paymentMethod, setPaymentMethod] = useState("pix");
   const [paymentStatus, setPaymentStatus] = useState("paid");
   const [amountPaid, setAmountPaid] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [installments, setInstallments] = useState(1);
   const [notes, setNotes] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
@@ -64,7 +66,7 @@ export default function NovoPedidoPage() {
         newCustomer: isNewCustomer ? newCustomer : null,
         items, paymentMethod, paymentStatus,
         amountPaid: paymentStatus === "paid" ? subtotal : paid,
-        notes, createdAt: date,
+        notes, createdAt: date, dueDate: dueDate || null, installments,
       }),
     });
     setSaving(false);
@@ -191,11 +193,23 @@ export default function NovoPedidoPage() {
               </select>
             </div>
             {paymentStatus !== "paid" && (
-              <div>
-                <label style={label}>Valor já pago (R$)</label>
-                <input style={inp} type="number" min="0" step="0.01" placeholder="0,00" value={amountPaid}
-                  onChange={e => setAmountPaid(e.target.value)} />
-              </div>
+              <>
+                <div>
+                  <label style={label}>Valor já pago (R$)</label>
+                  <input style={inp} type="number" min="0" step="0.01" placeholder="0,00" value={amountPaid}
+                    onChange={e => setAmountPaid(e.target.value)} />
+                </div>
+                <div>
+                  <label style={label}>Parcelas</label>
+                  <select style={inp} value={installments} onChange={e => setInstallments(Number(e.target.value))}>
+                    {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}x</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={label}>Vencimento (data de pagamento)</label>
+                  <input style={inp} type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                </div>
+              </>
             )}
             <div>
               <label style={label}>Data da Venda</label>

@@ -138,10 +138,12 @@ model Order {
   id         String   @id @default(cuid())
   userId     String
   addressId  String?
-  status        String   @default("pending")
-  paymentStatus String   @default("paid")
-  paymentMethod String   @default("pix")
-  amountPaid    Float    @default(0)
+  status        String    @default("pending")
+  paymentStatus String    @default("paid")
+  paymentMethod String    @default("pix")
+  amountPaid    Float     @default(0)
+  dueDate       DateTime?
+  installments  Int       @default(1)
   total         Float
   subtotal      Float
   shipping      Float    @default(0)

@@ -15,6 +15,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (body.paymentStatus !== undefined) data.paymentStatus = body.paymentStatus;
   if (body.paymentMethod !== undefined) data.paymentMethod = body.paymentMethod;
   if (body.amountPaid !== undefined) data.amountPaid = body.amountPaid;
+  if (body.dueDate !== undefined) data.dueDate = body.dueDate ? new Date(body.dueDate) : null;
+  if (body.installments !== undefined) data.installments = body.installments;
   const order = await prisma.order.update({ where: { id }, data });
   return NextResponse.json(order);
 }

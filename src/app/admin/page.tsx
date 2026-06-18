@@ -21,7 +21,7 @@ export default async function AdminPage() {
     stockData, lowStock, zeroStock, pendingOrders,
     ordersThisMonth, newUsersThisMonth,
     totalExpenses, expensesThisMonth,
-    topProducts, cadernoOrders, recentSales,
+    topProducts, allPendingOrders, nextMonthDue, recentSales,
   ] = await Promise.all([
     prisma.product.count({ where: { active: true } }),
     prisma.order.count(),
@@ -46,8 +46,18 @@ export default async function AdminPage() {
       orderBy: { _sum: { quantity: "desc" } }, take: 5,
     }),
     prisma.order.findMany({
-      where: { paymentMethod: "caderno", paymentStatus: { not: "paid" } },
-      select: { total: true, amountPaid: true },
+      where: { paymentStatus: { not: "paid" } },
+      select: { total: true, amountPaid: true, paymentMethod: true },
+    }),
+    prisma.order.findMany({
+      where: {
+        paymentStatus: { not: "paid" },
+        dueDate: {
+          gte: new Date(now.getFullYear(), now.getMonth() + 1, 1),
+          lt: new Date(now.getFullYear(), now.getMonth() + 2, 1),
+        },
+      },
+      select: { total: true, amountPaid: true, user: { select: { name: true } } },
     }),
     prisma.order.findMany({
       where: { status: { not: "cancelled" }, createdAt: { gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) } },
@@ -69,8 +79,11 @@ export default async function AdminPage() {
   const lucroLiquido = (revenue._sum.total || 0) - totalGastos;
 
   const ticketMedio = orderCount > 0 ? (revenue._sum.total || 0) / orderCount : 0;
-  const cadernoNaRua = cadernoOrders.reduce((s, o) => s + (o.total - o.amountPaid), 0);
-  const cadernoQtd = cadernoOrders.length;
+  const cadernoOrders = allPendingOrders.filter(o => o.paymentMethod === "caderno");
+  const cadernoNaRua = allPendingOrders.reduce((s, o) => s + (o.total - o.amountPaid), 0);
+  const cadernoQtd = allPendingOrders.length;
+  const previsaoProxMes = nextMonthDue.reduce((s, o) => s + (o.total - o.amountPaid), 0);
+  const previsaoQtd = nextMonthDue.length;
 
   // monthly revenue chart (last 6 months)
   const MONTHS_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -193,12 +206,20 @@ export default async function AdminPage() {
           <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Ticket Médio</div>
           <div style={{ color: "#b8a080", fontSize: "0.7rem", marginTop: "0.1rem" }}>{orderCount} pedidos</div>
         </div>
-        <Link href="/admin/pedidos?method=caderno" style={{ textDecoration: "none" }}>
+        <Link href="/admin/pedidos?pay=pending" style={{ textDecoration: "none" }}>
           <div style={{ backgroundColor: cadernoNaRua > 0 ? "#fffbea" : "#fff", border: `1px solid ${cadernoNaRua > 0 ? "rgba(133,100,4,0.35)" : "rgba(140,100,20,0.1)"}`, borderRadius: "1rem", padding: "1.25rem", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", cursor: "pointer", height: "100%", boxSizing: "border-box" as const }}>
             <div style={{ fontSize: "1.3rem", marginBottom: "0.4rem" }}>📒</div>
             <div style={{ color: cadernoNaRua > 0 ? "#856404" : "#1a1510", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{formatCurrency(cadernoNaRua)}</div>
-            <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Caderno na Rua</div>
-            <div style={{ color: "#b8a080", fontSize: "0.7rem", marginTop: "0.1rem" }}>{cadernoQtd} {cadernoQtd === 1 ? "cliente" : "clientes"} em aberto</div>
+            <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Saldo em Aberto</div>
+            <div style={{ color: "#b8a080", fontSize: "0.7rem", marginTop: "0.1rem" }}>{cadernoQtd} {cadernoQtd === 1 ? "pedido" : "pedidos"} pendentes</div>
+          </div>
+        </Link>
+        <Link href="/admin/pedidos" style={{ textDecoration: "none" }}>
+          <div style={{ backgroundColor: previsaoProxMes > 0 ? "#eef8ee" : "#fff", border: `1px solid ${previsaoProxMes > 0 ? "rgba(26,138,42,0.25)" : "rgba(140,100,20,0.1)"}`, borderRadius: "1rem", padding: "1.25rem", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", cursor: "pointer", height: "100%", boxSizing: "border-box" as const }}>
+            <div style={{ fontSize: "1.3rem", marginBottom: "0.4rem" }}>📅</div>
+            <div style={{ color: previsaoProxMes > 0 ? "#1a8a2a" : "#1a1510", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{formatCurrency(previsaoProxMes)}</div>
+            <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Prev. Próximo Mês</div>
+            <div style={{ color: "#b8a080", fontSize: "0.7rem", marginTop: "0.1rem" }}>{previsaoQtd === 0 ? "Nenhum vencimento cadastrado" : `${previsaoQtd} venc. em ${new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleString("pt-BR", { month: "long" })}`}</div>
           </div>
         </Link>
       </div>

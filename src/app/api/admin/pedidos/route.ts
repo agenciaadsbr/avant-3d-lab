@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const body = await req.json();
-  const { userId, newCustomer, items, paymentMethod, paymentStatus, amountPaid, notes, createdAt } = body;
+  const { userId, newCustomer, items, paymentMethod, paymentStatus, amountPaid, notes, createdAt, dueDate, installments } = body;
 
   let customerId = userId;
 
@@ -47,6 +47,8 @@ export async function POST(req: Request) {
       shipping: 0,
       discount: 0,
       notes: notes || null,
+      dueDate: dueDate ? new Date(dueDate) : null,
+      installments: installments || 1,
       createdAt: createdAt ? new Date(createdAt) : new Date(),
       items: {
         create: items.map((i: any) => ({
