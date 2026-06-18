@@ -1,19 +1,14 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "xlsx";
 import { slugify } from "@/lib/utils";
 
-// Normaliza chave: remove acentos, minúsculo, trim
 function norm(s: string) {
-  return s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .trim();
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 }
 
-// Busca valor na row ignorando acentos e capitalização
 function col(row: Record<string, unknown>, ...keys: string[]): string {
   const normRow: Record<string, unknown> = {};
   for (const k of Object.keys(row)) normRow[norm(k)] = row[k];
@@ -65,7 +60,6 @@ export async function POST(req: Request) {
       continue;
     }
     if (isNaN(preco) || preco <= 0) {
-      // Debug: mostra o valor bruto que encontrou
       const rawDebug = col(row, "Preco venda", "Preço venda", "Preço Venda", "preco venda", "preco", "Preço", "Valor venda");
       results.push({ row: rowNum, name: nome, status: "erro", message: `Preço inválido: "${rawDebug || "(vazio)"}"` });
       continue;
@@ -78,7 +72,7 @@ export async function POST(req: Request) {
     }
 
     const tamanhoRaw = col(row, "Tamanho", "tamanho", "tamanhos", "Tamanhos") || "PP,P,M,G,GG";
-    const tamanhos = tamanhoRaw.split(",").map(s => s.trim()).filter(Boolean);
+    const tamanhos = tamanhoRaw.split(",").map((s: string) => s.trim()).filter(Boolean);
     const estoque = parseInt(col(row, "Qtd Estoque", "qtd estoque", "Estoque", "estoque", "quantidade").replace(",", "")) || 0;
     const descricao = col(row, "Descricao", "Descrição", "descricao", "Observacao");
     const imagem = col(row, "imagem", "Imagem", "foto", "Foto");
@@ -90,18 +84,13 @@ export async function POST(req: Request) {
     try {
       await prisma.product.create({
         data: {
-          name: nome,
-          slug,
+          name: nome, slug,
           description: descricao || null,
-          price: preco,
-          compareAt: null,
+          price: preco, compareAt: null,
           images: JSON.stringify(imagem ? [imagem] : []),
           sizes: JSON.stringify(tamanhos),
           colors: JSON.stringify([]),
-          stock: estoque,
-          featured: false,
-          active: true,
-          categoryId,
+          stock: estoque, featured: false, active: true, categoryId,
         },
       });
       results.push({ row: rowNum, name: nome, status: "ok" });
