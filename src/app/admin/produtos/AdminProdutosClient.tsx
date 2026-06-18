@@ -5,7 +5,7 @@ import { formatCurrency, parseJson } from "@/lib/utils";
 type Category = { id: string; name: string; slug: string };
 type Product = {
   id: string; name: string; price: number; costPrice: number | null;
-  stock: number; active: boolean; images: string;
+  stock: number; active: boolean; images: string; sizes: string;
   category: Category;
 };
 
@@ -96,7 +96,7 @@ export default function AdminProdutosClient({ products, categories }: { products
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
             <thead>
               <tr style={{ backgroundColor: "#FAF6EE" }}>
-                {["Produto", "Categoria", "Custo", "Preço", "Estoque", "Valor Est.", "Status", ""].map(h => (
+                {["Produto", "Categoria", "Tamanhos", "Custo", "Preço", "Estoque", "Valor Est.", "Status", ""].map(h => (
                   <th key={h} style={{ textAlign: "left", padding: "0.875rem 1rem", color: "#9a8060", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.1)", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
@@ -120,6 +120,16 @@ export default function AdminProdutosClient({ products, categories }: { products
                       <span style={{ fontSize: "0.75rem", backgroundColor: "#f0e8d0", color: "#7a5a10", padding: "0.2rem 0.5rem", borderRadius: 999, whiteSpace: "nowrap" }}>
                         {p.category.name}
                       </span>
+                    </td>
+                    <td style={{ padding: "0.875rem 1rem" }}>
+                      <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap", maxWidth: 140 }}>
+                        {parseJson<string[]>(p.sizes, []).length > 0
+                          ? parseJson<string[]>(p.sizes, []).map(s => (
+                              <span key={s} style={{ fontSize: "0.65rem", backgroundColor: "#f0f0f0", color: "#5a4a2a", padding: "0.15rem 0.4rem", borderRadius: 999, whiteSpace: "nowrap" }}>{s}</span>
+                            ))
+                          : <span style={{ color: "#b8a080", fontSize: "0.75rem" }}>—</span>
+                        }
+                      </div>
                     </td>
                     <td style={{ padding: "0.875rem 1rem", color: "#9a8060", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
                       {p.costPrice ? formatCurrency(p.costPrice) : "—"}
@@ -149,7 +159,7 @@ export default function AdminProdutosClient({ products, categories }: { products
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: "center", padding: "3rem", color: "#b8a080" }}>
+                  <td colSpan={9} style={{ textAlign: "center", padding: "3rem", color: "#b8a080" }}>
                     {products.length === 0
                       ? <><span>Nenhum produto cadastrado. </span><a href="/admin/importar" style={{ color: "#b8891a", fontWeight: 700 }}>Importar Excel</a></>
                       : "Nenhum produto encontrado com esses filtros."
