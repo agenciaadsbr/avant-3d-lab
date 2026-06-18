@@ -21,7 +21,7 @@ export default async function AdminPage() {
     stockData, lowStock, zeroStock, pendingOrders,
     ordersThisMonth, newUsersThisMonth,
     totalExpenses, expensesThisMonth,
-    topProducts,
+    topProducts, cadernoOrders,
   ] = await Promise.all([
     prisma.product.count({ where: { active: true } }),
     prisma.order.count(),
@@ -45,6 +45,10 @@ export default async function AdminPage() {
       by: ["productId"], _sum: { quantity: true },
       orderBy: { _sum: { quantity: "desc" } }, take: 5,
     }),
+    prisma.order.findMany({
+      where: { paymentMethod: "caderno", paymentStatus: { not: "paid" } },
+      select: { total: true, amountPaid: true },
+    }),
   ]);
 
   const valorVenda = stockData.reduce((a, p) => a + p.price * p.stock, 0);
@@ -61,6 +65,8 @@ export default async function AdminPage() {
   const lucroLiquido = (revenue._sum.total || 0) - totalGastos;
 
   const ticketMedio = orderCount > 0 ? (revenue._sum.total || 0) / orderCount : 0;
+  const cadernoNaRua = cadernoOrders.reduce((s, o) => s + (o.total - o.amountPaid), 0);
+  const cadernoQtd = cadernoOrders.length;
 
   // bar chart data for custo vs venda
   const barMax = Math.max(valorCusto, valorVenda, 1);
@@ -170,6 +176,14 @@ export default async function AdminPage() {
           <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Ticket Médio</div>
           <div style={{ color: "#b8a080", fontSize: "0.7rem", marginTop: "0.1rem" }}>{orderCount} pedidos</div>
         </div>
+        <Link href="/admin/pedidos?method=caderno" style={{ textDecoration: "none" }}>
+          <div style={{ backgroundColor: cadernoNaRua > 0 ? "#fffbea" : "#fff", border: `1px solid ${cadernoNaRua > 0 ? "rgba(133,100,4,0.35)" : "rgba(140,100,20,0.1)"}`, borderRadius: "1rem", padding: "1.25rem", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", cursor: "pointer", height: "100%", boxSizing: "border-box" as const }}>
+            <div style={{ fontSize: "1.3rem", marginBottom: "0.4rem" }}>📒</div>
+            <div style={{ color: cadernoNaRua > 0 ? "#856404" : "#1a1510", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{formatCurrency(cadernoNaRua)}</div>
+            <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Caderno na Rua</div>
+            <div style={{ color: "#b8a080", fontSize: "0.7rem", marginTop: "0.1rem" }}>{cadernoQtd} {cadernoQtd === 1 ? "cliente" : "clientes"} em aberto</div>
+          </div>
+        </Link>
       </div>
 
       {/* KPIs Estoque + Operacionais */}

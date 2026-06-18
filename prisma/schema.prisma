@@ -138,12 +138,15 @@ model Order {
   id         String   @id @default(cuid())
   userId     String
   addressId  String?
-  status     String   @default("pending")
-  total      Float
-  subtotal   Float
-  shipping   Float    @default(0)
-  discount   Float    @default(0)
-  notes      String?
+  status        String   @default("pending")
+  paymentStatus String   @default("paid")
+  paymentMethod String   @default("pix")
+  amountPaid    Float    @default(0)
+  total         Float
+  subtotal      Float
+  shipping      Float    @default(0)
+  discount      Float    @default(0)
+  notes         String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

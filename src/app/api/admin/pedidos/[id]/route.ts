@@ -9,8 +9,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const { id } = await params;
-  const { status } = await req.json();
-  const order = await prisma.order.update({ where: { id }, data: { status } });
+  const body = await req.json();
+  const data: Record<string, unknown> = {};
+  if (body.status !== undefined) data.status = body.status;
+  if (body.paymentStatus !== undefined) data.paymentStatus = body.paymentStatus;
+  if (body.paymentMethod !== undefined) data.paymentMethod = body.paymentMethod;
+  if (body.amountPaid !== undefined) data.amountPaid = body.amountPaid;
+  const order = await prisma.order.update({ where: { id }, data });
   return NextResponse.json(order);
 }
 
