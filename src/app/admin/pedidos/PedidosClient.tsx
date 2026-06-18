@@ -31,9 +31,10 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
   const [statusFilter, setStatusFilter] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [localOrders, setLocalOrders] = useState(orders);
 
   const filtered = useMemo(() => {
-    return orders.filter(o => {
+    return localOrders.filter(o => {
       if (statusFilter && o.status !== statusFilter) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -51,13 +52,15 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
 
   const updateStatus = async (orderId: string, status: string) => {
     setUpdatingId(orderId);
-    await fetch(`/api/admin/pedidos/${orderId}`, {
+    const res = await fetch(`/api/admin/pedidos/${orderId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
+    if (res.ok) {
+      setLocalOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+    }
     setUpdatingId(null);
-    window.location.reload();
   };
 
   const inp = { padding: "0.55rem 0.875rem", border: "1px solid rgba(140,100,20,0.25)", borderRadius: "0.625rem", fontSize: "0.8rem", backgroundColor: "#FAF6EE", outline: "none" };
