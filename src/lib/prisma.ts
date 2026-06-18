@@ -1,13 +1,21 @@
 import { PrismaClient } from "@prisma/client";
+import { createClient } from "@libsql/client";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
+function createPrismaClient() {
+  if (process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN) {
+    const libsql = createClient({
+      url: process.env.TURSO_DATABASE_URL,
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
+    const adapter = new PrismaLibSql(libsql);
+    return new PrismaClient({ adapter } as any);
+  }
+  return new PrismaClient({ log: process.env.NODE_ENV === "development" ? ["query"] : [] });
+}
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: ["query"],
-  });
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
