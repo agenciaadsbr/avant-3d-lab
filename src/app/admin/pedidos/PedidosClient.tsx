@@ -121,6 +121,9 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
           <a href="/admin" style={{ color: "#b8891a", fontSize: "0.875rem", textDecoration: "none" }}>← Admin</a>
           <h1 style={{ color: "#1a1510", fontSize: "1.75rem", fontWeight: 900, marginTop: "0.2rem" }}>Pedidos</h1>
         </div>
+        <a href="/admin/pedidos/novo" style={{ backgroundColor: "#b8891a", color: "#fff", padding: "0.6rem 1.25rem", borderRadius: "0.75rem", fontWeight: 800, fontSize: "0.875rem", textDecoration: "none", boxShadow: "0 2px 8px rgba(184,137,26,0.3)" }}>
+          + Novo Pedido
+        </a>
       </div>
 
       {/* KPIs */}

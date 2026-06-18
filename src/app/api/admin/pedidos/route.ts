@@ -1,0 +1,64 @@
+export const dynamic = 'force-dynamic';
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session || (session.user as any)?.role !== "admin")
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+
+  const body = await req.json();
+  const { userId, newCustomer, items, paymentMethod, paymentStatus, amountPaid, notes, createdAt } = body;
+
+  let customerId = userId;
+
+  if (newCustomer?.name) {
+    const email = newCustomer.email || `${newCustomer.name.toLowerCase().replace(/\s+/g, ".")}.${Date.now()}@cliente.accessfit.com.br`;
+    const existing = await prisma.user.findFirst({ where: { email } });
+    if (existing) {
+      customerId = existing.id;
+    } else {
+      const user = await prisma.user.create({
+        data: { name: newCustomer.name, email, phone: newCustomer.phone || null, role: "customer" },
+      });
+      customerId = user.id;
+    }
+  }
+
+  if (!customerId) return NextResponse.json({ error: "Cliente obrigatório" }, { status: 400 });
+  if (!items?.length) return NextResponse.json({ error: "Adicione ao menos um item" }, { status: 400 });
+
+  const vendaManual = await prisma.product.findFirst({ where: { name: "Venda Manual" } });
+  if (!vendaManual) return NextResponse.json({ error: "Produto 'Venda Manual' não encontrado" }, { status: 500 });
+
+  const subtotal = items.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
+  const paid = parseFloat(amountPaid) || 0;
+
+  const order = await prisma.order.create({
+    data: {
+      userId: customerId,
+      status: "delivered",
+      paymentMethod: paymentMethod || "pix",
+      paymentStatus: paymentStatus || "paid",
+      amountPaid: paid,
+      total: subtotal,
+      subtotal,
+      shipping: 0,
+      discount: 0,
+      notes: notes || null,
+      createdAt: createdAt ? new Date(createdAt) : new Date(),
+      items: {
+        create: items.map((i: any) => ({
+          productId: i.productId || vendaManual.id,
+          quantity: i.quantity,
+          price: i.price,
+          size: i.description || null,
+        })),
+      },
+    },
+    include: { user: true, items: true },
+  });
+
+  return NextResponse.json(order);
+}
