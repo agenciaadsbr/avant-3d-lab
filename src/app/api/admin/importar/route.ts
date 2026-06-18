@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     const row = rows[i];
     const rowNum = i + 2;
 
-    const nome = col(row, "Produto", "produto", "nome", "Nome");
+    const nome = col(row, "Produto", "produto", "nome", "Nome").replace(/\s+/g, " ").trim();
     const categoria = col(row, "Categoria", "categoria");
     const preco = parsePrice(col(row, "Preco venda", "Preço venda", "Preço Venda", "preco venda", "Valor venda", "Preço"));
     const custo = parsePrice(col(row, "Preco unitario", "Preço unitário", "Preço Unitário", "preco unitario", "custo")) || null;
