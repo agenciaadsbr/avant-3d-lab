@@ -21,7 +21,7 @@ export default async function AdminPage() {
     stockData, lowStock, zeroStock, pendingOrders,
     ordersThisMonth, newUsersThisMonth,
     totalExpenses, expensesThisMonth,
-    topProducts, cadernoOrders,
+    topProducts, cadernoOrders, recentSales,
   ] = await Promise.all([
     prisma.product.count({ where: { active: true } }),
     prisma.order.count(),
@@ -49,6 +49,10 @@ export default async function AdminPage() {
       where: { paymentMethod: "caderno", paymentStatus: { not: "paid" } },
       select: { total: true, amountPaid: true },
     }),
+    prisma.order.findMany({
+      where: { status: { not: "cancelled" }, createdAt: { gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) } },
+      select: { total: true, createdAt: true },
+    }),
   ]);
 
   const valorVenda = stockData.reduce((a, p) => a + p.price * p.stock, 0);
@@ -67,6 +71,19 @@ export default async function AdminPage() {
   const ticketMedio = orderCount > 0 ? (revenue._sum.total || 0) / orderCount : 0;
   const cadernoNaRua = cadernoOrders.reduce((s, o) => s + (o.total - o.amountPaid), 0);
   const cadernoQtd = cadernoOrders.length;
+
+  // monthly revenue chart (last 6 months)
+  const MONTHS_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  const monthlyData = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+    const month = d.getMonth();
+    const year = d.getFullYear();
+    const total = recentSales
+      .filter(o => { const od = new Date(o.createdAt); return od.getMonth() === month && od.getFullYear() === year; })
+      .reduce((s, o) => s + o.total, 0);
+    return { label: MONTHS_PT[month], total };
+  });
+  const monthlyMax = Math.max(...monthlyData.map(m => m.total), 1);
 
   // bar chart data for custo vs venda
   const barMax = Math.max(valorCusto, valorVenda, 1);
@@ -284,6 +301,39 @@ export default async function AdminPage() {
                 </div>
               </a>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Gráfico Receita Mensal */}
+      <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1.5rem", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", marginBottom: "1.5rem" }}>
+        <h2 style={{ color: "#1a1510", fontWeight: 800, fontSize: "0.95rem", marginBottom: "1.5rem" }}>📈 Receita por Mês</h2>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: "0.625rem", height: 160 }}>
+          {monthlyData.map((m, i) => {
+            const h = Math.max(Math.round((m.total / monthlyMax) * 140), m.total > 0 ? 6 : 2);
+            const isCurrent = i === 5;
+            return (
+              <div key={m.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem" }}>
+                <span style={{ fontSize: "0.65rem", color: "#9a8060", fontWeight: 700, whiteSpace: "nowrap" }}>
+                  {m.total > 0 ? `R$${(m.total / 1000).toFixed(1)}k` : ""}
+                </span>
+                <div style={{ width: "100%", height: h, backgroundColor: isCurrent ? "#b8891a" : "#e8d9b0", borderRadius: "6px 6px 0 0", transition: "height 0.4s", position: "relative" }} />
+                <span style={{ fontSize: "0.72rem", color: isCurrent ? "#b8891a" : "#9a8060", fontWeight: isCurrent ? 900 : 600 }}>{m.label}</span>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ display: "flex", gap: "1.5rem", marginTop: "1rem", borderTop: "1px solid rgba(140,100,20,0.08)", paddingTop: "0.75rem" }}>
+          <div style={{ fontSize: "0.75rem", color: "#9a8060" }}>
+            <span style={{ display: "inline-block", width: 10, height: 10, backgroundColor: "#b8891a", borderRadius: 2, marginRight: 4 }} />
+            Mês atual
+          </div>
+          <div style={{ fontSize: "0.75rem", color: "#9a8060" }}>
+            <span style={{ display: "inline-block", width: 10, height: 10, backgroundColor: "#e8d9b0", borderRadius: 2, marginRight: 4 }} />
+            Meses anteriores
+          </div>
+          <div style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#5a4a2a", fontWeight: 700 }}>
+            Total 6 meses: {formatCurrency(monthlyData.reduce((s, m) => s + m.total, 0))}
           </div>
         </div>
       </div>
