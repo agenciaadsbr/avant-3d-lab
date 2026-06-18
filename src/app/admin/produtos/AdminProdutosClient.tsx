@@ -13,6 +13,14 @@ export default function AdminProdutosClient({ products, categories }: { products
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [sizeFilter, setSizeFilter] = useState("");
+
+  // Todos os tamanhos únicos disponíveis
+  const allSizes = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach(p => parseJson<string[]>(p.sizes, []).forEach(s => set.add(s)));
+    return [...set].sort();
+  }, [products]);
 
   const filtered = useMemo(() => {
     return products.filter(p => {
@@ -21,10 +29,11 @@ export default function AdminProdutosClient({ products, categories }: { products
       if (statusFilter === "inativo" && p.active) return false;
       if (statusFilter === "sem_estoque" && p.stock > 0) return false;
       if (statusFilter === "estoque_baixo" && (p.stock === 0 || p.stock > 5)) return false;
+      if (sizeFilter && !parseJson<string[]>(p.sizes, []).includes(sizeFilter)) return false;
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-  }, [products, catFilter, statusFilter, search]);
+  }, [products, catFilter, statusFilter, sizeFilter, search]);
 
   const totalValor = filtered.reduce((a, p) => a + p.price * p.stock, 0);
   const totalUnidades = filtered.reduce((a, p) => a + p.stock, 0);
@@ -82,8 +91,14 @@ export default function AdminProdutosClient({ products, categories }: { products
           <option value="sem_estoque">Sem estoque</option>
           <option value="estoque_baixo">Estoque baixo</option>
         </select>
-        {(search || catFilter || statusFilter) && (
-          <button onClick={() => { setSearch(""); setCatFilter(""); setStatusFilter(""); }}
+        {allSizes.length > 0 && (
+          <select value={sizeFilter} onChange={e => setSizeFilter(e.target.value)} style={{ ...inp, minWidth: 120 }}>
+            <option value="">Todos tamanhos</option>
+            {allSizes.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        )}
+        {(search || catFilter || statusFilter || sizeFilter) && (
+          <button onClick={() => { setSearch(""); setCatFilter(""); setStatusFilter(""); setSizeFilter(""); }}
             style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", fontWeight: 700, fontSize: "0.75rem", padding: "0.55rem 0.875rem", borderRadius: "0.625rem", cursor: "pointer", whiteSpace: "nowrap" }}>
             ✕ Limpar
           </button>
@@ -125,7 +140,7 @@ export default function AdminProdutosClient({ products, categories }: { products
                       <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap", maxWidth: 140 }}>
                         {parseJson<string[]>(p.sizes, []).length > 0
                           ? parseJson<string[]>(p.sizes, []).map(s => (
-                              <span key={s} style={{ fontSize: "0.65rem", backgroundColor: "#f0f0f0", color: "#5a4a2a", padding: "0.15rem 0.4rem", borderRadius: 999, whiteSpace: "nowrap" }}>{s}</span>
+                              <span key={s} style={{ fontSize: "0.68rem", backgroundColor: sizeFilter === s ? "#b8891a" : "#EDE4CC", color: sizeFilter === s ? "#fff" : "#6a4a10", fontWeight: 700, padding: "0.2rem 0.5rem", borderRadius: 999, whiteSpace: "nowrap", border: "1px solid rgba(140,100,20,0.2)" }}>{s}</span>
                             ))
                           : <span style={{ color: "#b8a080", fontSize: "0.75rem" }}>—</span>
                         }
