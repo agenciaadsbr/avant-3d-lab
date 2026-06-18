@@ -4,46 +4,73 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminPage() {
   const session = await auth();
   if (!session || (session.user as any)?.role !== "admin") redirect("/");
 
-  const [productCount, orderCount, userCount, recentOrders, revenue, stockData, lowStock, pendingOrders] =
-    await Promise.all([
-      prisma.product.count({ where: { active: true } }),
-      prisma.order.count(),
-      prisma.user.count({ where: { role: "customer" } }),
-      prisma.order.findMany({
-        take: 6,
-        orderBy: { createdAt: "desc" },
-        include: { user: true, items: true },
-      }),
-      prisma.order.aggregate({
-        _sum: { total: true },
-        where: { status: { not: "cancelled" } },
-      }),
-      // valor total do estoque = soma(price * stock)
-      prisma.product.findMany({
-        where: { active: true },
-        select: { price: true, stock: true },
-      }),
-      // produtos com estoque baixo (<=5)
-      prisma.product.count({ where: { active: true, stock: { lte: 5 } } }),
-      // pedidos aguardando
-      prisma.order.count({ where: { status: "pending" } }),
-    ]);
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
-  const totalEstoque = stockData.reduce((acc, p) => acc + p.price * p.stock, 0);
-  const totalUnidades = stockData.reduce((acc, p) => acc + p.stock, 0);
+  const [
+    productCount, orderCount, userCount,
+    recentOrders, revenue, revenueThisMonth, revenueLastMonth,
+    stockData, lowStock, zeroStock, pendingOrders,
+    ordersThisMonth, newUsersThisMonth,
+    totalExpenses, expensesThisMonth,
+    topProducts,
+  ] = await Promise.all([
+    prisma.product.count({ where: { active: true } }),
+    prisma.order.count(),
+    prisma.user.count({ where: { role: "customer" } }),
+    prisma.order.findMany({
+      take: 6, orderBy: { createdAt: "desc" },
+      include: { user: true, items: true },
+    }),
+    prisma.order.aggregate({ _sum: { total: true }, where: { status: { not: "cancelled" } } }),
+    prisma.order.aggregate({ _sum: { total: true }, where: { status: { not: "cancelled" }, createdAt: { gte: startOfMonth } } }),
+    prisma.order.aggregate({ _sum: { total: true }, where: { status: { not: "cancelled" }, createdAt: { gte: startOfLastMonth, lte: endOfLastMonth } } }),
+    prisma.product.findMany({ where: { active: true }, select: { price: true, costPrice: true, stock: true, name: true } }),
+    prisma.product.count({ where: { active: true, stock: { gt: 0, lte: 5 } } }),
+    prisma.product.count({ where: { active: true, stock: 0 } }),
+    prisma.order.count({ where: { status: "pending" } }),
+    prisma.order.count({ where: { createdAt: { gte: startOfMonth } } }),
+    prisma.user.count({ where: { role: "customer", createdAt: { gte: startOfMonth } } }),
+    prisma.expense.aggregate({ _sum: { amount: true } }),
+    prisma.expense.aggregate({ _sum: { amount: true }, where: { date: { gte: startOfMonth } } }),
+    prisma.orderItem.groupBy({
+      by: ["productId"], _sum: { quantity: true },
+      orderBy: { _sum: { quantity: "desc" } }, take: 5,
+    }),
+  ]);
+
+  const valorVenda = stockData.reduce((a, p) => a + p.price * p.stock, 0);
+  const valorCusto = stockData.reduce((a, p) => a + (p.costPrice ?? p.price * 0.55) * p.stock, 0);
+  const totalUnidades = stockData.reduce((a, p) => a + p.stock, 0);
+  const margemEstoque = valorVenda > 0 ? ((valorVenda - valorCusto) / valorVenda) * 100 : 0;
+
+  const receitaMes = revenueThisMonth._sum.total || 0;
+  const receitaMesPassado = revenueLastMonth._sum.total || 0;
+  const variacaoReceita = receitaMesPassado > 0 ? ((receitaMes - receitaMesPassado) / receitaMesPassado) * 100 : 0;
+
+  const totalGastos = totalExpenses._sum.amount || 0;
+  const gastosMes = expensesThisMonth._sum.amount || 0;
+  const lucroLiquido = (revenue._sum.total || 0) - totalGastos;
+
+  const ticketMedio = orderCount > 0 ? (revenue._sum.total || 0) / orderCount : 0;
+
+  // bar chart data for custo vs venda
+  const barMax = Math.max(valorCusto, valorVenda, 1);
+  const custoW = Math.round((valorCusto / barMax) * 100);
+  const vendaW = Math.round((valorVenda / barMax) * 100);
 
   const statusLabel: Record<string, string> = {
-    pending: "Aguardando",
-    confirmed: "Confirmado",
-    shipped: "Enviado",
-    delivered: "Entregue",
-    cancelled: "Cancelado",
+    pending: "Aguardando", confirmed: "Confirmado",
+    shipped: "Enviado", delivered: "Entregue", cancelled: "Cancelado",
   };
-
   const statusColors: Record<string, { bg: string; color: string }> = {
     pending:   { bg: "#fff8e1", color: "#b8891a" },
     confirmed: { bg: "#e8f4fd", color: "#1a6a9a" },
@@ -54,8 +81,17 @@ export default async function AdminPage() {
 
   const adminName = (session.user as any)?.name?.split(" ")[0] || "Admin";
 
+  const card = (style?: object) => ({
+    backgroundColor: "#fff",
+    border: "1px solid rgba(140,100,20,0.1)",
+    borderRadius: "1rem",
+    padding: "1.25rem",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+    ...style,
+  });
+
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 1.5rem", backgroundColor: "#FAF6EE", minHeight: "100vh" }}>
+    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "2rem 1.5rem", backgroundColor: "#FAF6EE", minHeight: "100vh" }}>
 
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
@@ -64,6 +100,9 @@ export default async function AdminPage() {
           <h1 style={{ color: "#1a1510", fontSize: "1.75rem", fontWeight: 900, lineHeight: 1 }}>Painel Access Fit</h1>
         </div>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+          <a href="/admin/financeiro" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", backgroundColor: "#fff", border: "1px solid rgba(184,137,26,0.3)", color: "#b8891a", fontWeight: 700, fontSize: "0.8rem", padding: "0.5rem 1rem", borderRadius: "0.625rem", textDecoration: "none" }}>
+            💳 Financeiro
+          </a>
           <a href="/admin/importar" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", backgroundColor: "#fff", border: "1px solid rgba(184,137,26,0.3)", color: "#b8891a", fontWeight: 700, fontSize: "0.8rem", padding: "0.5rem 1rem", borderRadius: "0.625rem", textDecoration: "none" }}>
             ↑ Importar Excel
           </a>
@@ -74,56 +113,165 @@ export default async function AdminPage() {
       </div>
 
       {/* Alertas */}
-      {(lowStock > 0 || pendingOrders > 0) && (
+      {(lowStock > 0 || zeroStock > 0 || pendingOrders > 0) && (
         <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
+          {zeroStock > 0 && (
+            <a href="/admin/produtos" style={{ display: "flex", alignItems: "center", gap: "0.5rem", backgroundColor: "#fee8e8", border: "1px solid rgba(192,64,64,0.2)", borderRadius: "0.75rem", padding: "0.6rem 1rem", textDecoration: "none" }}>
+              <span>🚫</span>
+              <span style={{ color: "#c04040", fontSize: "0.8rem", fontWeight: 700 }}>{zeroStock} produto{zeroStock > 1 ? "s" : ""} sem estoque</span>
+            </a>
+          )}
           {lowStock > 0 && (
             <a href="/admin/produtos" style={{ display: "flex", alignItems: "center", gap: "0.5rem", backgroundColor: "#fff8e1", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "0.75rem", padding: "0.6rem 1rem", textDecoration: "none" }}>
-              <span style={{ fontSize: "1rem" }}>⚠️</span>
+              <span>⚠️</span>
               <span style={{ color: "#b8891a", fontSize: "0.8rem", fontWeight: 700 }}>{lowStock} produto{lowStock > 1 ? "s" : ""} com estoque baixo</span>
             </a>
           )}
           {pendingOrders > 0 && (
-            <a href="/admin/pedidos" style={{ display: "flex", alignItems: "center", gap: "0.5rem", backgroundColor: "#fee8e8", border: "1px solid rgba(192,64,64,0.2)", borderRadius: "0.75rem", padding: "0.6rem 1rem", textDecoration: "none" }}>
-              <span style={{ fontSize: "1rem" }}>🔔</span>
-              <span style={{ color: "#c04040", fontSize: "0.8rem", fontWeight: 700 }}>{pendingOrders} pedido{pendingOrders > 1 ? "s" : ""} aguardando</span>
+            <a href="/admin/pedidos" style={{ display: "flex", alignItems: "center", gap: "0.5rem", backgroundColor: "#e8f4fd", border: "1px solid rgba(26,106,154,0.2)", borderRadius: "0.75rem", padding: "0.6rem 1rem", textDecoration: "none" }}>
+              <span>🔔</span>
+              <span style={{ color: "#1a6a9a", fontSize: "0.8rem", fontWeight: 700 }}>{pendingOrders} pedido{pendingOrders > 1 ? "s" : ""} aguardando</span>
             </a>
           )}
         </div>
       )}
 
-      {/* KPIs principais */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
-        {[
-          { emoji: "💰", label: "Receita Total", value: formatCurrency(revenue._sum.total || 0), sub: "pedidos confirmados", gold: true },
-          { emoji: "📦", label: "Valor em Estoque", value: formatCurrency(totalEstoque), sub: `${totalUnidades} unidades`, gold: false },
-          { emoji: "🛍️", label: "Pedidos", value: orderCount, sub: `${pendingOrders} aguardando`, gold: false },
-          { emoji: "👗", label: "Produtos Ativos", value: productCount, sub: `${lowStock} com estoque baixo`, gold: false },
-          { emoji: "👥", label: "Clientes", value: userCount, sub: "cadastrados", gold: false },
-        ].map(stat => (
-          <div key={stat.label} style={{ backgroundColor: stat.gold ? "#b8891a" : "#fff", border: stat.gold ? "none" : "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1.25rem", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-            <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>{stat.emoji}</div>
-            <div style={{ color: stat.gold ? "#fff" : "#1a1510", fontSize: "1.6rem", fontWeight: 900, lineHeight: 1 }}>{stat.value}</div>
-            <div style={{ color: stat.gold ? "rgba(255,255,255,0.8)" : "#9a8060", fontSize: "0.75rem", fontWeight: 600, marginTop: "0.3rem" }}>{stat.label}</div>
-            <div style={{ color: stat.gold ? "rgba(255,255,255,0.6)" : "#b8a080", fontSize: "0.7rem", marginTop: "0.15rem" }}>{stat.sub}</div>
+      {/* KPIs Financeiros — linha 1 */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
+        <div style={{ ...card(), backgroundColor: "#b8891a", border: "none" }}>
+          <div style={{ fontSize: "1.3rem", marginBottom: "0.4rem" }}>💰</div>
+          <div style={{ color: "#fff", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{formatCurrency(revenue._sum.total || 0)}</div>
+          <div style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Receita Total</div>
+          <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.7rem", marginTop: "0.1rem" }}>todos os pedidos</div>
+        </div>
+        <div style={card()}>
+          <div style={{ fontSize: "1.3rem", marginBottom: "0.4rem" }}>📅</div>
+          <div style={{ color: "#1a1510", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{formatCurrency(receitaMes)}</div>
+          <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Receita este Mês</div>
+          <div style={{ color: variacaoReceita >= 0 ? "#1a8a2a" : "#c04040", fontSize: "0.7rem", marginTop: "0.1rem", fontWeight: 700 }}>
+            {variacaoReceita >= 0 ? "▲" : "▼"} {Math.abs(variacaoReceita).toFixed(1)}% vs mês passado
           </div>
-        ))}
+        </div>
+        <div style={card()}>
+          <div style={{ fontSize: "1.3rem", marginBottom: "0.4rem" }}>💸</div>
+          <div style={{ color: "#1a1510", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{formatCurrency(totalGastos)}</div>
+          <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Total Despesas</div>
+          <div style={{ color: "#b8a080", fontSize: "0.7rem", marginTop: "0.1rem" }}>{formatCurrency(gastosMes)} este mês</div>
+        </div>
+        <div style={{ ...card(), backgroundColor: lucroLiquido >= 0 ? "#f0fff4" : "#fff0f0", border: `1px solid ${lucroLiquido >= 0 ? "rgba(26,138,42,0.2)" : "rgba(192,64,64,0.2)"}` }}>
+          <div style={{ fontSize: "1.3rem", marginBottom: "0.4rem" }}>📈</div>
+          <div style={{ color: lucroLiquido >= 0 ? "#1a8a2a" : "#c04040", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{formatCurrency(lucroLiquido)}</div>
+          <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Lucro Líquido</div>
+          <div style={{ color: "#b8a080", fontSize: "0.7rem", marginTop: "0.1rem" }}>receita − despesas</div>
+        </div>
+        <div style={card()}>
+          <div style={{ fontSize: "1.3rem", marginBottom: "0.4rem" }}>🎯</div>
+          <div style={{ color: "#1a1510", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{formatCurrency(ticketMedio)}</div>
+          <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Ticket Médio</div>
+          <div style={{ color: "#b8a080", fontSize: "0.7rem", marginTop: "0.1rem" }}>{orderCount} pedidos</div>
+        </div>
       </div>
 
-      {/* Atalhos */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "0.75rem", marginBottom: "2rem" }}>
-        {[
-          { label: "Produtos", href: "/admin/produtos", emoji: "👗" },
-          { label: "Pedidos", href: "/admin/pedidos", emoji: "📦" },
-          { label: "Clientes", href: "/admin/clientes", emoji: "👥" },
-          { label: "Categorias", href: "/admin/categorias", emoji: "🗂️" },
-          { label: "Importar Excel", href: "/admin/importar", emoji: "📊" },
-        ].map(link => (
-          <a key={link.href} href={link.href}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.4rem", backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "0.875rem", padding: "1rem 0.75rem", textDecoration: "none" }}>
-            <span style={{ fontSize: "1.4rem" }}>{link.emoji}</span>
-            <span style={{ color: "#1a1510", fontSize: "0.8rem", fontWeight: 700, textAlign: "center" }}>{link.label}</span>
-          </a>
-        ))}
+      {/* KPIs Estoque + Operacionais */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+        <div style={card()}>
+          <div style={{ fontSize: "1.3rem", marginBottom: "0.4rem" }}>🏷️</div>
+          <div style={{ color: "#1a1510", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{formatCurrency(valorCusto)}</div>
+          <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Valor Custo Estoque</div>
+          <div style={{ color: "#b8a080", fontSize: "0.7rem", marginTop: "0.1rem" }}>investido nas peças</div>
+        </div>
+        <div style={card()}>
+          <div style={{ fontSize: "1.3rem", marginBottom: "0.4rem" }}>📦</div>
+          <div style={{ color: "#1a1510", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{formatCurrency(valorVenda)}</div>
+          <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Valor Venda Estoque</div>
+          <div style={{ color: "#b8a080", fontSize: "0.7rem", marginTop: "0.1rem" }}>{totalUnidades} unidades</div>
+        </div>
+        <div style={card()}>
+          <div style={{ fontSize: "1.3rem", marginBottom: "0.4rem" }}>✨</div>
+          <div style={{ color: "#b8891a", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{margemEstoque.toFixed(1)}%</div>
+          <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Margem Potencial</div>
+          <div style={{ color: "#b8a080", fontSize: "0.7rem", marginTop: "0.1rem" }}>sobre estoque atual</div>
+        </div>
+        <div style={card()}>
+          <div style={{ fontSize: "1.3rem", marginBottom: "0.4rem" }}>🛍️</div>
+          <div style={{ color: "#1a1510", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{ordersThisMonth}</div>
+          <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Pedidos este Mês</div>
+          <div style={{ color: "#b8a080", fontSize: "0.7rem", marginTop: "0.1rem" }}>{pendingOrders} aguardando</div>
+        </div>
+        <div style={card()}>
+          <div style={{ fontSize: "1.3rem", marginBottom: "0.4rem" }}>👥</div>
+          <div style={{ color: "#1a1510", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{userCount}</div>
+          <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Clientes</div>
+          <div style={{ color: "#1a8a2a", fontSize: "0.7rem", marginTop: "0.1rem", fontWeight: 700 }}>+{newUsersThisMonth} este mês</div>
+        </div>
+      </div>
+
+      {/* Gráfico Custo vs Venda + Atalhos */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+
+        {/* Gráfico Custo x Venda */}
+        <div style={card()}>
+          <h2 style={{ color: "#1a1510", fontWeight: 800, fontSize: "0.95rem", marginBottom: "1.25rem" }}>
+            📊 Estoque — Custo × Venda
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.35rem" }}>
+                <span style={{ fontSize: "0.75rem", color: "#9a8060", fontWeight: 700 }}>💸 Custo (investido)</span>
+                <span style={{ fontSize: "0.75rem", color: "#1a1510", fontWeight: 900 }}>{formatCurrency(valorCusto)}</span>
+              </div>
+              <div style={{ height: 12, backgroundColor: "#f0e8d0", borderRadius: 999, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${custoW}%`, backgroundColor: "#d4a853", borderRadius: 999, transition: "width 0.5s" }} />
+              </div>
+            </div>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.35rem" }}>
+                <span style={{ fontSize: "0.75rem", color: "#9a8060", fontWeight: 700 }}>💰 Venda (potencial)</span>
+                <span style={{ fontSize: "0.75rem", color: "#1a1510", fontWeight: 900 }}>{formatCurrency(valorVenda)}</span>
+              </div>
+              <div style={{ height: 12, backgroundColor: "#f0e8d0", borderRadius: 999, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${vendaW}%`, backgroundColor: "#b8891a", borderRadius: 999, transition: "width 0.5s" }} />
+              </div>
+            </div>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.35rem" }}>
+                <span style={{ fontSize: "0.75rem", color: "#9a8060", fontWeight: 700 }}>📈 Lucro potencial</span>
+                <span style={{ fontSize: "0.75rem", color: "#1a8a2a", fontWeight: 900 }}>{formatCurrency(valorVenda - valorCusto)}</span>
+              </div>
+              <div style={{ height: 12, backgroundColor: "#f0e8d0", borderRadius: 999, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${Math.round(((valorVenda - valorCusto) / barMax) * 100)}%`, backgroundColor: "#4aab6a", borderRadius: 999 }} />
+              </div>
+            </div>
+            <div style={{ borderTop: "1px solid rgba(140,100,20,0.1)", paddingTop: "0.75rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "0.75rem", color: "#9a8060" }}>Margem sobre venda</span>
+              <span style={{ fontSize: "1rem", fontWeight: 900, color: "#b8891a" }}>{margemEstoque.toFixed(1)}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Atalhos */}
+        <div style={card()}>
+          <h2 style={{ color: "#1a1510", fontWeight: 800, fontSize: "0.95rem", marginBottom: "1.25rem" }}>⚡ Atalhos Rápidos</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.625rem" }}>
+            {[
+              { label: "Produtos", href: "/admin/produtos", emoji: "👗", sub: `${productCount} ativos` },
+              { label: "Pedidos", href: "/admin/pedidos", emoji: "📦", sub: `${orderCount} total` },
+              { label: "Financeiro", href: "/admin/financeiro", emoji: "💳", sub: "despesas" },
+              { label: "Clientes", href: "/admin/clientes", emoji: "👥", sub: `${userCount} cadastros` },
+              { label: "Categorias", href: "/admin/categorias", emoji: "🗂️", sub: "organizar" },
+              { label: "Importar Excel", href: "/admin/importar", emoji: "📊", sub: "estoque" },
+            ].map(link => (
+              <a key={link.href} href={link.href}
+                style={{ display: "flex", alignItems: "center", gap: "0.625rem", backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "0.75rem", padding: "0.75rem", textDecoration: "none" }}>
+                <span style={{ fontSize: "1.2rem", flexShrink: 0 }}>{link.emoji}</span>
+                <div>
+                  <div style={{ color: "#1a1510", fontSize: "0.8rem", fontWeight: 700 }}>{link.label}</div>
+                  <div style={{ color: "#9a8060", fontSize: "0.65rem" }}>{link.sub}</div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Pedidos recentes */}
@@ -153,7 +301,7 @@ export default async function AdminPage() {
                   const sc = statusColors[order.status] || { bg: "#f0f0f0", color: "#666" };
                   return (
                     <tr key={order.id} style={{ borderBottom: "1px solid rgba(140,100,20,0.05)" }}>
-                      <td style={{ padding: "0.875rem 1rem", fontFamily: "monospace", fontSize: "0.75rem", color: "#9a8060", whiteSpace: "nowrap" }}>
+                      <td style={{ padding: "0.875rem 1rem", fontFamily: "monospace", fontSize: "0.75rem", color: "#9a8060" }}>
                         #{order.id.slice(-8).toUpperCase()}
                       </td>
                       <td style={{ padding: "0.875rem 1rem", color: "#1a1510", fontWeight: 600 }}>

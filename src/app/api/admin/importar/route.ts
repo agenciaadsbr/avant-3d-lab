@@ -50,6 +50,9 @@ export async function POST(req: Request) {
     const precoRaw = col(row, "Preco venda", "Preço venda", "Preço Venda", "preco venda", "preco", "Preço", "Valor venda")
       .replace(/R\$\s*/g, "").replace(".", "").replace(",", ".");
     const preco = parseFloat(precoRaw);
+    const custoRaw = col(row, "Preco unitario", "Preço unitário", "Preço Unitário", "preco unitario", "custo", "Custo", "Valor custo")
+      .replace(/R\$\s*/g, "").replace(".", "").replace(",", ".");
+    const custo = parseFloat(custoRaw) || null;
 
     if (!nome) {
       results.push({ row: rowNum, name: "(vazio)", status: "erro", message: "Coluna 'Produto' obrigatória" });
@@ -86,7 +89,7 @@ export async function POST(req: Request) {
         data: {
           name: nome, slug,
           description: descricao || null,
-          price: preco, compareAt: null,
+          price: preco, costPrice: custo, compareAt: null,
           images: JSON.stringify(imagem ? [imagem] : []),
           sizes: JSON.stringify(tamanhos),
           colors: JSON.stringify([]),

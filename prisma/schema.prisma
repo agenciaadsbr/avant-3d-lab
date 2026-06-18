@@ -90,6 +90,7 @@ model Product {
   slug        String   @unique
   description String?
   price       Float
+  costPrice   Float?
   compareAt   Float?
   images      String   @default("[]")
   sizes       String   @default("[]")
@@ -103,6 +104,34 @@ model Product {
 
   category   Category    @relation(fields: [categoryId], references: [id])
   orderItems OrderItem[]
+}
+
+model Supplier {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  contact   String?
+  email     String?
+  phone     String?
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  expenses  Expense[]
+}
+
+model Expense {
+  id            String    @id @default(cuid())
+  date          DateTime
+  description   String
+  amount        Float
+  category      String    @default("outros")
+  paymentMethod String    @default("pix")
+  supplierId    String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  supplier  Supplier? @relation(fields: [supplierId], references: [id])
 }
 
 model Order {
