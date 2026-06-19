@@ -318,6 +318,8 @@ export default function NovoPedidoPage() {
         <div style={{ backgroundColor: "#fff", borderRadius: "1rem", padding: "1.25rem", border: "1px solid rgba(140,100,20,0.1)" }}>
           <p style={{ fontWeight: 800, color: "#1a1510", marginBottom: "1rem" }}>💳 Pagamento</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+
+            {/* Tipo de pedido */}
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={label}>Tipo de pedido</label>
               <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -333,49 +335,67 @@ export default function NovoPedidoPage() {
                 ))}
               </div>
             </div>
-            <div>
-              <label style={label}>Forma de Pagamento</label>
-              <select style={inp} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
-                <option value="pix">Pix</option>
-                <option value="cartao">Cartão</option>
-                <option value="dinheiro">Dinheiro</option>
-                <option value="link">Link de Pagamento</option>
-                <option value="caderno">Caderno</option>
-              </select>
-            </div>
-            <div>
-              <label style={label}>Status</label>
-              <select style={inp} value={paymentStatus} onChange={e => { setPaymentStatus(e.target.value); if (e.target.value === "paid") setAmountPaid(""); }}>
-                <option value="paid">Pago</option>
-                <option value="partial">Parcial</option>
-                <option value="pending">Pendente</option>
-              </select>
-            </div>
-            {paymentStatus !== "paid" && (
+
+            {orderStatus === "try-on" ? (
+              /* Campos Home Try-On */
               <>
                 <div>
-                  <label style={label}>Valor já pago (R$)</label>
-                  <input style={inp} type="number" min="0" step="0.01" placeholder="0,00" value={amountPaid}
-                    onChange={e => setAmountPaid(e.target.value)} />
+                  <label style={label}>Data de envio</label>
+                  <input style={inp} type="date" value={date} onChange={e => setDate(e.target.value)} />
                 </div>
                 <div>
-                  <label style={label}>Parcelas</label>
-                  <select style={inp} value={installments} onChange={e => setInstallments(Number(e.target.value))}>
-                    {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}x</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={label}>Vencimento (data de pagamento)</label>
+                  <label style={label}>Prazo de retorno (opcional)</label>
                   <input style={inp} type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
                 </div>
               </>
+            ) : (
+              /* Campos Venda */
+              <>
+                <div>
+                  <label style={label}>Forma de Pagamento</label>
+                  <select style={inp} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+                    <option value="pix">Pix</option>
+                    <option value="cartao">Cartão</option>
+                    <option value="dinheiro">Dinheiro</option>
+                    <option value="link">Link de Pagamento</option>
+                    <option value="caderno">Caderno</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={label}>Status</label>
+                  <select style={inp} value={paymentStatus} onChange={e => { setPaymentStatus(e.target.value); if (e.target.value === "paid") setAmountPaid(""); }}>
+                    <option value="paid">Pago</option>
+                    <option value="partial">Parcial</option>
+                    <option value="pending">Pendente</option>
+                  </select>
+                </div>
+                {paymentStatus !== "paid" && (
+                  <>
+                    <div>
+                      <label style={label}>Valor já pago (R$)</label>
+                      <input style={inp} type="number" min="0" step="0.01" placeholder="0,00" value={amountPaid}
+                        onChange={e => setAmountPaid(e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={label}>Parcelas</label>
+                      <select style={inp} value={installments} onChange={e => setInstallments(Number(e.target.value))}>
+                        {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}x</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={label}>Vencimento</label>
+                      <input style={inp} type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                    </div>
+                  </>
+                )}
+                <div>
+                  <label style={label}>Data da Venda</label>
+                  <input style={inp} type="date" value={date} onChange={e => setDate(e.target.value)} />
+                </div>
+              </>
             )}
-            <div>
-              <label style={label}>Data da Venda</label>
-              <input style={inp} type="date" value={date} onChange={e => setDate(e.target.value)} />
-            </div>
           </div>
-          {paymentStatus !== "paid" && subtotal > 0 && (
+          {orderStatus === "delivered" && paymentStatus !== "paid" && subtotal > 0 && (
             <div style={{ marginTop: "0.75rem", padding: "0.6rem 0.875rem", backgroundColor: "#fff8e1", borderRadius: "0.625rem", display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
               <span style={{ color: "#5a4a2a" }}>Saldo em aberto:</span>
               <span style={{ fontWeight: 900, color: "#b8891a" }}>{saldo.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
