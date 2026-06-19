@@ -80,32 +80,36 @@ export async function POST(req: Request) {
     }
   }
 
-  const order = await prisma.order.create({
-    data: {
-      userId: customerId,
-      status: body.status || "delivered",
-      paymentMethod: paymentMethod || "pix",
-      paymentStatus: paymentStatus || "paid",
-      amountPaid: paid,
-      total: subtotal,
-      subtotal,
-      shipping: 0,
-      discount: 0,
-      notes: notes || null,
-      dueDate: dueDate ? new Date(dueDate) : null,
-      installments: installments || 1,
-      createdAt: createdAt ? new Date(createdAt) : new Date(),
-      items: {
-        create: items.map((i: any) => ({
-          productId: i.productId || fallbackProductId!,
-          quantity: i.quantity,
-          price: i.price,
-          size: i.size || i.description || null,
-        })),
+  try {
+    const order = await prisma.order.create({
+      data: {
+        userId: customerId,
+        status: body.status || "delivered",
+        paymentMethod: paymentMethod || "pix",
+        paymentStatus: paymentStatus || "paid",
+        amountPaid: paid,
+        total: subtotal,
+        subtotal,
+        shipping: 0,
+        discount: 0,
+        notes: notes || null,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        installmentCount: installments || 1,
+        createdAt: createdAt ? new Date(createdAt) : new Date(),
+        items: {
+          create: items.map((i: any) => ({
+            productId: i.productId || fallbackProductId!,
+            quantity: i.quantity,
+            price: i.price,
+            size: i.size || i.description || null,
+          })),
+        },
       },
-    },
-    include: { user: true, items: true },
-  });
-
-  return NextResponse.json(order);
+      include: { user: true, items: true },
+    });
+    return NextResponse.json(order);
+  } catch (e: any) {
+    console.error("Erro ao criar pedido:", e);
+    return NextResponse.json({ error: e?.message || "Erro interno ao criar pedido." }, { status: 500 });
+  }
 }
