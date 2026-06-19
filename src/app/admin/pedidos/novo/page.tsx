@@ -23,6 +23,7 @@ export default function NovoPedidoPage() {
   const [isNewCustomer, setIsNewCustomer] = useState(false);
 
   const [items, setItems] = useState<Item[]>([{ description: "", price: 0, quantity: 1 }]);
+  const [orderStatus, setOrderStatus] = useState("delivered");
   const [paymentMethod, setPaymentMethod] = useState("pix");
   const [paymentStatus, setPaymentStatus] = useState("paid");
   const [amountPaid, setAmountPaid] = useState("");
@@ -95,7 +96,7 @@ export default function NovoPedidoPage() {
       body: JSON.stringify({
         userId: selectedCustomer?.id,
         newCustomer: isNewCustomer ? newCustomer : null,
-        items, paymentMethod, paymentStatus,
+        items, status: orderStatus, paymentMethod, paymentStatus,
         amountPaid: paymentStatus === "paid" ? subtotal : paid,
         notes, createdAt: date, dueDate: dueDate || null, installments,
       }),
@@ -227,6 +228,21 @@ export default function NovoPedidoPage() {
         <div style={{ backgroundColor: "#fff", borderRadius: "1rem", padding: "1.25rem", border: "1px solid rgba(140,100,20,0.1)" }}>
           <p style={{ fontWeight: 800, color: "#1a1510", marginBottom: "1rem" }}>💳 Pagamento</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={label}>Tipo de pedido</label>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                {[
+                  { value: "try-on", label: "👗 Try-On", desc: "Saiu para experimentar" },
+                  { value: "delivered", label: "✅ Venda", desc: "Já foi vendido" },
+                ].map(opt => (
+                  <button key={opt.value} type="button" onClick={() => setOrderStatus(opt.value)}
+                    style={{ flex: 1, padding: "0.6rem 0.875rem", borderRadius: "0.625rem", border: `2px solid ${orderStatus === opt.value ? "#b8891a" : "rgba(140,100,20,0.2)"}`, backgroundColor: orderStatus === opt.value ? "#fff8e8" : "#FAF6EE", cursor: "pointer", textAlign: "left" }}>
+                    <div style={{ fontWeight: 700, fontSize: "0.875rem", color: orderStatus === opt.value ? "#b8891a" : "#5a4a2a" }}>{opt.label}</div>
+                    <div style={{ fontSize: "0.72rem", color: "#9a8060", marginTop: "0.1rem" }}>{opt.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
             <div>
               <label style={label}>Forma de Pagamento</label>
               <select style={inp} value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>

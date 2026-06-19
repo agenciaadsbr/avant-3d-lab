@@ -33,10 +33,12 @@ const METHOD_COLOR: Record<string, { bg: string; color: string }> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  pending: "Aguardando", confirmed: "Confirmado",
-  shipped: "Enviado", delivered: "Entregue", cancelled: "Cancelado",
+  "try-on":  "Try-On",
+  pending:   "Aguardando", confirmed: "Confirmado",
+  shipped:   "Enviado", delivered: "Entregue", cancelled: "Cancelado",
 };
 const STATUS_COLOR: Record<string, { bg: string; color: string }> = {
+  "try-on":  { bg: "#fce8ff", color: "#8a1ab8" },
   pending:   { bg: "#fff8e1", color: "#b8891a" },
   confirmed: { bg: "#e8f4fd", color: "#1a6a9a" },
   shipped:   { bg: "#f0e8ff", color: "#6a30b8" },
