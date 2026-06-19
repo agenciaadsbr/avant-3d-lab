@@ -20,6 +20,9 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
 
   const filtered = useMemo(() => {
     if (!search) return clientes;
@@ -35,6 +38,22 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
     setEditingId(c.id);
     setEditName(c.name || "");
     setEditPhone(c.phone || "");
+  };
+
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
+    setSaving(true);
+    const email = `${newName.toLowerCase().replace(/\s+/g, ".")}.${Date.now()}@cliente.accessfit.com.br`;
+    await fetch("/api/admin/clientes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newName.trim(), phone: newPhone.trim() || null, email }),
+    });
+    setSaving(false);
+    setShowNew(false);
+    setNewName("");
+    setNewPhone("");
+    router.refresh();
   };
 
   const handleSave = async (id: string) => {
@@ -59,7 +78,38 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
           <h1 style={{ color: "#1a1510", fontSize: "1.75rem", fontWeight: 900, marginTop: "0.2rem" }}>👥 Clientes</h1>
           <p style={{ color: "#9a8060", fontSize: "0.875rem", marginTop: "0.2rem" }}>{clientes.length} cadastros</p>
         </div>
+        <button onClick={() => setShowNew(v => !v)}
+          style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.75rem", padding: "0.6rem 1.25rem", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer" }}>
+          + Novo Cliente
+        </button>
       </div>
+
+      {/* Formulário novo cliente */}
+      {showNew && (
+        <div style={{ backgroundColor: "#fff", border: "1px solid rgba(184,137,26,0.25)", borderRadius: "1rem", padding: "1.25rem", marginBottom: "1.25rem" }}>
+          <p style={{ fontWeight: 800, color: "#1a1510", marginBottom: "0.875rem" }}>Novo Cliente</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.875rem" }}>
+            <div>
+              <label style={{ fontSize: "0.75rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>Nome *</label>
+              <input style={inp} placeholder="Nome completo" value={newName} onChange={e => setNewName(e.target.value)} autoFocus />
+            </div>
+            <div>
+              <label style={{ fontSize: "0.75rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>Telefone</label>
+              <input style={inp} placeholder="(47) 9..." value={newPhone} onChange={e => setNewPhone(e.target.value)} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button onClick={handleCreate} disabled={saving || !newName.trim()}
+              style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.5rem 1.25rem", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer" }}>
+              {saving ? "Salvando..." : "Cadastrar"}
+            </button>
+            <button onClick={() => { setShowNew(false); setNewName(""); setNewPhone(""); }}
+              style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", borderRadius: "0.625rem", padding: "0.5rem 0.875rem", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer" }}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Busca */}
       <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "0.875rem 1.25rem", marginBottom: "1.25rem" }}>
