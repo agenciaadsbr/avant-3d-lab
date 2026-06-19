@@ -232,7 +232,7 @@ export default function NovoPedidoPage() {
               <label style={label}>Tipo de pedido</label>
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 {[
-                  { value: "try-on", label: "👗 Try-On", desc: "Saiu para experimentar" },
+                  { value: "try-on", label: "👗 Home Try-On", desc: "Saiu para experimentar" },
                   { value: "delivered", label: "✅ Venda", desc: "Já foi vendido" },
                 ].map(opt => (
                   <button key={opt.value} type="button" onClick={() => setOrderStatus(opt.value)}

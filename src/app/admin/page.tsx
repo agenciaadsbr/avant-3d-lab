@@ -104,7 +104,7 @@ export default async function AdminPage() {
   const vendaW = Math.round((valorVenda / barMax) * 100);
 
   const statusLabel: Record<string, string> = {
-    "try-on":  "Try-On",
+    "try-on":  "Home Try-On",
     pending:   "Aguardando", confirmed: "Confirmado",
     shipped:   "Enviado", delivered: "Entregue", cancelled: "Cancelado",
   };

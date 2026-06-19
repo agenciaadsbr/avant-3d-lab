@@ -33,7 +33,7 @@ const METHOD_COLOR: Record<string, { bg: string; color: string }> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  "try-on":  "Try-On",
+  "try-on":  "Home Try-On",
   pending:   "Aguardando", confirmed: "Confirmado",
   shipped:   "Enviado", delivered: "Entregue", cancelled: "Cancelado",
 };
