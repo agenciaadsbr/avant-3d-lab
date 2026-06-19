@@ -3,7 +3,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 type Customer = { id: string; name: string; email: string; phone?: string };
-type Item = { description: string; price: number; quantity: number };
+type Product = { id: string; name: string; price: number; stock: number; sizes: string; images: string };
+type Item = { productId?: string; description: string; price: number; quantity: number; size?: string };
 
 const inp = {
   padding: "0.6rem 0.875rem", border: "1px solid rgba(140,100,20,0.25)",
@@ -23,6 +24,9 @@ export default function NovoPedidoPage() {
   const [isNewCustomer, setIsNewCustomer] = useState(false);
 
   const [items, setItems] = useState<Item[]>([{ description: "", price: 0, quantity: 1 }]);
+  const [productSearch, setProductSearch] = useState<string[]>([""]);
+  const [productResults, setProductResults] = useState<Product[][]>([[]]);
+  const [showProductDropdown, setShowProductDropdown] = useState<boolean[]>([false]);
   const [orderStatus, setOrderStatus] = useState("delivered");
   const [paymentMethod, setPaymentMethod] = useState("pix");
   const [paymentStatus, setPaymentStatus] = useState("paid");
@@ -65,10 +69,40 @@ export default function NovoPedidoPage() {
   const paid = parseFloat(amountPaid) || 0;
   const saldo = paymentStatus !== "paid" ? subtotal - paid : 0;
 
-  const addItem = () => setItems(p => [...p, { description: "", price: 0, quantity: 1 }]);
-  const removeItem = (i: number) => setItems(p => p.filter((_, idx) => idx !== i));
+  const addItem = () => {
+    setItems(p => [...p, { description: "", price: 0, quantity: 1 }]);
+    setProductSearch(p => [...p, ""]);
+    setProductResults(p => [...p, []]);
+    setShowProductDropdown(p => [...p, false]);
+  };
+  const removeItem = (i: number) => {
+    setItems(p => p.filter((_, idx) => idx !== i));
+    setProductSearch(p => p.filter((_, idx) => idx !== i));
+    setProductResults(p => p.filter((_, idx) => idx !== i));
+    setShowProductDropdown(p => p.filter((_, idx) => idx !== i));
+  };
   const updateItem = (i: number, field: keyof Item, value: any) =>
     setItems(p => p.map((it, idx) => idx === i ? { ...it, [field]: value } : it));
+
+  const searchProducts = async (i: number, q: string) => {
+    setProductSearch(p => p.map((v, idx) => idx === i ? q : v));
+    setShowProductDropdown(p => p.map((v, idx) => idx === i ? true : v));
+    if (!q.trim()) { setProductResults(p => p.map((v, idx) => idx === i ? [] : v)); return; }
+    const res = await fetch(`/api/admin/produtos?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    setProductResults(p => p.map((v, idx) => idx === i ? data : v));
+  };
+
+  const selectProduct = (i: number, product: Product) => {
+    const sizes = JSON.parse(product.sizes || "[]") as string[];
+    setItems(p => p.map((it, idx) => idx === i ? {
+      ...it, productId: product.id, description: product.name,
+      price: product.price, size: sizes[0] || undefined,
+    } : it));
+    setProductSearch(p => p.map((v, idx) => idx === i ? product.name : v));
+    setShowProductDropdown(p => p.map((v, idx) => idx === i ? false : v));
+    setProductResults(p => p.map((v, idx) => idx === i ? [] : v));
+  };
 
   const handleAddToExisting = async () => {
     setError("");
@@ -201,20 +235,58 @@ export default function NovoPedidoPage() {
         {/* Itens */}
         <div style={{ backgroundColor: "#fff", borderRadius: "1rem", padding: "1.25rem", border: "1px solid rgba(140,100,20,0.1)" }}>
           <p style={{ fontWeight: 800, color: "#1a1510", marginBottom: "1rem" }}>🛍️ Itens</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-            {items.map((item, i) => (
-              <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 100px 60px 32px", gap: "0.5rem", alignItems: "center" }}>
-                <input style={inp} placeholder="Descrição do produto" value={item.description}
-                  onChange={e => updateItem(i, "description", e.target.value)} />
-                <input style={inp} type="number" placeholder="R$ valor" min="0" step="0.01" value={item.price || ""}
-                  onChange={e => updateItem(i, "price", parseFloat(e.target.value) || 0)} />
-                <input style={inp} type="number" placeholder="Qtd" min="1" value={item.quantity}
-                  onChange={e => updateItem(i, "quantity", parseInt(e.target.value) || 1)} />
-                {items.length > 1 && (
-                  <button onClick={() => removeItem(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "#c04040", fontSize: "1rem", padding: 0 }}>✕</button>
-                )}
-              </div>
-            ))}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+            {items.map((item, i) => {
+              const sizes = item.productId
+                ? JSON.parse(items[i] && productResults[i]?.find(p => p.id === item.productId)?.sizes || "[]") as string[]
+                : [];
+              return (
+                <div key={i} style={{ backgroundColor: "#FAF6EE", borderRadius: "0.625rem", padding: "0.75rem", position: "relative" }}>
+                  {items.length > 1 && (
+                    <button onClick={() => removeItem(i)} style={{ position: "absolute", top: "0.5rem", right: "0.5rem", background: "none", border: "none", cursor: "pointer", color: "#c04040", fontSize: "0.875rem", padding: 0 }}>✕</button>
+                  )}
+                  {/* Busca de produto */}
+                  <div style={{ position: "relative", marginBottom: "0.5rem" }}>
+                    <input style={inp} placeholder="🔍 Buscar produto..." value={productSearch[i] || ""}
+                      onChange={e => searchProducts(i, e.target.value)}
+                      onFocus={() => setShowProductDropdown(p => p.map((v, idx) => idx === i ? true : v))} />
+                    {showProductDropdown[i] && productResults[i]?.length > 0 && (
+                      <div style={{ position: "absolute", top: "100%", left: 0, right: 0, backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.2)", borderRadius: "0.625rem", zIndex: 50, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", marginTop: 2, overflow: "hidden" }}>
+                        {productResults[i].map(p => (
+                          <div key={p.id} onClick={() => selectProduct(i, p)}
+                            style={{ padding: "0.625rem 0.875rem", cursor: "pointer", borderBottom: "1px solid rgba(140,100,20,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#FAF6EE")}
+                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#fff")}>
+                            <div>
+                              <div style={{ fontWeight: 600, fontSize: "0.875rem", color: "#1a1510" }}>{p.name}</div>
+                              <div style={{ fontSize: "0.72rem", color: "#9a8060" }}>Estoque: {p.stock} un</div>
+                            </div>
+                            <div style={{ fontWeight: 700, color: "#b8891a", fontSize: "0.875rem" }}>
+                              {p.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {/* Tamanho, preço e quantidade */}
+                  <div style={{ display: "grid", gridTemplateColumns: item.productId && JSON.parse(productResults[i]?.find(p => p.id === item.productId)?.sizes || "[]").length > 0 ? "1fr 110px 70px" : "1fr 70px", gap: "0.5rem" }}>
+                    <input style={inp} type="number" placeholder="R$ preço" min="0" step="0.01" value={item.price || ""}
+                      onChange={e => updateItem(i, "price", parseFloat(e.target.value) || 0)} />
+                    {item.productId && JSON.parse(productResults[i]?.find(p => p.id === item.productId)?.sizes || "[]").length > 0 && (
+                      <select style={inp} value={item.size || ""}
+                        onChange={e => updateItem(i, "size", e.target.value)}>
+                        {(JSON.parse(productResults[i]?.find(p => p.id === item.productId)?.sizes || "[]") as string[]).map(s => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    )}
+                    <input style={inp} type="number" placeholder="Qtd" min="1" value={item.quantity}
+                      onChange={e => updateItem(i, "quantity", parseInt(e.target.value) || 1)} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
           <button onClick={addItem} style={{ marginTop: "0.75rem", padding: "0.4rem 0.875rem", backgroundColor: "#EDE4CC", border: "none", borderRadius: "0.5rem", cursor: "pointer", fontSize: "0.8rem", fontWeight: 700, color: "#6a4a10" }}>
             + Adicionar item

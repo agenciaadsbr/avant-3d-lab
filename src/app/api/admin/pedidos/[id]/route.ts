@@ -81,6 +81,21 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const { id } = await params;
+
+  // Restaurar estoque dos itens vinculados a produtos reais
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { items: true },
+  });
+  if (order) {
+    for (const item of order.items) {
+      await prisma.product.updateMany({
+        where: { id: item.productId },
+        data: { stock: { increment: item.quantity } },
+      });
+    }
+  }
+
   await prisma.order.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

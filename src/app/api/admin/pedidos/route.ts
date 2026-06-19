@@ -64,6 +64,16 @@ export async function POST(req: Request) {
   const subtotal = items.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
   const paid = parseFloat(amountPaid) || 0;
 
+  // Decrementar estoque dos produtos vinculados
+  for (const item of items) {
+    if (item.productId && item.productId !== vendaManual.id) {
+      await prisma.product.update({
+        where: { id: item.productId },
+        data: { stock: { decrement: item.quantity } },
+      });
+    }
+  }
+
   const order = await prisma.order.create({
     data: {
       userId: customerId,
@@ -84,7 +94,7 @@ export async function POST(req: Request) {
           productId: i.productId || vendaManual.id,
           quantity: i.quantity,
           price: i.price,
-          size: i.description || null,
+          size: i.size || i.description || null,
         })),
       },
     },
