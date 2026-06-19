@@ -405,9 +405,9 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
                                     <span style={{ backgroundColor: pc.bg, color: pc.color, fontSize: "0.75rem", fontWeight: 700, padding: "0.3rem 0.75rem", borderRadius: "999px" }}>
                                       {PAY_LABEL[order.paymentStatus] || order.paymentStatus}
                                     </span>
-                                    {order.installments > 1 && (
+                                    {order.installmentCount > 1 && (
                                       <span style={{ backgroundColor: "#f0e8ff", color: "#6a30b8", fontSize: "0.75rem", fontWeight: 700, padding: "0.3rem 0.75rem", borderRadius: "999px" }}>
-                                        {order.installments}x
+                                        {order.installmentCount}x
                                       </span>
                                     )}
                                     {order.dueDate && (
