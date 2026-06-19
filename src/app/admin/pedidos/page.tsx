@@ -14,6 +14,7 @@ export default async function PedidosPage() {
     include: {
       user: { select: { id: true, name: true, email: true, phone: true } },
       items: { include: { product: { select: { id: true, name: true } } } },
+      installments: { orderBy: { number: "asc" } },
     },
   });
 

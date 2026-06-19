@@ -16,9 +16,41 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (body.paymentMethod !== undefined) data.paymentMethod = body.paymentMethod;
   if (body.amountPaid !== undefined) data.amountPaid = body.amountPaid;
   if (body.dueDate !== undefined) data.dueDate = body.dueDate ? new Date(body.dueDate) : null;
-  if (body.installments !== undefined) data.installments = body.installments;
+  if (body.installmentCount !== undefined) data.installmentCount = body.installmentCount;
+
   const order = await prisma.order.update({ where: { id }, data });
-  return NextResponse.json(order);
+
+  // Generate installments when dueDate + installmentCount are provided
+  if (body.dueDate && body.installmentCount && body.installmentCount > 0 && body.generateInstallments) {
+    const count = body.installmentCount;
+    const firstDue = new Date(body.dueDate);
+    const totalSaldo = order.total - (typeof body.amountPaid === 'number' ? body.amountPaid : order.amountPaid);
+    const perInstallment = Math.round((totalSaldo / count) * 100) / 100;
+
+    // Delete existing installments
+    await prisma.installment.deleteMany({ where: { orderId: id } });
+
+    // Create new installments
+    for (let i = 0; i < count; i++) {
+      const due = new Date(firstDue);
+      due.setMonth(due.getMonth() + i);
+      await prisma.installment.create({
+        data: {
+          orderId: id,
+          number: i + 1,
+          amount: i === count - 1 ? Math.round((totalSaldo - perInstallment * (count - 1)) * 100) / 100 : perInstallment,
+          dueDate: due,
+          status: "pending",
+        },
+      });
+    }
+  }
+
+  const updated = await prisma.order.findUnique({
+    where: { id },
+    include: { installments: { orderBy: { number: "asc" } } },
+  });
+  return NextResponse.json(updated);
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {

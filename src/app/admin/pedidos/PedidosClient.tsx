@@ -2,12 +2,14 @@
 import { useState, useMemo } from "react";
 
 type OrderItem = { id: string; quantity: number; price: number; size?: string; product: { id: string; name: string } };
+type Installment = { id: string; number: number; amount: number; dueDate: string; status: string; paidAt?: string | null };
 type Order = {
   id: string; status: string; paymentStatus: string; paymentMethod: string; amountPaid: number;
   total: number; subtotal: number; shipping: number; discount: number; notes?: string;
-  createdAt: string; dueDate?: string | null; installments: number;
+  createdAt: string; dueDate?: string | null; installmentCount: number;
   user: { id: string; name: string; email: string; phone?: string };
   items: OrderItem[];
+  installments: Installment[];
 };
 
 const PAY_LABEL: Record<string, string> = {
@@ -59,6 +61,7 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
   const [editPaymentMethod, setEditPaymentMethod] = useState("");
   const [editDueDate, setEditDueDate] = useState("");
   const [editInstallments, setEditInstallments] = useState(1);
+  const [togglingInstallment, setTogglingInstallment] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return localOrders.filter(o => {
@@ -97,7 +100,7 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
     setEditPaymentStatus(order.paymentStatus);
     setEditPaymentMethod(order.paymentMethod || "pix");
     setEditDueDate(order.dueDate ? new Date(order.dueDate).toISOString().slice(0, 10) : "");
-    setEditInstallments(order.installments || 1);
+    setEditInstallments(order.installmentCount || 1);
   };
 
   const savePayment = async (orderId: string) => {
@@ -106,15 +109,34 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         paymentStatus: editPaymentStatus, paymentMethod: editPaymentMethod, amountPaid,
-        dueDate: editDueDate || null, installments: editInstallments,
+        dueDate: editDueDate || null, installmentCount: editInstallments,
+        generateInstallments: !!editDueDate && editInstallments > 0,
       }),
     });
     if (res.ok) {
-      setLocalOrders(prev => prev.map(o => o.id === orderId
-        ? { ...o, paymentStatus: editPaymentStatus, paymentMethod: editPaymentMethod, amountPaid, dueDate: editDueDate || null, installments: editInstallments }
-        : o));
+      const updated = await res.json();
+      setLocalOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updated } : o));
     }
     setEditingPayment(null);
+  };
+
+  const toggleInstallment = async (orderId: string, installmentId: string, currentStatus: string) => {
+    setTogglingInstallment(installmentId);
+    const newStatus = currentStatus === "paid" ? "pending" : "paid";
+    const res = await fetch(`/api/admin/parcelas/${installmentId}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    if (res.ok) {
+      setLocalOrders(prev => prev.map(o => o.id === orderId ? {
+        ...o,
+        installments: o.installments.map(i => i.id === installmentId ? { ...i, status: newStatus } : i),
+        paymentStatus: o.installments.every(i => (i.id === installmentId ? newStatus : i.status) === "paid") ? "paid"
+          : o.installments.some(i => (i.id === installmentId ? newStatus : i.status) === "paid") ? "partial" : "pending",
+        amountPaid: o.installments.filter(i => (i.id === installmentId ? newStatus : i.status) === "paid").reduce((s, i) => s + i.amount, 0),
+      } : o));
+    }
+    setTogglingInstallment(null);
   };
 
   const inp = { padding: "0.55rem 0.875rem", border: "1px solid rgba(140,100,20,0.25)", borderRadius: "0.625rem", fontSize: "0.8rem", backgroundColor: "#FAF6EE", outline: "none" };
@@ -269,7 +291,7 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
                                 <span style={{ color: "#1a1510" }}>Total</span>
                                 <span style={{ color: "#b8891a" }}>{fmt(order.total)}</span>
                               </div>
-                              {order.paymentStatus !== "paid" && (
+                              {order.paymentStatus !== "paid" && order.installments.length === 0 && (
                                 <div style={{ marginTop: "0.5rem", padding: "0.5rem 0.75rem", backgroundColor: PAY_COLOR[order.paymentStatus]?.bg || "#fee8e8", borderRadius: "0.5rem" }}>
                                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
                                     <span style={{ color: "#5a4a2a" }}>Pago</span>
@@ -279,6 +301,37 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
                                     <span style={{ color: "#5a4a2a" }}>Em aberto</span>
                                     <span style={{ color: PAY_COLOR[order.paymentStatus]?.color || "#c04040", fontWeight: 700 }}>{fmt(order.total - order.amountPaid)}</span>
                                   </div>
+                                </div>
+                              )}
+                              {order.installments.length > 0 && (
+                                <div style={{ marginTop: "0.75rem" }}>
+                                  <p style={{ fontSize: "0.75rem", color: "#9a8060", fontWeight: 700, marginBottom: "0.4rem" }}>PARCELAS</p>
+                                  {order.installments.map(inst => {
+                                    const isPaid = inst.status === "paid";
+                                    const isOverdue = !isPaid && new Date(inst.dueDate) < new Date();
+                                    return (
+                                      <div key={inst.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.4rem 0.625rem", borderRadius: "0.5rem", marginBottom: "0.3rem", backgroundColor: isPaid ? "#e8f8e8" : isOverdue ? "#fee8e8" : "#fff8e1", border: `1px solid ${isPaid ? "rgba(26,138,42,0.15)" : isOverdue ? "rgba(192,64,64,0.15)" : "rgba(184,137,26,0.15)"}` }}>
+                                        <div>
+                                          <span style={{ fontSize: "0.75rem", fontWeight: 700, color: isPaid ? "#1a8a2a" : isOverdue ? "#c04040" : "#b8891a" }}>
+                                            {inst.number}ª parcela
+                                          </span>
+                                          <span style={{ fontSize: "0.7rem", color: "#9a8060", marginLeft: "0.5rem" }}>
+                                            {new Date(inst.dueDate).toLocaleDateString("pt-BR")}
+                                            {isOverdue && " ⚠️"}
+                                          </span>
+                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                                          <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#1a1510" }}>{fmt(inst.amount)}</span>
+                                          <button
+                                            disabled={togglingInstallment === inst.id}
+                                            onClick={() => toggleInstallment(order.id, inst.id, inst.status)}
+                                            style={{ fontSize: "0.65rem", fontWeight: 700, padding: "0.2rem 0.5rem", borderRadius: "999px", border: "none", cursor: "pointer", backgroundColor: isPaid ? "#1a8a2a" : "#b8891a", color: "#fff" }}>
+                                            {isPaid ? "✓ Pago" : "Marcar pago"}
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>

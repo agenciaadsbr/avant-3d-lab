@@ -49,15 +49,15 @@ export default async function AdminPage() {
       where: { paymentStatus: { not: "paid" } },
       select: { total: true, amountPaid: true, paymentMethod: true },
     }),
-    prisma.order.findMany({
+    prisma.installment.findMany({
       where: {
-        paymentStatus: { not: "paid" },
+        status: "pending",
         dueDate: {
           gte: new Date(now.getFullYear(), now.getMonth() + 1, 1),
           lt: new Date(now.getFullYear(), now.getMonth() + 2, 1),
         },
       },
-      select: { total: true, amountPaid: true, user: { select: { name: true } } },
+      select: { amount: true, dueDate: true, order: { select: { user: { select: { name: true } } } } },
     }),
     prisma.order.findMany({
       where: { status: { not: "cancelled" }, createdAt: { gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) } },
@@ -82,7 +82,7 @@ export default async function AdminPage() {
   const cadernoOrders = allPendingOrders.filter(o => o.paymentMethod === "caderno");
   const cadernoNaRua = allPendingOrders.reduce((s, o) => s + (o.total - o.amountPaid), 0);
   const cadernoQtd = allPendingOrders.length;
-  const previsaoProxMes = nextMonthDue.reduce((s, o) => s + (o.total - o.amountPaid), 0);
+  const previsaoProxMes = nextMonthDue.reduce((s, i) => s + i.amount, 0);
   const previsaoQtd = nextMonthDue.length;
 
   // monthly revenue chart (last 6 months)
