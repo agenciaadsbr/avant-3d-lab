@@ -22,13 +22,14 @@ const PAY_COLOR: Record<string, { bg: string; color: string }> = {
 };
 
 const METHOD_LABEL: Record<string, string> = {
-  pix: "Pix", cartao: "Cartão", dinheiro: "Dinheiro", caderno: "Caderno",
+  pix: "Pix", cartao: "Cartão", dinheiro: "Dinheiro", caderno: "Caderno", link: "Link",
 };
 const METHOD_COLOR: Record<string, { bg: string; color: string }> = {
   pix:      { bg: "#e8f4fd", color: "#1a6a9a" },
   cartao:   { bg: "#f0e8ff", color: "#6a30b8" },
   dinheiro: { bg: "#e8f8e8", color: "#1a8a2a" },
   caderno:  { bg: "#fff3cd", color: "#856404" },
+  link:     { bg: "#fce8ff", color: "#8a1ab8" },
 };
 
 const STATUS_LABEL: Record<string, string> = {

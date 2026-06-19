@@ -233,6 +233,7 @@ export default function NovoPedidoPage() {
                 <option value="pix">Pix</option>
                 <option value="cartao">Cartão</option>
                 <option value="dinheiro">Dinheiro</option>
+                <option value="link">Link de Pagamento</option>
                 <option value="caderno">Caderno</option>
               </select>
             </div>

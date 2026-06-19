@@ -310,6 +310,7 @@ export default async function AdminPage() {
               { label: "Pedidos", href: "/admin/pedidos", emoji: "📦", sub: `${orderCount} total` },
               { label: "Financeiro", href: "/admin/financeiro", emoji: "💳", sub: "despesas" },
               { label: "Clientes", href: "/admin/clientes", emoji: "👥", sub: `${userCount} cadastros` },
+              { label: "Categorias", href: "/admin/categorias", emoji: "🗂️", sub: "organizar" },
               { label: "Caderno", href: "/admin/caderno", emoji: "📒", sub: "saldo em aberto" },
               { label: "Importar Excel", href: "/admin/importar", emoji: "📊", sub: "estoque" },
             ].map(link => (
