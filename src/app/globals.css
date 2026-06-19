@@ -62,3 +62,19 @@ select option { background-color: #fff; color: var(--text-main); }
 }
 
 a, button { -webkit-tap-highlight-color: transparent; transition: opacity 0.15s, color 0.15s, background-color 0.15s; }
+
+/* Admin navigation */
+.admin-header    { display: block; }
+.admin-bottomnav { display: none; }
+@media (max-width: 640px) {
+  .admin-header    { display: none !important; }
+  .admin-bottomnav { display: flex !important; }
+}
+
+/* Public site utilities */
+.hide-mobile  { display: flex; }
+.hide-desktop { display: none; }
+@media (max-width: 768px) {
+  .hide-mobile  { display: none !important; }
+  .hide-desktop { display: flex !important; }
+}

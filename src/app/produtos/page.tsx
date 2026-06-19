@@ -28,8 +28,8 @@ export default async function ProdutosPage({
     <div style={{ backgroundColor: "#FAF6EE", minHeight: "100vh" }}>
 
       {/* Hero da coleção */}
-      <div style={{ backgroundColor: "#fff", borderBottom: "1px solid rgba(140,100,20,0.12)", padding: "2rem 1.25rem 1.5rem" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ backgroundColor: "#fff", borderBottom: "1px solid rgba(140,100,20,0.12)", padding: "2rem 2rem 1.5rem" }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto" }}>
           <p style={{ fontSize: "0.75rem", color: "#b8891a", fontWeight: 700, letterSpacing: "0.1em", marginBottom: "0.3rem" }}>
             ACCESS FIT
           </p>
@@ -42,7 +42,7 @@ export default async function ProdutosPage({
         </div>
       </div>
 
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem 1.25rem" }}>
+      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "1.5rem 2rem" }}>
 
         {/* Categorias mobile — scroll horizontal */}
         <div style={{ display: "flex", gap: "0.5rem", overflowX: "auto", paddingBottom: "1rem", marginBottom: "0.5rem" }}
@@ -62,9 +62,9 @@ export default async function ProdutosPage({
         <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
 
           {/* Sidebar desktop */}
-          <aside style={{ width: 200, flexShrink: 0, position: "sticky", top: 80 }}
+          <aside style={{ width: 220, flexShrink: 0, position: "sticky", top: 88, paddingLeft: "0.5rem" }}
             className="hide-mobile">
-            <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "#b8891a", letterSpacing: "0.1em", marginBottom: "0.875rem" }}>CATEGORIAS</p>
+            <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "#b8891a", letterSpacing: "0.1em", marginBottom: "0.875rem", paddingLeft: "0.875rem" }}>CATEGORIAS</p>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
               <Link href="/produtos"
                 style={{ padding: "0.5rem 0.875rem", borderRadius: "0.5rem", fontSize: "0.875rem", fontWeight: 600, textDecoration: "none", backgroundColor: !categoria ? "rgba(184,137,26,0.1)" : "transparent", color: !categoria ? "#b8891a" : "#7a6030", borderLeft: !categoria ? "3px solid #b8891a" : "3px solid transparent" }}>
@@ -97,10 +97,6 @@ export default async function ProdutosPage({
         </div>
       </div>
 
-      <style>{`
-        @media (max-width: 768px) { .hide-desktop { display: flex !important; } .hide-mobile { display: none !important; } }
-        @media (min-width: 769px) { .hide-desktop { display: none !important; } .hide-mobile { display: flex !important; } }
-      `}</style>
     </div>
   );
 }

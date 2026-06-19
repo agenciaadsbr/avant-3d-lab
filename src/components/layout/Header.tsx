@@ -33,18 +33,18 @@ export default function Header() {
         borderBottom: "1px solid rgba(140,100,20,0.15)",
         boxShadow: "0 1px 12px rgba(140,100,20,0.06)",
       }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 1.25rem", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 1.25rem", height: 72, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
 
           {/* Logo */}
-          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "0.6rem", flexShrink: 0 }}>
-            <div style={{ width: 48, height: 48, position: "relative", flexShrink: 0, borderRadius: "50%", overflow: "hidden", mixBlendMode: "multiply" }}>
+          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "0.75rem", flexShrink: 0 }}>
+            <div style={{ width: 56, height: 56, position: "relative", flexShrink: 0, borderRadius: "50%", overflow: "hidden" }}>
               <Image src="/logo.png" alt="Access Fit Logo" fill style={{ objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
-              <span style={{ fontSize: "1rem", fontWeight: 900, letterSpacing: "0.12em", background: "linear-gradient(135deg, #c9920a, #e0b030, #a07010)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              <span style={{ fontSize: "1.15rem", fontWeight: 900, letterSpacing: "0.12em", background: "linear-gradient(135deg, #c9920a, #e0b030, #a07010)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                 ACCESS FIT
               </span>
-              <span style={{ fontSize: "0.55rem", color: "#9a7a3a", letterSpacing: "0.08em", fontWeight: 500 }}>
+              <span style={{ fontSize: "0.65rem", color: "#9a7a3a", letterSpacing: "0.06em", fontWeight: 500, marginTop: "0.2rem" }}>
                 Desbloqueie sua energia infinita
               </span>
             </div>

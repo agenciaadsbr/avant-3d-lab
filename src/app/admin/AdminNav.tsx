@@ -99,14 +99,6 @@ export default function AdminNav() {
         ))}
       </nav>
 
-      <style>{`
-        .admin-header { display: block !important; }
-        .admin-bottomnav { display: none !important; }
-        @media (max-width: 640px) {
-          .admin-header { display: none !important; }
-          .admin-bottomnav { display: flex !important; }
-        }
-      `}</style>
     </>
   );
 }
