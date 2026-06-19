@@ -19,6 +19,19 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (body.installmentCount !== undefined) data.installmentCount = body.installmentCount;
   if (body.userId !== undefined) data.userId = body.userId;
 
+  // Restaurar estoque ao cancelar um pedido try-on ou qualquer pedido
+  if (body.status === "cancelled") {
+    const current = await prisma.order.findUnique({ where: { id }, include: { items: true } });
+    if (current && current.status !== "cancelled") {
+      for (const item of current.items) {
+        await prisma.product.updateMany({
+          where: { id: item.productId },
+          data: { stock: { increment: item.quantity } },
+        });
+      }
+    }
+  }
+
   const order = await prisma.order.update({ where: { id }, data });
 
   // Append items to existing order

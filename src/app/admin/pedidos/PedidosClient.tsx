@@ -359,6 +359,40 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                             </div>
                             {/* Info pagamento + cliente */}
                             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+
+                              {/* Banner Home Try-On */}
+                              {order.status === "try-on" && (
+                                <div style={{ backgroundColor: "#fce8ff", border: "1px solid rgba(138,26,184,0.25)", borderRadius: "0.75rem", padding: "1rem" }}>
+                                  <p style={{ fontWeight: 800, color: "#5a0a7a", fontSize: "0.85rem", marginBottom: "0.625rem" }}>👗 Home Try-On — aguardando decisão</p>
+                                  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                                    <button
+                                      onClick={async () => {
+                                        await fetch(`/api/admin/pedidos/${order.id}`, {
+                                          method: "PUT", headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ status: "delivered" }),
+                                        });
+                                        setLocalOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: "delivered" } : o));
+                                        startEditPayment(order);
+                                      }}
+                                      style={{ backgroundColor: "#1a8a2a", color: "#fff", border: "none", borderRadius: "0.5rem", padding: "0.45rem 0.875rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}>
+                                      ✅ Confirmou a compra
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        if (!confirm("Confirmar devolução? O estoque será restaurado.")) return;
+                                        await fetch(`/api/admin/pedidos/${order.id}`, {
+                                          method: "PUT", headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ status: "cancelled" }),
+                                        });
+                                        setLocalOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: "cancelled" } : o));
+                                      }}
+                                      style={{ backgroundColor: "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.25)", borderRadius: "0.5rem", padding: "0.45rem 0.875rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}>
+                                      ↩️ Devolveu
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+
                               {/* Editar pagamento */}
                               <div style={{ backgroundColor: "#fff", borderRadius: "0.75rem", padding: "1rem", border: "1px solid rgba(140,100,20,0.08)" }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
