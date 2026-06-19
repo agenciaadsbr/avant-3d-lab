@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 type Cliente = {
@@ -23,6 +23,9 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
+  const [mergingId, setMergingId] = useState<string | null>(null);
+  const [mergeSearch, setMergeSearch] = useState("");
+  const [merging, setMerging] = useState(false);
 
   const filtered = useMemo(() => {
     if (!search) return clientes;
@@ -54,6 +57,24 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
     setNewName("");
     setNewPhone("");
     router.refresh();
+  };
+
+  const handleMerge = async (keepId: string, removeId: string) => {
+    setMerging(true);
+    const res = await fetch("/api/admin/clientes/merge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keepId, removeId }),
+    });
+    setMerging(false);
+    if (res.ok) {
+      setMergingId(null);
+      setMergeSearch("");
+      router.refresh();
+    } else {
+      const d = await res.json();
+      alert(d.error || "Erro ao unificar.");
+    }
   };
 
   const handleDelete = async (id: string, name: string | null) => {
@@ -146,7 +167,8 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
               {filtered.map(c => {
                 const isEditing = editingId === c.id;
                 return (
-                  <tr key={c.id} style={{ borderBottom: "1px solid rgba(140,100,20,0.06)", backgroundColor: isEditing ? "#fffbf0" : undefined }}>
+                  <React.Fragment key={c.id}>
+                  <tr style={{ borderBottom: "1px solid rgba(140,100,20,0.06)", backgroundColor: isEditing ? "#fffbf0" : undefined }}>
                     <td style={{ padding: "0.75rem 1rem" }}>
                       {isEditing ? (
                         <input style={inp} value={editName} onChange={e => setEditName(e.target.value)} autoFocus placeholder="Nome completo" />
@@ -179,10 +201,14 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
                           </button>
                         </div>
                       ) : (
-                        <div style={{ display: "flex", gap: "0.4rem" }}>
+                        <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
                           <button onClick={() => startEdit(c)}
                             style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(184,137,26,0.3)", color: "#b8891a", fontSize: "0.75rem", fontWeight: 700, padding: "0.35rem 0.75rem", borderRadius: "0.5rem", cursor: "pointer", whiteSpace: "nowrap" }}>
                             ✏️ Editar
+                          </button>
+                          <button onClick={() => { setMergingId(mergingId === c.id ? null : c.id); setMergeSearch(""); }}
+                            style={{ backgroundColor: "#f0e8ff", border: "1px solid rgba(106,48,184,0.2)", color: "#6a30b8", fontSize: "0.75rem", fontWeight: 700, padding: "0.35rem 0.6rem", borderRadius: "0.5rem", cursor: "pointer", whiteSpace: "nowrap" }}>
+                            🔗 Unificar
                           </button>
                           {c._count.orders === 0 && (
                             <button onClick={() => handleDelete(c.id, c.name)}
@@ -194,8 +220,48 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
                       )}
                     </td>
                   </tr>
-                );
+                  {/* Painel de unificação */}
+                  {mergingId === c.id && (
+                    <tr>
+                      <td colSpan={6} style={{ padding: "0.5rem 1rem 1rem", backgroundColor: "#f8f0ff" }}>
+                        <div style={{ padding: "0.875rem 1rem", backgroundColor: "#fff", borderRadius: "0.75rem", border: "1px solid rgba(106,48,184,0.2)" }}>
+                          <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "#5a1090", marginBottom: "0.5rem" }}>
+                            🔗 Unificar com qual cliente? Os pedidos serão movidos para <strong>{c.name}</strong> e o duplicado será excluído.
+                          </p>
+                          <input style={inp} placeholder="Buscar duplicata pelo nome..." value={mergeSearch}
+                            onChange={e => setMergeSearch(e.target.value)} autoFocus />
+                          {mergeSearch.length >= 2 && (
+                            <div style={{ marginTop: "0.5rem", border: "1px solid rgba(106,48,184,0.15)", borderRadius: "0.5rem", overflow: "hidden" }}>
+                              {clientes
+                                .filter(x => x.id !== c.id && (x.name || "").toLowerCase().includes(mergeSearch.toLowerCase()))
+                                .slice(0, 5)
+                                .map(x => (
+                                  <button key={x.id} disabled={merging}
+                                    onClick={() => {
+                                      if (confirm(`Mover todos os pedidos de "${x.name}" para "${c.name}" e excluir "${x.name}"?`))
+                                        handleMerge(c.id, x.id);
+                                    }}
+                                    style={{ display: "flex", justifyContent: "space-between", width: "100%", textAlign: "left", padding: "0.5rem 0.75rem", background: "#fff", border: "none", borderBottom: "1px solid rgba(106,48,184,0.08)", cursor: "pointer", fontSize: "0.8rem" }}
+                                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#f8f0ff")}
+                                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#fff")}>
+                                    <span style={{ fontWeight: 700, color: "#1a1510" }}>{x.name}</span>
+                                    <span style={{ color: "#9a8060", fontSize: "0.72rem" }}>{x._count.orders} pedido(s)</span>
+                                  </button>
+                                ))}
+                              {clientes.filter(x => x.id !== c.id && (x.name || "").toLowerCase().includes(mergeSearch.toLowerCase())).length === 0 && (
+                                <p style={{ padding: "0.5rem 0.75rem", color: "#9a8060", fontSize: "0.8rem" }}>Nenhum cliente encontrado.</p>
+                              )}
+                            </div>
+                          )}
+                          <button onClick={() => setMergingId(null)} style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#9a8060", background: "none", border: "none", cursor: "pointer" }}>Cancelar</button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
               })}
+
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} style={{ textAlign: "center", padding: "3rem", color: "#b8a080" }}>
