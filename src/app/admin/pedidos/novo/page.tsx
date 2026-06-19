@@ -45,6 +45,17 @@ export default function NovoPedidoPage() {
     fetch("/api/admin/clientes").then(r => r.json()).then(d => setCustomers(d.customers || d || [])).catch(() => {});
   }, []);
 
+  // Prazo automático de 2 dias para Home Try-On
+  useEffect(() => {
+    if (orderStatus === "try-on") {
+      const d = new Date(date);
+      d.setDate(d.getDate() + 2);
+      setDueDate(d.toISOString().slice(0, 10));
+    } else {
+      setDueDate("");
+    }
+  }, [orderStatus, date]);
+
   useEffect(() => {
     if (!selectedCustomer || paymentMethod !== "caderno" || isNewCustomer) {
       setExistingCadernoOrder(null);
