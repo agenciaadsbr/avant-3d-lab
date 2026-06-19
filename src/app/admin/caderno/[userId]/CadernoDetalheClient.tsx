@@ -119,6 +119,11 @@ export default function CadernoDetalheClient({ user, orders }: { user: User; ord
                     <p style={{ fontSize: "0.78rem", color: "#9a8060", marginBottom: "0.75rem", fontStyle: "italic" }}>📝 {order.notes}</p>
                   )}
 
+                  <a href={`/admin/pedidos?expand=${order.id}`}
+                    style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", fontSize: "0.78rem", fontWeight: 700, color: "#b8891a", textDecoration: "none", backgroundColor: "#FAF6EE", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "0.5rem", padding: "0.35rem 0.75rem", marginBottom: "0.75rem" }}>
+                    ✏️ Editar pedido
+                  </a>
+
                   {/* Ações */}
                   {isEditing ? (
                     <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
