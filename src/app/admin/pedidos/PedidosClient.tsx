@@ -67,6 +67,9 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const [editDueDate, setEditDueDate] = useState("");
   const [editInstallments, setEditInstallments] = useState(1);
   const [togglingInstallment, setTogglingInstallment] = useState<string | null>(null);
+  const [editingInstallmentId, setEditingInstallmentId] = useState<string | null>(null);
+  const [editInstallmentDate, setEditInstallmentDate] = useState("");
+  const [editInstallmentAmount, setEditInstallmentAmount] = useState("");
   const [reassigningId, setReassigningId] = useState<string | null>(null);
   const [reassignSearch, setReassignSearch] = useState("");
   const [reassignSaving, setReassignSaving] = useState(false);
@@ -145,6 +148,25 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
       } : o));
     }
     setTogglingInstallment(null);
+  };
+
+  const saveInstallmentEdit = async (orderId: string, installmentId: string) => {
+    const body: Record<string, unknown> = {};
+    if (editInstallmentDate) body.dueDate = editInstallmentDate;
+    if (editInstallmentAmount) body.amount = parseFloat(editInstallmentAmount);
+    await fetch(`/api/admin/parcelas/${installmentId}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    setLocalOrders(prev => prev.map(o => o.id === orderId ? {
+      ...o,
+      installments: o.installments.map(i => i.id === installmentId ? {
+        ...i,
+        dueDate: editInstallmentDate || i.dueDate,
+        amount: editInstallmentAmount ? parseFloat(editInstallmentAmount) : i.amount,
+      } : i),
+    } : o));
+    setEditingInstallmentId(null);
   };
 
   const reassignCustomer = async (orderId: string, newUser: { id: string; name: string | null; email: string }) => {
@@ -331,26 +353,59 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                   {order.installments.map(inst => {
                                     const isPaid = inst.status === "paid";
                                     const isOverdue = !isPaid && new Date(inst.dueDate) < new Date();
+                                    const isEditingThis = editingInstallmentId === inst.id;
                                     return (
-                                      <div key={inst.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.4rem 0.625rem", borderRadius: "0.5rem", marginBottom: "0.3rem", backgroundColor: isPaid ? "#e8f8e8" : isOverdue ? "#fee8e8" : "#fff8e1", border: `1px solid ${isPaid ? "rgba(26,138,42,0.15)" : isOverdue ? "rgba(192,64,64,0.15)" : "rgba(184,137,26,0.15)"}` }}>
-                                        <div>
-                                          <span style={{ fontSize: "0.75rem", fontWeight: 700, color: isPaid ? "#1a8a2a" : isOverdue ? "#c04040" : "#b8891a" }}>
-                                            {inst.number}ª parcela
-                                          </span>
-                                          <span style={{ fontSize: "0.7rem", color: "#9a8060", marginLeft: "0.5rem" }}>
-                                            {new Date(inst.dueDate).toLocaleDateString("pt-BR")}
-                                            {isOverdue && " ⚠️"}
-                                          </span>
+                                      <div key={inst.id} style={{ borderRadius: "0.5rem", marginBottom: "0.3rem", backgroundColor: isPaid ? "#e8f8e8" : isOverdue ? "#fee8e8" : "#fff8e1", border: `1px solid ${isPaid ? "rgba(26,138,42,0.15)" : isOverdue ? "rgba(192,64,64,0.15)" : "rgba(184,137,26,0.15)"}` }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.4rem 0.625rem" }}>
+                                          <div>
+                                            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: isPaid ? "#1a8a2a" : isOverdue ? "#c04040" : "#b8891a" }}>
+                                              {inst.number}ª parcela
+                                            </span>
+                                            <span style={{ fontSize: "0.7rem", color: "#9a8060", marginLeft: "0.5rem" }}>
+                                              {new Date(inst.dueDate).toLocaleDateString("pt-BR")}
+                                              {isOverdue && " ⚠️"}
+                                            </span>
+                                          </div>
+                                          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                                            <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#1a1510" }}>{fmt(inst.amount)}</span>
+                                            {!isPaid && (
+                                              <button onClick={() => { setEditingInstallmentId(isEditingThis ? null : inst.id); setEditInstallmentDate(new Date(inst.dueDate).toISOString().slice(0, 10)); setEditInstallmentAmount(String(inst.amount)); }}
+                                                style={{ fontSize: "0.65rem", padding: "0.2rem 0.4rem", borderRadius: "999px", border: "1px solid rgba(140,100,20,0.2)", cursor: "pointer", backgroundColor: "transparent", color: "#9a8060" }}>
+                                                ✏️
+                                              </button>
+                                            )}
+                                            <button
+                                              disabled={togglingInstallment === inst.id}
+                                              onClick={() => toggleInstallment(order.id, inst.id, inst.status)}
+                                              style={{ fontSize: "0.65rem", fontWeight: 700, padding: "0.2rem 0.5rem", borderRadius: "999px", border: "none", cursor: "pointer", backgroundColor: isPaid ? "#1a8a2a" : "#b8891a", color: "#fff" }}>
+                                              {isPaid ? "✓ Pago" : "Marcar pago"}
+                                            </button>
+                                          </div>
                                         </div>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                                          <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#1a1510" }}>{fmt(inst.amount)}</span>
-                                          <button
-                                            disabled={togglingInstallment === inst.id}
-                                            onClick={() => toggleInstallment(order.id, inst.id, inst.status)}
-                                            style={{ fontSize: "0.65rem", fontWeight: 700, padding: "0.2rem 0.5rem", borderRadius: "999px", border: "none", cursor: "pointer", backgroundColor: isPaid ? "#1a8a2a" : "#b8891a", color: "#fff" }}>
-                                            {isPaid ? "✓ Pago" : "Marcar pago"}
-                                          </button>
-                                        </div>
+                                        {isEditingThis && (
+                                          <div style={{ padding: "0.5rem 0.625rem", borderTop: "1px solid rgba(140,100,20,0.1)", display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                                            <div style={{ flex: 1, minWidth: 120 }}>
+                                              <div style={{ fontSize: "0.65rem", color: "#9a8060", marginBottom: "0.2rem" }}>Data de vencimento</div>
+                                              <input type="date" value={editInstallmentDate} onChange={e => setEditInstallmentDate(e.target.value)}
+                                                style={{ ...inp, padding: "0.3rem 0.5rem", fontSize: "0.75rem" }} />
+                                            </div>
+                                            <div style={{ flex: 1, minWidth: 90 }}>
+                                              <div style={{ fontSize: "0.65rem", color: "#9a8060", marginBottom: "0.2rem" }}>Valor (R$)</div>
+                                              <input type="number" step="0.01" value={editInstallmentAmount} onChange={e => setEditInstallmentAmount(e.target.value)}
+                                                style={{ ...inp, padding: "0.3rem 0.5rem", fontSize: "0.75rem" }} />
+                                            </div>
+                                            <div style={{ display: "flex", gap: "0.3rem", paddingTop: "0.9rem" }}>
+                                              <button onClick={() => saveInstallmentEdit(order.id, inst.id)}
+                                                style={{ fontSize: "0.7rem", fontWeight: 700, padding: "0.3rem 0.625rem", borderRadius: "0.4rem", border: "none", cursor: "pointer", backgroundColor: "#b8891a", color: "#fff" }}>
+                                                Salvar
+                                              </button>
+                                              <button onClick={() => setEditingInstallmentId(null)}
+                                                style={{ fontSize: "0.7rem", padding: "0.3rem 0.5rem", borderRadius: "0.4rem", border: "1px solid rgba(140,100,20,0.2)", cursor: "pointer", backgroundColor: "transparent", color: "#9a8060" }}>
+                                                ✕
+                                              </button>
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                   })}

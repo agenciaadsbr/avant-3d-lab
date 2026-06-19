@@ -9,15 +9,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const { id } = await params;
-  const { status } = await req.json();
+  const body = await req.json();
+  const data: Record<string, unknown> = {};
+  if (body.status !== undefined) { data.status = body.status; data.paidAt = body.status === "paid" ? new Date() : null; }
+  if (body.dueDate !== undefined) data.dueDate = new Date(body.dueDate);
+  if (body.amount !== undefined) data.amount = body.amount;
 
-  const installment = await prisma.installment.update({
-    where: { id },
-    data: {
-      status,
-      paidAt: status === "paid" ? new Date() : null,
-    },
-  });
+  const installment = await prisma.installment.update({ where: { id }, data });
 
   // Recalculate order paymentStatus based on installments
   const allInstallments = await prisma.installment.findMany({
