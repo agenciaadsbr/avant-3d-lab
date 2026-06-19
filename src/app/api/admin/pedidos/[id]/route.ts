@@ -20,6 +20,27 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const order = await prisma.order.update({ where: { id }, data });
 
+  // Append items to existing order
+  if (body.addItems?.length) {
+    const vendaManual = await prisma.product.findFirst({ where: { name: "Venda Manual" } });
+    if (!vendaManual) return NextResponse.json({ error: "Produto 'Venda Manual' não encontrado" }, { status: 500 });
+
+    const addedTotal = body.addItems.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
+    await prisma.orderItem.createMany({
+      data: body.addItems.map((i: any) => ({
+        orderId: id,
+        productId: i.productId || vendaManual.id,
+        quantity: i.quantity,
+        price: i.price,
+        size: i.description || null,
+      })),
+    });
+    await prisma.order.update({
+      where: { id },
+      data: { total: { increment: addedTotal }, subtotal: { increment: addedTotal } },
+    });
+  }
+
   // Generate installments when dueDate + installmentCount are provided
   if (body.dueDate && body.installmentCount && body.installmentCount > 0 && body.generateInstallments) {
     const count = body.installmentCount;

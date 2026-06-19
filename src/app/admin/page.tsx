@@ -206,7 +206,7 @@ export default async function AdminPage() {
           <div style={{ color: "#9a8060", fontSize: "0.75rem", fontWeight: 700, marginTop: "0.3rem" }}>Ticket Médio</div>
           <div style={{ color: "#b8a080", fontSize: "0.7rem", marginTop: "0.1rem" }}>{orderCount} pedidos</div>
         </div>
-        <Link href="/admin/pedidos?pay=pending" style={{ textDecoration: "none" }}>
+        <Link href="/admin/caderno" style={{ textDecoration: "none" }}>
           <div style={{ backgroundColor: cadernoNaRua > 0 ? "#fffbea" : "#fff", border: `1px solid ${cadernoNaRua > 0 ? "rgba(133,100,4,0.35)" : "rgba(140,100,20,0.1)"}`, borderRadius: "1rem", padding: "1.25rem", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", cursor: "pointer", height: "100%", boxSizing: "border-box" as const }}>
             <div style={{ fontSize: "1.3rem", marginBottom: "0.4rem" }}>📒</div>
             <div style={{ color: cadernoNaRua > 0 ? "#856404" : "#1a1510", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{formatCurrency(cadernoNaRua)}</div>
@@ -310,7 +310,7 @@ export default async function AdminPage() {
               { label: "Pedidos", href: "/admin/pedidos", emoji: "📦", sub: `${orderCount} total` },
               { label: "Financeiro", href: "/admin/financeiro", emoji: "💳", sub: "despesas" },
               { label: "Clientes", href: "/admin/clientes", emoji: "👥", sub: `${userCount} cadastros` },
-              { label: "Categorias", href: "/admin/categorias", emoji: "🗂️", sub: "organizar" },
+              { label: "Caderno", href: "/admin/caderno", emoji: "📒", sub: "saldo em aberto" },
               { label: "Importar Excel", href: "/admin/importar", emoji: "📊", sub: "estoque" },
             ].map(link => (
               <a key={link.href} href={link.href}

@@ -3,6 +3,35 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export async function GET(req: Request) {
+  const session = await auth();
+  if (!session || (session.user as any)?.role !== "admin")
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const userId = searchParams.get("userId");
+  const date = searchParams.get("date");
+  const paymentMethod = searchParams.get("paymentMethod");
+
+  const where: Record<string, unknown> = {};
+  if (userId) where.userId = userId;
+  if (paymentMethod) where.paymentMethod = paymentMethod;
+  if (date) {
+    const d = new Date(date);
+    const start = new Date(d); start.setHours(0, 0, 0, 0);
+    const end = new Date(d); end.setHours(23, 59, 59, 999);
+    where.createdAt = { gte: start, lte: end };
+  }
+
+  const orders = await prisma.order.findMany({
+    where,
+    include: { items: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return NextResponse.json(orders);
+}
+
 export async function POST(req: Request) {
   const session = await auth();
   if (!session || (session.user as any)?.role !== "admin")

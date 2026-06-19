@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 type Customer = { id: string; name: string; email: string; phone?: string };
@@ -32,11 +32,28 @@ export default function NovoPedidoPage() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [existingCadernoOrder, setExistingCadernoOrder] = useState<any>(null);
+  const [dismissedOrderId, setDismissedOrderId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/admin/clientes").then(r => r.json()).then(d => setCustomers(d.customers || d || [])).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!selectedCustomer || paymentMethod !== "caderno" || isNewCustomer) {
+      setExistingCadernoOrder(null);
+      return;
+    }
+    fetch(`/api/admin/pedidos?userId=${selectedCustomer.id}&date=${date}&paymentMethod=caderno`)
+      .then(r => r.json())
+      .then(orders => {
+        const order = orders?.[0] || null;
+        if (order && order.id !== dismissedOrderId) setExistingCadernoOrder(order);
+        else setExistingCadernoOrder(null);
+      })
+      .catch(() => {});
+  }, [selectedCustomer, paymentMethod, date, isNewCustomer, dismissedOrderId]);
 
   useEffect(() => {
     if (!search) { setFiltered([]); return; }
@@ -51,6 +68,20 @@ export default function NovoPedidoPage() {
   const removeItem = (i: number) => setItems(p => p.filter((_, idx) => idx !== i));
   const updateItem = (i: number, field: keyof Item, value: any) =>
     setItems(p => p.map((it, idx) => idx === i ? { ...it, [field]: value } : it));
+
+  const handleAddToExisting = async () => {
+    setError("");
+    if (items.some(i => !i.description || i.price <= 0)) { setError("Preencha descrição e valor de todos os itens."); return; }
+    setSaving(true);
+    const res = await fetch(`/api/admin/pedidos/${existingCadernoOrder.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ addItems: items }),
+    });
+    setSaving(false);
+    if (res.ok) router.push("/admin/pedidos");
+    else { const d = await res.json(); setError(d.error || "Erro ao adicionar itens."); }
+  };
 
   const handleSave = async () => {
     setError("");
@@ -144,6 +175,27 @@ export default function NovoPedidoPage() {
             </div>
           )}
         </div>
+
+        {/* Aviso caderno */}
+        {existingCadernoOrder && (
+          <div style={{ backgroundColor: "#fff8e1", border: "1px solid rgba(184,137,26,0.35)", borderRadius: "1rem", padding: "1.25rem" }}>
+            <p style={{ fontWeight: 800, color: "#5a4a2a", marginBottom: "0.4rem" }}>📒 Pedido no caderno encontrado</p>
+            <p style={{ fontSize: "0.875rem", color: "#7a5a10", marginBottom: "0.875rem" }}>
+              <strong>{selectedCustomer?.name}</strong> já tem {existingCadernoOrder.items.length} item(s) no caderno nesta data — total atual:{" "}
+              <strong>{existingCadernoOrder.total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <button onClick={handleAddToExisting} disabled={saving}
+                style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.5rem 1.1rem", fontWeight: 700, fontSize: "0.875rem", cursor: saving ? "not-allowed" : "pointer" }}>
+                {saving ? "Adicionando..." : "+ Adicionar ao pedido existente"}
+              </button>
+              <button onClick={() => setDismissedOrderId(existingCadernoOrder.id)}
+                style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", borderRadius: "0.625rem", padding: "0.5rem 1.1rem", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer" }}>
+                Criar pedido separado
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Itens */}
         <div style={{ backgroundColor: "#fff", borderRadius: "1rem", padding: "1.25rem", border: "1px solid rgba(140,100,20,0.1)" }}>
