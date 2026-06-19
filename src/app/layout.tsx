@@ -5,6 +5,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import CartDrawer from "@/components/cart/CartDrawer";
 import { SessionProvider } from "next-auth/react";
+import { headers } from "next/headers";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,15 +21,19 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+  const isAdmin = pathname.startsWith("/admin");
+
   return (
     <html lang="pt-BR">
       <body className={inter.className} style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
         <SessionProvider>
-          <Header />
+          {!isAdmin && <Header />}
           <main style={{ flex: 1 }}>{children}</main>
-          <Footer />
-          <CartDrawer />
+          {!isAdmin && <Footer />}
+          {!isAdmin && <CartDrawer />}
         </SessionProvider>
       </body>
     </html>
