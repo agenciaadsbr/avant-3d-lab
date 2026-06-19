@@ -252,20 +252,38 @@ export default function NovoPedidoPage() {
                       onFocus={() => setShowProductDropdown(p => p.map((v, idx) => idx === i ? true : v))} />
                     {showProductDropdown[i] && productResults[i]?.length > 0 && (
                       <div style={{ position: "absolute", top: "100%", left: 0, right: 0, backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.2)", borderRadius: "0.625rem", zIndex: 50, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", marginTop: 2, overflow: "hidden" }}>
-                        {productResults[i].map(p => (
-                          <div key={p.id} onClick={() => selectProduct(i, p)}
-                            style={{ padding: "0.625rem 0.875rem", cursor: "pointer", borderBottom: "1px solid rgba(140,100,20,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#FAF6EE")}
-                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#fff")}>
-                            <div>
-                              <div style={{ fontWeight: 600, fontSize: "0.875rem", color: "#1a1510" }}>{p.name}</div>
-                              <div style={{ fontSize: "0.72rem", color: "#9a8060" }}>Estoque: {p.stock} un</div>
+                        {productResults[i].map(p => {
+                          const imgs = JSON.parse(p.images || "[]") as string[];
+                          const szs = JSON.parse(p.sizes || "[]") as string[];
+                          return (
+                            <div key={p.id} onClick={() => selectProduct(i, p)}
+                              style={{ padding: "0.625rem 0.875rem", cursor: "pointer", borderBottom: "1px solid rgba(140,100,20,0.06)", display: "flex", alignItems: "center", gap: "0.75rem" }}
+                              onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#FAF6EE")}
+                              onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#fff")}>
+                              {/* Foto */}
+                              <div style={{ width: 44, height: 44, borderRadius: "0.4rem", backgroundColor: "#f0e8d0", flexShrink: 0, overflow: "hidden" }}>
+                                {imgs[0] && <img src={imgs[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                              </div>
+                              {/* Info */}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 600, fontSize: "0.875rem", color: "#1a1510" }}>{p.name}</div>
+                                <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap", marginTop: "0.2rem" }}>
+                                  {szs.length > 0
+                                    ? szs.map(s => (
+                                        <span key={s} style={{ fontSize: "0.65rem", backgroundColor: "#EDE4CC", color: "#6a4a10", fontWeight: 700, padding: "0.1rem 0.4rem", borderRadius: 999 }}>{s}</span>
+                                      ))
+                                    : <span style={{ fontSize: "0.72rem", color: "#9a8060" }}>Estoque: {p.stock} un</span>
+                                  }
+                                  {szs.length > 0 && <span style={{ fontSize: "0.72rem", color: "#9a8060" }}>· {p.stock} un</span>}
+                                </div>
+                              </div>
+                              {/* Preço */}
+                              <div style={{ fontWeight: 700, color: "#b8891a", fontSize: "0.875rem", flexShrink: 0 }}>
+                                {p.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                              </div>
                             </div>
-                            <div style={{ fontWeight: 700, color: "#b8891a", fontSize: "0.875rem" }}>
-                              {p.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
