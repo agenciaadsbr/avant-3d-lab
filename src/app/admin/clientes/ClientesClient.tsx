@@ -56,6 +56,17 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
     router.refresh();
   };
 
+  const handleDelete = async (id: string, name: string | null) => {
+    if (!confirm(`Excluir "${name || "cliente"}"? Esta ação não pode ser desfeita.`)) return;
+    const res = await fetch(`/api/admin/clientes/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      router.refresh();
+    } else {
+      const d = await res.json();
+      alert(d.error || "Erro ao excluir.");
+    }
+  };
+
   const handleSave = async (id: string) => {
     setSaving(true);
     await fetch(`/api/admin/clientes/${id}`, {
@@ -168,10 +179,18 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
                           </button>
                         </div>
                       ) : (
-                        <button onClick={() => startEdit(c)}
-                          style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(184,137,26,0.3)", color: "#b8891a", fontSize: "0.75rem", fontWeight: 700, padding: "0.35rem 0.75rem", borderRadius: "0.5rem", cursor: "pointer", whiteSpace: "nowrap" }}>
-                          ✏️ Editar
-                        </button>
+                        <div style={{ display: "flex", gap: "0.4rem" }}>
+                          <button onClick={() => startEdit(c)}
+                            style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(184,137,26,0.3)", color: "#b8891a", fontSize: "0.75rem", fontWeight: 700, padding: "0.35rem 0.75rem", borderRadius: "0.5rem", cursor: "pointer", whiteSpace: "nowrap" }}>
+                            ✏️ Editar
+                          </button>
+                          {c._count.orders === 0 && (
+                            <button onClick={() => handleDelete(c.id, c.name)}
+                              style={{ backgroundColor: "#fee8e8", border: "1px solid rgba(192,64,64,0.2)", color: "#c04040", fontSize: "0.75rem", fontWeight: 700, padding: "0.35rem 0.6rem", borderRadius: "0.5rem", cursor: "pointer" }}>
+                              🗑️
+                            </button>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>
