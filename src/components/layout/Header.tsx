@@ -13,6 +13,7 @@ const navLinks = [
   { href: "/produtos?categoria=tops", label: "Tops" },
   { href: "/produtos?categoria=conjuntos", label: "Conjuntos" },
   { href: "/produtos?categoria=shorts", label: "Shorts" },
+  { href: "/sobre", label: "Sobre Nós" },
 ];
 
 export default function Header() {
