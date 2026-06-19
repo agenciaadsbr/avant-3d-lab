@@ -150,8 +150,12 @@ export default function NovoPedidoPage() {
     if (res.ok) {
       router.push("/admin/pedidos");
     } else {
-      const d = await res.json();
-      setError(d.error || "Erro ao salvar pedido.");
+      try {
+        const d = await res.json();
+        setError(d.error || "Erro ao salvar pedido.");
+      } catch {
+        setError(`Erro ${res.status} ao salvar pedido. Tente novamente.`);
+      }
     }
   };
 

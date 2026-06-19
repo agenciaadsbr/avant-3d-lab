@@ -58,15 +58,21 @@ export async function POST(req: Request) {
   if (!customerId) return NextResponse.json({ error: "Cliente obrigatório" }, { status: 400 });
   if (!items?.length) return NextResponse.json({ error: "Adicione ao menos um item" }, { status: 400 });
 
-  const vendaManual = await prisma.product.findFirst({ where: { name: "Venda Manual" } });
-  if (!vendaManual) return NextResponse.json({ error: "Produto 'Venda Manual' não encontrado" }, { status: 500 });
+  // "Venda Manual" só é necessário como fallback se algum item não tiver productId
+  const needsFallback = items.some((i: any) => !i.productId);
+  let fallbackProductId: string | null = null;
+  if (needsFallback) {
+    const vendaManual = await prisma.product.findFirst({ where: { name: "Venda Manual" } });
+    if (!vendaManual) return NextResponse.json({ error: "Selecione um produto do catálogo ou cadastre 'Venda Manual'." }, { status: 400 });
+    fallbackProductId = vendaManual.id;
+  }
 
   const subtotal = items.reduce((s: number, i: any) => s + i.price * i.quantity, 0);
   const paid = parseFloat(amountPaid) || 0;
 
   // Decrementar estoque dos produtos vinculados
   for (const item of items) {
-    if (item.productId && item.productId !== vendaManual.id) {
+    if (item.productId) {
       await prisma.product.update({
         where: { id: item.productId },
         data: { stock: { decrement: item.quantity } },
@@ -91,7 +97,7 @@ export async function POST(req: Request) {
       createdAt: createdAt ? new Date(createdAt) : new Date(),
       items: {
         create: items.map((i: any) => ({
-          productId: i.productId || vendaManual.id,
+          productId: i.productId || fallbackProductId!,
           quantity: i.quantity,
           price: i.price,
           size: i.size || i.description || null,
