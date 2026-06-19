@@ -9,14 +9,21 @@ export default async function PedidosPage() {
   const session = await auth();
   if (!session || (session.user as any)?.role !== "admin") redirect("/");
 
-  const orders = await prisma.order.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      user: { select: { id: true, name: true, email: true, phone: true } },
-      items: { include: { product: { select: { id: true, name: true } } } },
-      installments: { orderBy: { number: "asc" } },
-    },
-  });
+  const [orders, customers] = await Promise.all([
+    prisma.order.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: { select: { id: true, name: true, email: true, phone: true } },
+        items: { include: { product: { select: { id: true, name: true } } } },
+        installments: { orderBy: { number: "asc" } },
+      },
+    }),
+    prisma.user.findMany({
+      where: { role: "customer" },
+      select: { id: true, name: true, email: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
-  return <PedidosClient orders={orders as any} />;
+  return <PedidosClient orders={orders as any} customers={customers} />;
 }

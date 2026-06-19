@@ -48,7 +48,9 @@ function fmt(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-export default function PedidosClient({ orders }: { orders: Order[] }) {
+type Customer = { id: string; name: string | null; email: string };
+
+export default function PedidosClient({ orders, customers = [] }: { orders: Order[]; customers?: Customer[] }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [payFilter, setPayFilter] = useState("");
@@ -63,6 +65,9 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
   const [editDueDate, setEditDueDate] = useState("");
   const [editInstallments, setEditInstallments] = useState(1);
   const [togglingInstallment, setTogglingInstallment] = useState<string | null>(null);
+  const [reassigningId, setReassigningId] = useState<string | null>(null);
+  const [reassignSearch, setReassignSearch] = useState("");
+  const [reassignSaving, setReassignSaving] = useState(false);
 
   const filtered = useMemo(() => {
     return localOrders.filter(o => {
@@ -138,6 +143,20 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
       } : o));
     }
     setTogglingInstallment(null);
+  };
+
+  const reassignCustomer = async (orderId: string, newUser: { id: string; name: string | null; email: string }) => {
+    setReassignSaving(true);
+    const res = await fetch(`/api/admin/pedidos/${orderId}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: newUser.id }),
+    });
+    if (res.ok) {
+      setLocalOrders(prev => prev.map(o => o.id === orderId ? { ...o, user: { ...o.user, id: newUser.id, name: newUser.name || "", email: newUser.email } } : o));
+    }
+    setReassignSaving(false);
+    setReassigningId(null);
+    setReassignSearch("");
   };
 
   const inp = { padding: "0.55rem 0.875rem", border: "1px solid rgba(140,100,20,0.25)", borderRadius: "0.625rem", fontSize: "0.8rem", backgroundColor: "#FAF6EE", outline: "none" };
@@ -421,10 +440,66 @@ export default function PedidosClient({ orders }: { orders: Order[] }) {
                               </div>
                               {/* Cliente */}
                               <div style={{ backgroundColor: "#fff", borderRadius: "0.75rem", padding: "1rem", border: "1px solid rgba(140,100,20,0.08)" }}>
-                                <p style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.8rem", marginBottom: "0.75rem" }}>Cliente</p>
-                                <p style={{ color: "#3a2a10", fontSize: "0.8rem", marginBottom: "0.3rem" }}>👤 {order.user.name}</p>
-                                <p style={{ color: "#3a2a10", fontSize: "0.8rem", marginBottom: "0.3rem" }}>📧 {order.user.email}</p>
-                                {order.user.phone && <p style={{ color: "#3a2a10", fontSize: "0.8rem", marginBottom: "0.3rem" }}>📞 {order.user.phone}</p>}
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+                                  <p style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.8rem" }}>Cliente</p>
+                                  {reassigningId !== order.id ? (
+                                    <button onClick={() => { setReassigningId(order.id); setReassignSearch(""); }}
+                                      style={{ fontSize: "0.7rem", color: "#b8891a", background: "none", border: "none", cursor: "pointer", fontWeight: 700 }}>
+                                      🔄 Trocar cliente
+                                    </button>
+                                  ) : (
+                                    <button onClick={() => setReassigningId(null)}
+                                      style={{ fontSize: "0.7rem", color: "#9a8060", background: "none", border: "none", cursor: "pointer" }}>
+                                      Cancelar
+                                    </button>
+                                  )}
+                                </div>
+                                {reassigningId === order.id ? (
+                                  <div>
+                                    <p style={{ fontSize: "0.72rem", color: "#9a8060", marginBottom: "0.5rem" }}>
+                                      Atual: <strong>{order.user.name}</strong>. Busque o cliente correto:
+                                    </p>
+                                    <input
+                                      style={{ ...inp, width: "100%", boxSizing: "border-box" as const, marginBottom: "0.5rem" }}
+                                      placeholder="Nome ou e-mail do cliente..."
+                                      value={reassignSearch}
+                                      onChange={e => setReassignSearch(e.target.value)}
+                                      autoFocus
+                                    />
+                                    {reassignSearch.length >= 2 && (
+                                      <div style={{ border: "1px solid rgba(140,100,20,0.2)", borderRadius: "0.5rem", overflow: "hidden" }}>
+                                        {customers
+                                          .filter(c => c.id !== order.user.id && (
+                                            (c.name || "").toLowerCase().includes(reassignSearch.toLowerCase()) ||
+                                            c.email.toLowerCase().includes(reassignSearch.toLowerCase())
+                                          ))
+                                          .slice(0, 6)
+                                          .map(c => (
+                                            <button key={c.id} disabled={reassignSaving}
+                                              onClick={() => reassignCustomer(order.id, c)}
+                                              style={{ display: "block", width: "100%", textAlign: "left", padding: "0.5rem 0.75rem", background: "#fff", border: "none", borderBottom: "1px solid rgba(140,100,20,0.08)", cursor: "pointer", fontSize: "0.8rem" }}
+                                              onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#FAF6EE")}
+                                              onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#fff")}>
+                                              <span style={{ fontWeight: 700, color: "#1a1510" }}>{c.name || "—"}</span>
+                                              <span style={{ color: "#9a8060", marginLeft: "0.5rem", fontSize: "0.72rem" }}>{c.email}</span>
+                                            </button>
+                                          ))}
+                                        {customers.filter(c => c.id !== order.user.id && (
+                                          (c.name || "").toLowerCase().includes(reassignSearch.toLowerCase()) ||
+                                          c.email.toLowerCase().includes(reassignSearch.toLowerCase())
+                                        )).length === 0 && (
+                                          <p style={{ padding: "0.5rem 0.75rem", color: "#9a8060", fontSize: "0.8rem" }}>Nenhum cliente encontrado.</p>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <>
+                                    <p style={{ color: "#3a2a10", fontSize: "0.8rem", marginBottom: "0.3rem" }}>👤 {order.user.name}</p>
+                                    <p style={{ color: "#3a2a10", fontSize: "0.8rem", marginBottom: "0.3rem" }}>📧 {order.user.email}</p>
+                                    {order.user.phone && <p style={{ color: "#3a2a10", fontSize: "0.8rem", marginBottom: "0.3rem" }}>📞 {order.user.phone}</p>}
+                                  </>
+                                )}
                                 {order.notes && (
                                   <div style={{ marginTop: "0.75rem", padding: "0.5rem 0.75rem", backgroundColor: "#FAF6EE", borderRadius: "0.5rem", fontSize: "0.75rem", color: "#7a6030" }}>
                                     📝 {order.notes}

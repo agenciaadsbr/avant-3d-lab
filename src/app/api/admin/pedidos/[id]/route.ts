@@ -17,6 +17,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (body.amountPaid !== undefined) data.amountPaid = body.amountPaid;
   if (body.dueDate !== undefined) data.dueDate = body.dueDate ? new Date(body.dueDate) : null;
   if (body.installmentCount !== undefined) data.installmentCount = body.installmentCount;
+  if (body.userId !== undefined) data.userId = body.userId;
 
   const order = await prisma.order.update({ where: { id }, data });
 
