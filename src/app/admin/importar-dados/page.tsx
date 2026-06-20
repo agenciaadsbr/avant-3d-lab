@@ -4,6 +4,16 @@ import { useState } from "react";
 export default function ImportarDadosPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [rolling, setRolling] = useState(false);
+
+  const rollback = async () => {
+    if (!confirm("Desfazer a importação? Remove os pedidos e gastos criados agora.")) return;
+    setRolling(true);
+    const res = await fetch("/api/admin/importar-dados/rollback", { method: "POST" });
+    const data = await res.json();
+    setResult({ ...data, isRollback: true });
+    setRolling(false);
+  };
 
   const executar = async () => {
     if (!confirm("Confirma a importação? Isso vai criar produtos, vendas e gastos no sistema.")) return;
@@ -38,12 +48,24 @@ export default function ImportarDadosPage() {
           <p style={{ fontWeight: 900, fontSize: "1.1rem", color: result.ok ? "#1a6a2a" : "#c04040", marginBottom: "1rem" }}>
             {result.ok ? "✅ Importação concluída!" : "❌ Erro na importação"}
           </p>
-          {result.ok && (
+          {result.ok && !result.isRollback && (
+            <>
+              <ul style={{ color: "#3a5a3a", fontSize: "0.9rem", lineHeight: 2, paddingLeft: "1.25rem" }}>
+                <li>📦 <strong>{result.products}</strong> produtos criados/atualizados</li>
+                <li>💸 <strong>{result.expenses}</strong> gastos importados</li>
+                <li>🛍️ <strong>{result.sales}</strong> vendas importadas</li>
+                <li>👥 <strong>{result.clients}</strong> clientes novos criados</li>
+              </ul>
+              <button onClick={rollback} disabled={rolling}
+                style={{ marginTop: "1rem", backgroundColor: "#fee8e8", border: "1px solid rgba(192,64,64,0.3)", color: "#c04040", borderRadius: "0.625rem", padding: "0.5rem 1rem", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer" }}>
+                {rolling ? "Desfazendo..." : "↩ Desfazer importação"}
+              </button>
+            </>
+          )}
+          {result.isRollback && (
             <ul style={{ color: "#3a5a3a", fontSize: "0.9rem", lineHeight: 2, paddingLeft: "1.25rem" }}>
-              <li>📦 <strong>{result.products}</strong> produtos criados/atualizados</li>
-              <li>💸 <strong>{result.expenses}</strong> gastos importados</li>
-              <li>🛍️ <strong>{result.sales}</strong> vendas importadas</li>
-              <li>👥 <strong>{result.clients}</strong> clientes novos criados</li>
+              <li>🗑️ <strong>{result.deletedOrders}</strong> pedidos removidos</li>
+              <li>🗑️ <strong>{result.deletedExpenses}</strong> gastos removidos</li>
             </ul>
           )}
           {result.errors?.length > 0 && (
