@@ -112,7 +112,10 @@ export default function ImportarDadosPage() {
               ))}
             </div>
           )}
-          {result.error && <p style={{ color: "#c04040", marginTop: "0.75rem", fontSize: "0.875rem" }}>{result.error}</p>}
+          {result.error && <p style={{ color: "#c04040", marginTop: "0.75rem", fontSize: "0.875rem" }}>Erro: {result.error}</p>}
+          <pre style={{ marginTop: "1rem", fontSize: "0.7rem", color: "#5a4a2a", backgroundColor: "#FAF6EE", padding: "0.75rem", borderRadius: "0.5rem", overflowX: "auto", whiteSpace: "pre-wrap" }}>
+            {JSON.stringify(result, null, 2)}
+          </pre>
           <a href="/admin" style={{ display: "inline-block", marginTop: "1.25rem", color: "#b8891a", fontWeight: 700, textDecoration: "none" }}>← Voltar ao painel</a>
         </div>
       )}
