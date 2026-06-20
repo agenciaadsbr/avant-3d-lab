@@ -69,8 +69,8 @@ export default function ProductForm({ categories, product }: { categories: Categ
       fd.append("file", file);
       const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
       if (res.ok) {
-        const { path } = await res.json();
-        newPaths.push(path);
+        const data = await res.json();
+        newPaths.push(data.url || data.path);
       }
     }
 
