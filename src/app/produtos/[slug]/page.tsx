@@ -152,7 +152,7 @@ export default function ProductPage() {
             </button>
 
             {/* WhatsApp */}
-            <a href={`https://wa.me/5547999999999?text=Olá! Tenho interesse no produto: ${product.name}`} target="_blank" rel="noopener noreferrer"
+            <a href={`https://wa.me/5551986596705?text=Olá! Tenho interesse no produto: ${product.name}`} target="_blank" rel="noopener noreferrer"
               style={{ width: "100%", marginTop: "0.75rem", padding: "0.875rem", backgroundColor: "#25D366", color: "#fff", fontWeight: 800, fontSize: "0.9rem", border: "none", borderRadius: "0.875rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", textDecoration: "none", letterSpacing: "0.02em" }}>
               📲 Perguntar pelo WhatsApp
             </a>
