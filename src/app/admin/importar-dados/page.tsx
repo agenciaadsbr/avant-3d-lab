@@ -6,6 +6,15 @@ export default function ImportarDadosPage() {
   const [result, setResult] = useState<any>(null);
   const [rolling, setRolling] = useState(false);
 
+  const limparCaderno = async () => {
+    if (!confirm("Apagar todos os pedidos do caderno em aberto lançados manualmente?")) return;
+    setLoading(true);
+    const res = await fetch("/api/admin/importar-dados/limpar-caderno", { method: "POST" });
+    const data = await res.json();
+    setResult({ ...data, isClearCaderno: true });
+    setLoading(false);
+  };
+
   const rollback = async () => {
     if (!confirm("Desfazer a importação? Remove os pedidos e gastos criados agora.")) return;
     setRolling(true);
@@ -38,6 +47,10 @@ export default function ImportarDadosPage() {
             <li>✅ Importar <strong>93 vendas</strong> históricas</li>
             <li>✅ Criar clientes novos automaticamente</li>
           </ul>
+          <button onClick={limparCaderno} disabled={loading}
+            style={{ backgroundColor: "#fee8e8", border: "1px solid rgba(192,64,64,0.25)", color: "#c04040", borderRadius: "0.75rem", padding: "0.75rem 2rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer", width: "100%", marginBottom: "0.75rem" }}>
+            🗑️ Limpar pedidos do caderno (lançados manualmente)
+          </button>
           <button onClick={executar} disabled={loading}
             style={{ backgroundColor: loading ? "#d4b870" : "#b8891a", color: "#fff", border: "none", borderRadius: "0.75rem", padding: "0.875rem 2rem", fontSize: "1rem", fontWeight: 900, cursor: loading ? "not-allowed" : "pointer", width: "100%" }}>
             {loading ? "⏳ Importando... aguarde" : "▶ Executar Importação"}
@@ -61,6 +74,11 @@ export default function ImportarDadosPage() {
                 {rolling ? "Desfazendo..." : "↩ Desfazer importação"}
               </button>
             </>
+          )}
+          {result.isClearCaderno && (
+            <p style={{ color: "#1a6a2a", fontSize: "0.9rem" }}>
+              🗑️ <strong>{result.deleted}</strong> pedidos do caderno removidos. Agora pode rodar a importação!
+            </p>
           )}
           {result.isRollback && (
             <ul style={{ color: "#3a5a3a", fontSize: "0.9rem", lineHeight: 2, paddingLeft: "1.25rem" }}>
