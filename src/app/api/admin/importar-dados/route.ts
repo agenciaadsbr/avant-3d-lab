@@ -17,14 +17,14 @@ function slugify(text: string): string {
 
 const CATEGORY_MAP: Record<string, string> = {
   "SHORTS": "Shorts", "TOPS": "Tops", "MACAQUINHOS": "Macaquinhos",
-  "LEGGINS": "Leggings", "LEGGINS ": "Leggings", "JAQUETAS": "Jaquetas",
+  "LEGGINS": "Leggins", "LEGGINS ": "Leggins", "JAQUETAS": "Jaquetas",
   "CONJUNTOS": "Conjuntos", "CAMISETAS BÁSICAS": "Camisetas básicas",
   "Camisetas Básicas": "Camisetas básicas", "MACACÃO": "Macacão",
 };
 
 const SKU_PREFIX: Record<string, string> = {
   "Shorts": "SH", "Tops": "TP", "Macaquinhos": "MQ",
-  "Leggings": "LG", "Jaquetas": "JQ", "Conjuntos": "CF",
+  "Leggins": "LG", "Jaquetas": "JQ", "Conjuntos": "CF",
   "Camisetas básicas": "CB", "Macacão": "MC", "Vendas Manuais": "VM",
 };
 
@@ -216,13 +216,17 @@ export async function POST(req: Request) {
       });
     }
 
-    // ── 2. FORNECEDOR "Venda Manual" ──
+    // ── 2. PRODUTO "Venda Manual" ──
+    const vendaManualCat = await prisma.category.findFirst({
+      where: { OR: [{ slug: "vendas-manuais" }, { slug: "vendas-manual" }, { name: { contains: "Venda" } }] }
+    });
+    const fallbackCat = await prisma.category.findFirst();
     await prisma.product.upsert({
       where: { slug: "venda-manual" },
       update: {},
       create: {
         name: "Venda Manual", slug: "venda-manual", price: 0, stock: 999, active: false,
-        category: { connect: { slug: slugify(catNames[0]) } },
+        categoryId: (vendaManualCat || fallbackCat)!.id,
       },
     });
 
