@@ -63,19 +63,6 @@ export default async function HomePage() {
               </a>
             </div>
 
-            {/* Stats */}
-            <div style={{ display: "flex", gap: "2rem", marginTop: "3rem", paddingTop: "2rem", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-              {[
-                { num: "100%", label: "Qualidade" },
-                { num: "+500", label: "Clientes" },
-                { num: "24h", label: "Entrega" },
-              ].map(s => (
-                <div key={s.label}>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#b8891a" }}>{s.num}</div>
-                  <div style={{ fontSize: "0.72rem", color: "rgba(250,246,238,0.45)", fontWeight: 600, marginTop: "0.15rem" }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Grid de preview de produtos */}
