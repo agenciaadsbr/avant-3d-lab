@@ -79,6 +79,8 @@ a, button { -webkit-tap-highlight-color: transparent; transition: opacity 0.15s,
   .hide-desktop { display: flex !important; }
 }
 
+.cat-card:hover { transform: translateY(-3px) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important; }
+
 /* Products grid responsive */
 .products-grid {
   grid-template-columns: repeat(4, 1fr) !important;

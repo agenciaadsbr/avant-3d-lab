@@ -126,10 +126,8 @@ export default async function HomePage() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "0.875rem" }}>
             {categories.map(cat => (
-              <Link key={cat.id} href={`/produtos?categoria=${cat.slug}`}
-                style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.12)", borderRadius: "1rem", padding: "1.5rem 1rem", textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.6rem", minHeight: 100, boxShadow: "0 2px 8px rgba(0,0,0,0.04)", transition: "transform 0.2s, box-shadow 0.2s" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 6px 20px rgba(0,0,0,0.1)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}>
+              <Link key={cat.id} href={`/produtos?categoria=${cat.slug}`} className="cat-card"
+                style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.12)", borderRadius: "1rem", padding: "1.5rem 1rem", textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.6rem", minHeight: 100, boxShadow: "0 2px 8px rgba(0,0,0,0.04)", transition: "transform 0.2s, box-shadow 0.2s" }}>
                 <span style={{ fontSize: "1.75rem" }}>{categoryIcons[cat.name] || "✨"}</span>
                 <span style={{ color: "#1a1510", fontWeight: 700, fontSize: "0.85rem", textAlign: "center" }}>{cat.name}</span>
               </Link>
