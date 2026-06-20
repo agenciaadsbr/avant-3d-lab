@@ -10,7 +10,10 @@ export default async function AdminProdutosPage() {
   if (!session || (session.user as any)?.role !== "admin") redirect("/");
 
   const [products, categories] = await Promise.all([
-    prisma.product.findMany({ include: { category: true }, orderBy: { name: "asc" } }),
+    prisma.product.findMany({
+      where: { active: true, NOT: { slug: "venda-manual" } },
+      include: { category: true }, orderBy: { name: "asc" }
+    }),
     prisma.category.findMany({ orderBy: { name: "asc" } }),
   ]);
 
