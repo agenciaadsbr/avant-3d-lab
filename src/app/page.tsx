@@ -99,7 +99,7 @@ export default async function HomePage() {
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
-            {featuredProducts.map((p) => <ProductCard key={p.id} product={p} />)}
+            {featuredProducts.map((p) => <ProductCard key={p.id} product={p as any} />)}
           </div>
         )}
       </section>
