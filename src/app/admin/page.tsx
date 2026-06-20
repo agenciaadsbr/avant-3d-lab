@@ -161,10 +161,12 @@ export default async function AdminPage() {
                 const saldo = o.total - o.amountPaid;
                 const diasAtraso = Math.floor((now.getTime() - new Date(o.dueDate!).getTime()) / (1000 * 60 * 60 * 24));
                 return (
-                  <Link key={o.id} href={`/admin/caderno/${o.userId}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.625rem 1.25rem", textDecoration: "none", borderBottom: "1px solid rgba(140,100,20,0.06)" }}>
+                  <Link key={o.id} href={`/admin/pedidos?expand=${o.id}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.625rem 1.25rem", textDecoration: "none", borderBottom: "1px solid rgba(140,100,20,0.06)" }}>
                     <div>
                       <span style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.875rem" }}>{o.user.name}</span>
-                      <span style={{ fontSize: "0.72rem", color: "#9a8060", marginLeft: "0.5rem" }}>{diasAtraso}d de atraso</span>
+                      <span style={{ fontSize: "0.72rem", color: "#c04040", marginLeft: "0.5rem" }}>
+                        venc. {new Date(o.dueDate!).toLocaleDateString("pt-BR")} · {diasAtraso}d de atraso
+                      </span>
                     </div>
                     <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "#856404" }}>{formatCurrency(saldo)}</span>
                   </Link>
