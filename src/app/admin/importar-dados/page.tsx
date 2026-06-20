@@ -1,0 +1,63 @@
+"use client";
+import { useState } from "react";
+
+export default function ImportarDadosPage() {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+
+  const executar = async () => {
+    if (!confirm("Confirma a importação? Isso vai criar produtos, vendas e gastos no sistema.")) return;
+    setLoading(true);
+    const res = await fetch("/api/admin/importar-dados", { method: "POST" });
+    const data = await res.json();
+    setResult(data);
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ maxWidth: 600, margin: "3rem auto", padding: "2rem", backgroundColor: "#FAF6EE", minHeight: "100vh" }}>
+      <a href="/admin" style={{ color: "#b8891a", fontSize: "0.875rem", textDecoration: "none" }}>← Admin</a>
+      <h1 style={{ fontSize: "1.5rem", fontWeight: 900, color: "#1a1510", margin: "0.5rem 0 1.5rem" }}>Importar Dados das Planilhas</h1>
+
+      {!result ? (
+        <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.15)", borderRadius: "1rem", padding: "1.5rem" }}>
+          <p style={{ color: "#5a4a2a", marginBottom: "0.75rem", lineHeight: 1.7 }}>Esta importação vai:</p>
+          <ul style={{ color: "#5a4a2a", fontSize: "0.875rem", lineHeight: 2, paddingLeft: "1.25rem", marginBottom: "1.5rem" }}>
+            <li>✅ Criar/atualizar <strong>54 produtos</strong> com SKU automático</li>
+            <li>✅ Importar <strong>16 gastos</strong> da loja</li>
+            <li>✅ Importar <strong>93 vendas</strong> históricas</li>
+            <li>✅ Criar clientes novos automaticamente</li>
+          </ul>
+          <button onClick={executar} disabled={loading}
+            style={{ backgroundColor: loading ? "#d4b870" : "#b8891a", color: "#fff", border: "none", borderRadius: "0.75rem", padding: "0.875rem 2rem", fontSize: "1rem", fontWeight: 900, cursor: loading ? "not-allowed" : "pointer", width: "100%" }}>
+            {loading ? "⏳ Importando... aguarde" : "▶ Executar Importação"}
+          </button>
+        </div>
+      ) : (
+        <div style={{ backgroundColor: result.ok ? "#e8f8e8" : "#fee8e8", border: `1px solid ${result.ok ? "rgba(26,138,42,0.2)" : "rgba(192,64,64,0.2)"}`, borderRadius: "1rem", padding: "1.5rem" }}>
+          <p style={{ fontWeight: 900, fontSize: "1.1rem", color: result.ok ? "#1a6a2a" : "#c04040", marginBottom: "1rem" }}>
+            {result.ok ? "✅ Importação concluída!" : "❌ Erro na importação"}
+          </p>
+          {result.ok && (
+            <ul style={{ color: "#3a5a3a", fontSize: "0.9rem", lineHeight: 2, paddingLeft: "1.25rem" }}>
+              <li>📦 <strong>{result.products}</strong> produtos criados/atualizados</li>
+              <li>💸 <strong>{result.expenses}</strong> gastos importados</li>
+              <li>🛍️ <strong>{result.sales}</strong> vendas importadas</li>
+              <li>👥 <strong>{result.clients}</strong> clientes novos criados</li>
+            </ul>
+          )}
+          {result.errors?.length > 0 && (
+            <div style={{ marginTop: "1rem" }}>
+              <p style={{ fontWeight: 700, color: "#c04040", marginBottom: "0.5rem" }}>Avisos:</p>
+              {result.errors.map((e: string, i: number) => (
+                <p key={i} style={{ fontSize: "0.8rem", color: "#c04040" }}>• {e}</p>
+              ))}
+            </div>
+          )}
+          {result.error && <p style={{ color: "#c04040", marginTop: "0.75rem", fontSize: "0.875rem" }}>{result.error}</p>}
+          <a href="/admin" style={{ display: "inline-block", marginTop: "1.25rem", color: "#b8891a", fontWeight: 700, textDecoration: "none" }}>← Voltar ao painel</a>
+        </div>
+      )}
+    </div>
+  );
+}
