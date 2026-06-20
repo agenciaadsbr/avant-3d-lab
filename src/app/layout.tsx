@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import CartDrawer from "@/components/cart/CartDrawer";
+import WhatsAppButton from "@/components/layout/WhatsAppButton";
 import { SessionProvider } from "next-auth/react";
 import { headers } from "next/headers";
 
@@ -34,6 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main style={{ flex: 1 }}>{children}</main>
           {!isAdmin && <Footer />}
           {!isAdmin && <CartDrawer />}
+          {!isAdmin && <WhatsAppButton />}
         </SessionProvider>
       </body>
     </html>

@@ -94,7 +94,7 @@ export default function SobrePage() {
               { emoji: "✨", title: "Qualidade", desc: "Selecionamos cada peça com atenção ao caimento, tecido e acabamento." },
               { emoji: "💛", title: "Confiança", desc: "Uma relação próxima com cada cliente, com cuidado e transparência." },
               { emoji: "🌟", title: "Estilo", desc: "Moda fitness que vai da academia ao dia a dia com elegância." },
-              { emoji: "🤝", title: "Proximidade", desc: "Atendimento personalizado — porque cada cliente é única." },
+              { emoji: "🚚", title: "Entrega em todo o Brasil", desc: "Baseadas em Porto Alegre, RS, mas enviamos para qualquer lugar do país." },
             ].map(v => (
               <div key={v.title} style={{ padding: "0.5rem" }}>
                 <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>{v.emoji}</div>
