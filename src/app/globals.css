@@ -78,3 +78,14 @@ a, button { -webkit-tap-highlight-color: transparent; transition: opacity 0.15s,
   .hide-mobile  { display: none !important; }
   .hide-desktop { display: flex !important; }
 }
+
+/* Products grid responsive */
+.products-grid {
+  grid-template-columns: repeat(4, 1fr) !important;
+}
+@media (max-width: 1100px) {
+  .products-grid { grid-template-columns: repeat(3, 1fr) !important; }
+}
+@media (max-width: 768px) {
+  .products-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
