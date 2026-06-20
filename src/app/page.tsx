@@ -105,7 +105,7 @@ export default async function HomePage() {
         <div style={{ display: "flex", gap: "3rem", animation: "ticker 20s linear infinite", whiteSpace: "nowrap", width: "max-content" }}>
           {Array(6).fill(null).map((_, i) => (
             <span key={i} style={{ color: "#fff", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", flexShrink: 0 }}>
-              ✦ &nbsp; Desbloqueie sua energia &nbsp; ✦ &nbsp; Força. Estilo. Movimento. &nbsp; ✦ &nbsp; Nova Coleção 2026
+              ✦ &nbsp; Desbloqueie sua energia infinita &nbsp; ✦ &nbsp; Força. Estilo. Movimento. &nbsp; ✦ &nbsp; Desbloqueie sua energia infinita &nbsp; ✦ &nbsp; Vista-se com intenção, mova-se com poder.
             </span>
           ))}
         </div>
