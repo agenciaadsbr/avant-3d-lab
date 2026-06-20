@@ -88,6 +88,18 @@ export default function Footer() {
                 </div>
               </a>
 
+              {/* Email */}
+              <a href="mailto:accessfitpoa@gmail.com"
+                style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", color: "#7a6a4a" }}>
+                <div style={{ width: 32, height: 32, backgroundColor: "#b8891a", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                </div>
+                <div>
+                  <p style={{ fontSize: "0.85rem", color: "#9a8060", fontWeight: 600 }}>accessfitpoa@gmail.com</p>
+                  <p style={{ fontSize: "0.7rem", color: "#5a4a30" }}>Envie um e-mail</p>
+                </div>
+              </a>
+
               {/* Instagram */}
               <a href="https://instagram.com/accessfit_poa" target="_blank" rel="noopener noreferrer"
                 style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none", color: "#7a6a4a" }}>
