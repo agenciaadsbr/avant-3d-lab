@@ -124,12 +124,12 @@ export default function AdminProdutosClient({ products, categories }: { products
                 return (
                   <tr key={p.id} style={{ borderBottom: "1px solid rgba(140,100,20,0.06)" }}>
                     <td style={{ padding: "0.875rem 1rem" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <a href={`/admin/produtos/${p.id}`} style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "0.75rem" }}>
                         <div style={{ width: 40, height: 40, backgroundColor: "#F0E8D0", borderRadius: "0.5rem", overflow: "hidden", flexShrink: 0 }}>
                           {images[0] && <img src={images[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
                         </div>
-                        <span style={{ color: "#1a1510", fontWeight: 600, fontSize: "0.875rem" }}>{p.name}</span>
-                      </div>
+                        <span style={{ color: "#b8891a", fontWeight: 600, fontSize: "0.875rem", textDecoration: "underline", textUnderlineOffset: "2px" }}>{p.name}</span>
+                      </a>
                     </td>
                     <td style={{ padding: "0.875rem 1rem" }}>
                       <span style={{ fontSize: "0.75rem", backgroundColor: "#f0e8d0", color: "#7a5a10", padding: "0.2rem 0.5rem", borderRadius: 999, whiteSpace: "nowrap" }}>
