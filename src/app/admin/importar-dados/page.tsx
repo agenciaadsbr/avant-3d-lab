@@ -6,6 +6,15 @@ export default function ImportarDadosPage() {
   const [result, setResult] = useState<any>(null);
   const [rolling, setRolling] = useState(false);
 
+  const resetCompleto = async () => {
+    if (!confirm("ATENÇÃO: Isso apaga TODOS os produtos, pedidos e gastos. Clientes, categorias e fornecedores ficam. Confirma?")) return;
+    setLoading(true);
+    const res = await fetch("/api/admin/importar-dados/reset", { method: "POST" });
+    const data = await res.json();
+    setResult({ ...data, isReset: true });
+    setLoading(false);
+  };
+
   const limparCaderno = async () => {
     if (!confirm("Apagar todos os pedidos do caderno em aberto lançados manualmente?")) return;
     setLoading(true);
@@ -47,6 +56,10 @@ export default function ImportarDadosPage() {
             <li>✅ Importar <strong>93 vendas</strong> históricas</li>
             <li>✅ Criar clientes novos automaticamente</li>
           </ul>
+          <button onClick={resetCompleto} disabled={loading}
+            style={{ backgroundColor: "#1a1510", color: "#fff", border: "none", borderRadius: "0.75rem", padding: "0.75rem 2rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer", width: "100%", marginBottom: "0.75rem" }}>
+            ⚠️ Reset completo (produtos, pedidos e gastos)
+          </button>
           <button onClick={limparCaderno} disabled={loading}
             style={{ backgroundColor: "#fee8e8", border: "1px solid rgba(192,64,64,0.25)", color: "#c04040", borderRadius: "0.75rem", padding: "0.75rem 2rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer", width: "100%", marginBottom: "0.75rem" }}>
             🗑️ Limpar pedidos do caderno (lançados manualmente)
@@ -74,6 +87,11 @@ export default function ImportarDadosPage() {
                 {rolling ? "Desfazendo..." : "↩ Desfazer importação"}
               </button>
             </>
+          )}
+          {result.isReset && (
+            <p style={{ color: "#1a6a2a", fontSize: "0.9rem" }}>
+              ✅ Reset concluído! Produtos, pedidos e gastos apagados. Agora clique em <strong>"Executar Importação"</strong>.
+            </p>
           )}
           {result.isClearCaderno && (
             <p style={{ color: "#1a6a2a", fontSize: "0.9rem" }}>
