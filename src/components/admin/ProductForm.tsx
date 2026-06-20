@@ -32,6 +32,7 @@ export default function ProductForm({ categories, product }: { categories: Categ
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [uploadingImg, setUploadingImg] = useState(false);
   const imgInputRef = useRef<HTMLInputElement>(null);
 
@@ -239,7 +240,7 @@ export default function ProductForm({ categories, product }: { categories: Categ
       </div>
 
       {/* Botões */}
-      <div style={{ display: "flex", gap: "0.875rem" }}>
+      <div style={{ display: "flex", gap: "0.875rem", flexWrap: "wrap", alignItems: "center" }}>
         <button type="submit" form="product-form" disabled={loading} onClick={handleSubmit as any}
           style={{ padding: "0.875rem 2.5rem", backgroundColor: loading ? "#9a7030" : "#b8891a", color: "#fff", fontWeight: 900, border: "none", borderRadius: "0.75rem", cursor: loading ? "not-allowed" : "pointer", fontSize: "0.95rem" }}>
           {loading ? "Salvando..." : product ? "💾 Salvar Alterações" : "✓ Criar Produto"}
@@ -247,6 +248,19 @@ export default function ProductForm({ categories, product }: { categories: Categ
         <a href="/admin/produtos" style={{ padding: "0.875rem 1.5rem", border: "1px solid rgba(140,100,20,0.25)", color: "#7a5a20", borderRadius: "0.75rem", textDecoration: "none", fontSize: "0.875rem", display: "inline-flex", alignItems: "center", fontWeight: 600 }}>
           Cancelar
         </a>
+        {product && (
+          <button type="button" disabled={deleting}
+            onClick={async () => {
+              if (!confirm(`Excluir "${product.name}"? Esta ação não pode ser desfeita.`)) return;
+              setDeleting(true);
+              const res = await fetch(`/api/admin/produtos/${product.id}`, { method: "DELETE" });
+              if (res.ok) { router.push("/admin/produtos"); }
+              else { setError("Erro ao excluir produto."); setDeleting(false); }
+            }}
+            style={{ marginLeft: "auto", padding: "0.875rem 1.5rem", backgroundColor: deleting ? "#f0d0d0" : "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.25)", borderRadius: "0.75rem", fontWeight: 700, fontSize: "0.875rem", cursor: deleting ? "not-allowed" : "pointer" }}>
+            {deleting ? "Excluindo..." : "🗑️ Excluir Produto"}
+          </button>
+        )}
       </div>
     </div>
   );
