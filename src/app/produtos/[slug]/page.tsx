@@ -22,6 +22,7 @@ export default function ProductPage() {
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedImage, setSelectedImage] = useState(0);
   const [added, setAdded] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
 
   useEffect(() => {
     fetch(`/api/produtos/${params.slug}`)
@@ -82,12 +83,18 @@ export default function ProductPage() {
 
           {/* Galeria */}
           <div>
-            <div style={{ borderRadius: "1.25rem", overflow: "hidden", backgroundColor: "#F0E8D0", aspectRatio: "3/4", border: "1px solid rgba(140,100,20,0.1)", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}>
+            <div onClick={() => images[selectedImage] && setLightbox(true)}
+              style={{ borderRadius: "1.25rem", overflow: "hidden", backgroundColor: "#F0E8D0", aspectRatio: "3/4", border: "1px solid rgba(140,100,20,0.1)", boxShadow: "0 4px 20px rgba(0,0,0,0.08)", cursor: images[selectedImage] ? "zoom-in" : "default", position: "relative" }}>
               {images[selectedImage] ? (
                 <img src={images[selectedImage]} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
               ) : (
                 <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#b8891a", fontSize: "0.875rem", opacity: 0.5 }}>
                   Foto em breve
+                </div>
+              )}
+              {images[selectedImage] && (
+                <div style={{ position: "absolute", bottom: 10, right: 10, backgroundColor: "rgba(0,0,0,0.45)", borderRadius: "0.5rem", padding: "4px 8px", fontSize: "0.65rem", color: "#fff", fontWeight: 700 }}>
+                  🔍 Ampliar
                 </div>
               )}
             </div>
@@ -102,6 +109,44 @@ export default function ProductPage() {
               </div>
             )}
           </div>
+
+          {/* Lightbox */}
+          {lightbox && (
+            <div onClick={() => setLightbox(false)}
+              style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.92)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {/* Fechar */}
+              <button onClick={() => setLightbox(false)}
+                style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 44, height: 44, borderRadius: "50%", fontSize: "1.25rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                ✕
+              </button>
+              {/* Seta esquerda */}
+              {images.length > 1 && (
+                <button onClick={e => { e.stopPropagation(); setSelectedImage(i => (i - 1 + images.length) % images.length); }}
+                  style={{ position: "absolute", left: 16, background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 48, height: 48, borderRadius: "50%", fontSize: "1.5rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  ‹
+                </button>
+              )}
+              {/* Imagem */}
+              <img src={images[selectedImage]} alt={product.name} onClick={e => e.stopPropagation()}
+                style={{ maxHeight: "90vh", maxWidth: "90vw", objectFit: "contain", borderRadius: "0.75rem", boxShadow: "0 8px 40px rgba(0,0,0,0.5)" }} />
+              {/* Seta direita */}
+              {images.length > 1 && (
+                <button onClick={e => { e.stopPropagation(); setSelectedImage(i => (i + 1) % images.length); }}
+                  style={{ position: "absolute", right: 16, background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 48, height: 48, borderRadius: "50%", fontSize: "1.5rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  ›
+                </button>
+              )}
+              {/* Contador */}
+              {images.length > 1 && (
+                <div style={{ position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)", display: "flex", gap: "6px" }}>
+                  {images.map((_, i) => (
+                    <div key={i} onClick={e => { e.stopPropagation(); setSelectedImage(i); }}
+                      style={{ width: i === selectedImage ? 20 : 8, height: 8, borderRadius: "999px", backgroundColor: i === selectedImage ? "#b8891a" : "rgba(255,255,255,0.4)", cursor: "pointer", transition: "width 0.2s" }} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Detalhes */}
           <div>
