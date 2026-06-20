@@ -95,9 +95,11 @@ model Product {
   images      String   @default("[]")
   sizes       String   @default("[]")
   colors      String   @default("[]")
-  stock       Int      @default(0)
-  featured    Boolean  @default(false)
-  active      Boolean  @default(true)
+  stock        Int      @default(0)
+  sku          String?  @unique
+  supplierCode String?
+  featured     Boolean  @default(false)
+  active       Boolean  @default(true)
   categoryId  String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
