@@ -15,7 +15,7 @@ export default async function CadernoDetalhePage({ params }: { params: Promise<{
   const [user, orders] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, phone: true } }),
     prisma.order.findMany({
-      where: { userId, paymentMethod: "caderno" },
+      where: { userId, status: { not: "cancelled" } },
       include: { items: true },
       orderBy: { createdAt: "desc" },
     }),

@@ -11,7 +11,7 @@ export default async function CadernoPage() {
   if (!session || (session.user as any)?.role !== "admin") redirect("/");
 
   const orders = await prisma.order.findMany({
-    where: { paymentMethod: "caderno", paymentStatus: { not: "paid" } },
+    where: { paymentStatus: { not: "paid" }, status: { not: "cancelled" } },
     include: { user: true },
     orderBy: { createdAt: "desc" },
   });

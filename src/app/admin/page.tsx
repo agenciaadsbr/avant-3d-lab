@@ -38,11 +38,11 @@ export default async function AdminPage() {
       where: { status: "try-on", createdAt: { gte: todayStart, lte: todayEnd } },
       include: { user: true },
     }),
-    // Caderno atrasado
+    // Caderno atrasado — todos com saldo em aberto e vencimento passado
     prisma.order.findMany({
       where: {
-        paymentMethod: "caderno",
         paymentStatus: { not: "paid" },
+        status: { not: "cancelled" },
         dueDate: { lt: now },
       },
       include: { user: true },
