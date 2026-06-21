@@ -1,0 +1,198 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useCart } from "@/store/cart";
+import { formatCurrency } from "@/lib/utils";
+import Link from "next/link";
+import Image from "next/image";
+
+const inp = {
+  padding: "0.75rem 1rem",
+  border: "1px solid rgba(140,100,20,0.25)",
+  borderRadius: "0.625rem",
+  fontSize: "0.95rem",
+  backgroundColor: "#fff",
+  outline: "none",
+  width: "100%",
+  boxSizing: "border-box" as const,
+};
+
+export default function CheckoutPage() {
+  const { items, total, clearCart } = useCart();
+  const [skus, setSkus] = useState<Record<string, string>>({});
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [type, setType] = useState<"compra" | "tryon">("compra");
+  const [sent, setSent] = useState(false);
+
+  // Busca SKUs dos produtos no carrinho
+  useEffect(() => {
+    const ids = [...new Set(items.map(i => i.productId))];
+    if (!ids.length) return;
+    fetch(`/api/produtos/skus?ids=${ids.join(",")}`)
+      .then(r => r.json())
+      .then(data => setSkus(data))
+      .catch(() => {});
+  }, [items]);
+
+  const handleWhatsApp = () => {
+    if (!name.trim() || !phone.trim()) return;
+
+    const linhas = items.map(item => {
+      const sku = skus[item.productId] ? `[${skus[item.productId]}] ` : "";
+      const tam = item.size && item.size !== "Único" ? ` — Tam. ${item.size}` : "";
+      const qtd = item.quantity > 1 ? ` × ${item.quantity}` : "";
+      return `👗 ${sku}${item.name}${tam}${qtd} — ${formatCurrency(item.price * item.quantity)}`;
+    }).join("\n");
+
+    const tipoTexto = type === "tryon"
+      ? "🏠 *Home Try-On* — vou experimentar e pagar só o que ficar"
+      : "🛍️ *Compra*";
+
+    const msg = [
+      `Olá! Gostaria de fazer um pedido na *Access Fit* 🌟`,
+      ``,
+      linhas,
+      ``,
+      `💰 *Total: ${formatCurrency(total())}*`,
+      ``,
+      `📋 Tipo: ${tipoTexto}`,
+      `👤 Nome: ${name}`,
+      `📞 Telefone: ${phone}`,
+      city ? `📍 Cidade: ${city}` : "",
+    ].filter(l => l !== undefined).join("\n");
+
+    const url = `https://wa.me/5551986596705?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank");
+    setSent(true);
+    clearCart();
+  };
+
+  if (items.length === 0 && !sent) {
+    return (
+      <div style={{ minHeight: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#FAF6EE", padding: "2rem" }}>
+        <p style={{ fontSize: "1.25rem", fontWeight: 700, color: "#1a1510", marginBottom: "0.5rem" }}>Carrinho vazio</p>
+        <p style={{ color: "#9a8060", marginBottom: "1.5rem" }}>Adicione produtos antes de finalizar.</p>
+        <Link href="/produtos" style={{ backgroundColor: "#b8891a", color: "#fff", padding: "0.75rem 2rem", borderRadius: "0.75rem", textDecoration: "none", fontWeight: 700 }}>
+          Ver coleção
+        </Link>
+      </div>
+    );
+  }
+
+  if (sent) {
+    return (
+      <div style={{ minHeight: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#FAF6EE", padding: "2rem", textAlign: "center" }}>
+        <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>✅</div>
+        <h2 style={{ fontSize: "1.5rem", fontWeight: 900, color: "#1a1510", marginBottom: "0.5rem" }}>Pedido enviado!</h2>
+        <p style={{ color: "#5a4a2a", marginBottom: "0.5rem" }}>Sua mensagem foi aberta no WhatsApp.</p>
+        <p style={{ color: "#9a8060", fontSize: "0.875rem", marginBottom: "2rem" }}>Em breve entraremos em contato para confirmar.</p>
+        <Link href="/produtos" style={{ color: "#b8891a", fontWeight: 700, textDecoration: "none" }}>← Continuar comprando</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ backgroundColor: "#FAF6EE", minHeight: "100vh", padding: "2rem 1.25rem" }}>
+      <div style={{ maxWidth: 880, margin: "0 auto" }}>
+
+        {/* Header */}
+        <div style={{ marginBottom: "2rem" }}>
+          <Link href="/produtos" style={{ color: "#b8891a", fontSize: "0.875rem", textDecoration: "none" }}>← Continuar comprando</Link>
+          <h1 style={{ fontSize: "1.75rem", fontWeight: 900, color: "#1a1510", marginTop: "0.3rem" }}>Finalizar Pedido</h1>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", alignItems: "start" }}>
+
+          {/* Resumo do carrinho */}
+          <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.12)", borderRadius: "1rem", padding: "1.5rem" }}>
+            <h2 style={{ fontWeight: 800, color: "#1a1510", marginBottom: "1.25rem", fontSize: "1rem" }}>🛍️ Seus itens</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginBottom: "1.25rem" }}>
+              {items.map(item => (
+                <div key={item.id} style={{ display: "flex", gap: "0.875rem", alignItems: "center" }}>
+                  <div style={{ width: 56, height: 56, backgroundColor: "#F0E8D0", borderRadius: "0.5rem", overflow: "hidden", flexShrink: 0 }}>
+                    {item.image && <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {skus[item.productId] && (
+                      <p style={{ fontSize: "0.68rem", color: "#b8891a", fontWeight: 700, fontFamily: "monospace" }}>{skus[item.productId]}</p>
+                    )}
+                    <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#1a1510", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</p>
+                    <p style={{ fontSize: "0.75rem", color: "#9a8060" }}>{item.size}{item.quantity > 1 ? ` × ${item.quantity}` : ""}</p>
+                  </div>
+                  <span style={{ fontWeight: 700, color: "#b8891a", whiteSpace: "nowrap" }}>{formatCurrency(item.price * item.quantity)}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ borderTop: "1px solid rgba(140,100,20,0.1)", paddingTop: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontWeight: 700, color: "#1a1510" }}>Total</span>
+              <span style={{ fontWeight: 900, fontSize: "1.25rem", color: "#b8891a" }}>{formatCurrency(total())}</span>
+            </div>
+          </div>
+
+          {/* Formulário */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+
+            {/* Tipo de pedido */}
+            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.12)", borderRadius: "1rem", padding: "1.5rem" }}>
+              <h2 style={{ fontWeight: 800, color: "#1a1510", marginBottom: "1rem", fontSize: "1rem" }}>Como prefere receber?</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+                {[
+                  { value: "compra", emoji: "🛍️", title: "Compra normal", desc: "Recebo e fico com as peças" },
+                  { value: "tryon", emoji: "👗", title: "Home Try-On", desc: "Experimento em casa e pago só o que ficar" },
+                ].map(opt => (
+                  <button key={opt.value} onClick={() => setType(opt.value as any)}
+                    style={{ display: "flex", gap: "0.875rem", alignItems: "center", padding: "0.875rem 1rem", borderRadius: "0.75rem", border: `2px solid ${type === opt.value ? "#b8891a" : "rgba(140,100,20,0.15)"}`, backgroundColor: type === opt.value ? "#fff8e8" : "#FAF6EE", cursor: "pointer", textAlign: "left" }}>
+                    <span style={{ fontSize: "1.5rem" }}>{opt.emoji}</span>
+                    <div>
+                      <p style={{ fontWeight: 700, color: type === opt.value ? "#b8891a" : "#1a1510", fontSize: "0.9rem" }}>{opt.title}</p>
+                      <p style={{ fontSize: "0.75rem", color: "#9a8060", marginTop: "0.1rem" }}>{opt.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Dados */}
+            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.12)", borderRadius: "1rem", padding: "1.5rem" }}>
+              <h2 style={{ fontWeight: 800, color: "#1a1510", marginBottom: "1rem", fontSize: "1rem" }}>Seus dados</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <div>
+                  <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>Nome completo *</label>
+                  <input style={inp} placeholder="Seu nome" value={name} onChange={e => setName(e.target.value)} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>WhatsApp *</label>
+                  <input style={inp} placeholder="(51) 9..." value={phone} onChange={e => setPhone(e.target.value)} />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>Cidade</label>
+                  <input style={inp} placeholder="Sua cidade" value={city} onChange={e => setCity(e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            {/* Botão */}
+            <button onClick={handleWhatsApp} disabled={!name.trim() || !phone.trim()}
+              style={{ backgroundColor: (!name.trim() || !phone.trim()) ? "#d4b870" : "#25D366", color: "#fff", border: "none", borderRadius: "0.875rem", padding: "1rem", fontSize: "1rem", fontWeight: 900, cursor: (!name.trim() || !phone.trim()) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", boxShadow: "0 4px 16px rgba(37,211,102,0.3)" }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              Enviar pelo WhatsApp
+            </button>
+            <p style={{ textAlign: "center", fontSize: "0.75rem", color: "#9a8060" }}>
+              Abrirá o WhatsApp com seu pedido formatado. Nós confirmamos e combinamos a entrega.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @media (max-width: 640px) {
+          div[style*="grid-template-columns: 1fr 1fr"] {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
