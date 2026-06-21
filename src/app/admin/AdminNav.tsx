@@ -2,12 +2,13 @@
 import { usePathname } from "next/navigation";
 
 const links = [
-  { href: "/admin",            label: "Início",      emoji: "🏠" },
-  { href: "/admin/pedidos",    label: "Pedidos",     emoji: "📦" },
-  { href: "/admin/produtos",   label: "Produtos",    emoji: "👗" },
-  { href: "/admin/caderno",    label: "Caderno",     emoji: "📒" },
-  { href: "/admin/clientes",   label: "Clientes",    emoji: "👥" },
-  { href: "/admin/financeiro", label: "Financeiro",  emoji: "💳" },
+  { href: "/admin",             label: "Início",      emoji: "🏠" },
+  { href: "/admin/pedidos",     label: "Pedidos",     emoji: "📦" },
+  { href: "/admin/produtos",    label: "Produtos",    emoji: "👗" },
+  { href: "/admin/caderno",     label: "Caderno",     emoji: "📒" },
+  { href: "/admin/clientes",    label: "Clientes",    emoji: "👥" },
+  { href: "/admin/financeiro",  label: "Financeiro",  emoji: "💳" },
+  { href: "/admin/relatorios",  label: "Relatórios",  emoji: "📊" },
 ];
 
 const Stars = () => (
