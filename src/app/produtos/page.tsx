@@ -46,58 +46,92 @@ export default async function ProdutosPage({
   };
 
   return (
-    <div style={{ backgroundColor: "#FAF6EE", minHeight: "100vh" }}>
+    <div style={{ backgroundColor: "#FAF6EE", minHeight: "100vh", overflowX: "hidden" }}>
 
       {/* Breadcrumb + Título */}
-      <div style={{ backgroundColor: "#fff", borderBottom: "1px solid rgba(140,100,20,0.1)", padding: "1.25rem 2rem" }}>
+      <div style={{ backgroundColor: "#fff", borderBottom: "1px solid rgba(140,100,20,0.1)", padding: "1rem 1.25rem" }}>
         <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-          <p style={{ fontSize: "0.75rem", color: "#9a8060", marginBottom: "0.4rem" }}>
+          <p style={{ fontSize: "0.72rem", color: "#9a8060", marginBottom: "0.4rem" }}>
             <Link href="/" style={{ color: "#b8891a", textDecoration: "none" }}>Início</Link>
             <span style={{ margin: "0 0.4rem" }}>›</span>
             {currentCategory ? (
               <><Link href="/produtos" style={{ color: "#b8891a", textDecoration: "none" }}>Coleção</Link><span style={{ margin: "0 0.4rem" }}>›</span>{currentCategory.name}</>
             ) : "Coleção"}
           </p>
-          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem" }}>
-            <div>
-              <h1 style={{ fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 900, color: "#1a1510", lineHeight: 1.1 }}>
-                {currentCategory ? currentCategory.name : busca ? `"${busca}"` : "Nossa Coleção"}
-              </h1>
-              <p style={{ color: "#9a8060", fontSize: "0.8rem", marginTop: "0.25rem" }}>
-                {products.length} peça{products.length !== 1 ? "s" : ""}
-              </p>
-            </div>
-            {/* Ordenação */}
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ fontSize: "0.78rem", color: "#9a8060", whiteSpace: "nowrap" }}>Ordenar por:</span>
-              {[
-                { label: "Mais recentes", value: "" },
-                { label: "Menor preço", value: "preco_asc" },
-                { label: "Maior preço", value: "preco_desc" },
-                { label: "Nome", value: "nome" },
-              ].map(o => (
-                <Link key={o.value} href={buildUrl({ ordem: o.value || undefined })}
-                  style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem", borderRadius: "999px", textDecoration: "none", fontWeight: 600, backgroundColor: (ordem || "") === o.value ? "#1a1510" : "#FAF6EE", color: (ordem || "") === o.value ? "#FAF6EE" : "#9a8060", border: "1px solid rgba(140,100,20,0.15)" }}>
-                  {o.label}
-                </Link>
-              ))}
-            </div>
-          </div>
+          <h1 style={{ fontSize: "clamp(1.25rem, 3vw, 2rem)", fontWeight: 900, color: "#1a1510", lineHeight: 1.1 }}>
+            {currentCategory ? currentCategory.name : busca ? `"${busca}"` : "Nossa Coleção"}
+          </h1>
+          <p style={{ color: "#9a8060", fontSize: "0.78rem", marginTop: "0.2rem" }}>
+            {products.length} peça{products.length !== 1 ? "s" : ""}
+          </p>
         </div>
       </div>
 
-      {/* Mobile: categorias scroll */}
-      <div style={{ display: "flex", gap: "0.5rem", overflowX: "auto", padding: "0.875rem 1.25rem", borderBottom: "1px solid rgba(140,100,20,0.08)" }} className="hide-desktop">
-        <Link href={buildUrl({ categoria: undefined })}
-          style={{ flexShrink: 0, padding: "0.4rem 1rem", borderRadius: "999px", fontSize: "0.8rem", fontWeight: 700, textDecoration: "none", backgroundColor: !categoria ? "#b8891a" : "#fff", color: !categoria ? "#fff" : "#7a6030", border: !categoria ? "none" : "1px solid rgba(140,100,20,0.2)" }}>
-          Todos
-        </Link>
-        {categories.map(cat => (
-          <Link key={cat.id} href={buildUrl({ categoria: cat.slug })}
-            style={{ flexShrink: 0, padding: "0.4rem 1rem", borderRadius: "999px", fontSize: "0.8rem", fontWeight: 700, textDecoration: "none", backgroundColor: categoria === cat.slug ? "#b8891a" : "#fff", color: categoria === cat.slug ? "#fff" : "#7a6030", border: categoria === cat.slug ? "none" : "1px solid rgba(140,100,20,0.2)" }}>
-            {cat.name}
+      {/* Mobile: filtros em scroll horizontal */}
+      <div className="hide-desktop" style={{ borderBottom: "1px solid rgba(140,100,20,0.08)" }}>
+        {/* Categorias */}
+        <div style={{ display: "flex", gap: "0.5rem", overflowX: "auto", padding: "0.75rem 1.25rem 0", WebkitOverflowScrolling: "touch" }}>
+          <Link href={buildUrl({ categoria: undefined })}
+            style={{ flexShrink: 0, padding: "0.4rem 0.875rem", borderRadius: "999px", fontSize: "0.78rem", fontWeight: 700, textDecoration: "none", backgroundColor: !categoria ? "#b8891a" : "#fff", color: !categoria ? "#fff" : "#7a6030", border: !categoria ? "none" : "1px solid rgba(140,100,20,0.2)" }}>
+            Todos
           </Link>
-        ))}
+          {categories.map(cat => (
+            <Link key={cat.id} href={buildUrl({ categoria: cat.slug })}
+              style={{ flexShrink: 0, padding: "0.4rem 0.875rem", borderRadius: "999px", fontSize: "0.78rem", fontWeight: 700, textDecoration: "none", backgroundColor: categoria === cat.slug ? "#b8891a" : "#fff", color: categoria === cat.slug ? "#fff" : "#7a6030", border: categoria === cat.slug ? "none" : "1px solid rgba(140,100,20,0.2)" }}>
+              {cat.name}
+            </Link>
+          ))}
+        </div>
+        {/* Tamanhos mobile */}
+        {allSizes.length > 0 && (
+          <div style={{ display: "flex", gap: "0.4rem", overflowX: "auto", padding: "0.5rem 1.25rem 0.75rem", WebkitOverflowScrolling: "touch" }}>
+            {tamanho && (
+              <Link href={buildUrl({ tamanho: undefined })}
+                style={{ flexShrink: 0, padding: "0.3rem 0.75rem", borderRadius: "999px", fontSize: "0.75rem", fontWeight: 700, textDecoration: "none", backgroundColor: "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.2)" }}>
+                ✕ {tamanho}
+              </Link>
+            )}
+            {allSizes.map(s => (
+              <Link key={s} href={buildUrl({ tamanho: tamanho === s ? undefined : s })}
+                style={{ flexShrink: 0, padding: "0.3rem 0.75rem", borderRadius: "999px", fontSize: "0.75rem", fontWeight: 700, textDecoration: "none", backgroundColor: tamanho === s ? "#1a1510" : "#fff", color: tamanho === s ? "#fff" : "#5a4a2a", border: `1px solid ${tamanho === s ? "#1a1510" : "rgba(140,100,20,0.2)"}` }}>
+                {s}
+              </Link>
+            ))}
+          </div>
+        )}
+        {/* Ordenação mobile */}
+        <div style={{ display: "flex", gap: "0.4rem", overflowX: "auto", padding: "0 1.25rem 0.75rem", WebkitOverflowScrolling: "touch" }}>
+          <span style={{ fontSize: "0.72rem", color: "#9a8060", flexShrink: 0, alignSelf: "center" }}>Ordem:</span>
+          {[
+            { label: "Recentes", value: "" },
+            { label: "↑ Preço", value: "preco_asc" },
+            { label: "↓ Preço", value: "preco_desc" },
+            { label: "Nome", value: "nome" },
+          ].map(o => (
+            <Link key={o.value} href={buildUrl({ ordem: o.value || undefined })}
+              style={{ flexShrink: 0, fontSize: "0.75rem", padding: "0.3rem 0.75rem", borderRadius: "999px", textDecoration: "none", fontWeight: 600, backgroundColor: (ordem || "") === o.value ? "#1a1510" : "#fff", color: (ordem || "") === o.value ? "#fff" : "#9a8060", border: "1px solid rgba(140,100,20,0.15)" }}>
+              {o.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop: título + ordenação */}
+      <div className="hide-mobile" style={{ backgroundColor: "#fff", borderBottom: "1px solid rgba(140,100,20,0.08)", padding: "0.75rem 2rem" }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "0.5rem" }}>
+          <span style={{ fontSize: "0.78rem", color: "#9a8060", whiteSpace: "nowrap" }}>Ordenar por:</span>
+          {[
+            { label: "Mais recentes", value: "" },
+            { label: "Menor preço", value: "preco_asc" },
+            { label: "Maior preço", value: "preco_desc" },
+            { label: "Nome", value: "nome" },
+          ].map(o => (
+            <Link key={o.value} href={buildUrl({ ordem: o.value || undefined })}
+              style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem", borderRadius: "999px", textDecoration: "none", fontWeight: 600, backgroundColor: (ordem || "") === o.value ? "#1a1510" : "#FAF6EE", color: (ordem || "") === o.value ? "#FAF6EE" : "#9a8060", border: "1px solid rgba(140,100,20,0.15)" }}>
+              {o.label}
+            </Link>
+          ))}
+        </div>
       </div>
 
       <div style={{ maxWidth: 1400, margin: "0 auto", padding: "1.5rem 1.5rem", display: "flex", gap: "2rem", alignItems: "flex-start" }}>
