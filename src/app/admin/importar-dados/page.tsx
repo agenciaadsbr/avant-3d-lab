@@ -6,6 +6,14 @@ export default function ImportarDadosPage() {
   const [result, setResult] = useState<any>(null);
   const [rolling, setRolling] = useState(false);
 
+  const migrarCartao = async () => {
+    setLoading(true);
+    const res = await fetch("/api/admin/despesas/migrar-cartao", { method: "POST" });
+    const data = await res.json();
+    setResult({ ...data, isMigrarCartao: true });
+    setLoading(false);
+  };
+
   const resetCompleto = async () => {
     if (!confirm("ATENÇÃO: Isso apaga TODOS os produtos, pedidos e gastos. Clientes, categorias e fornecedores ficam. Confirma?")) return;
     setLoading(true);
@@ -56,6 +64,10 @@ export default function ImportarDadosPage() {
             <li>✅ Importar <strong>93 vendas</strong> históricas</li>
             <li>✅ Criar clientes novos automaticamente</li>
           </ul>
+          <button onClick={migrarCartao} disabled={loading}
+            style={{ backgroundColor: "#f0e8ff", border: "1px solid rgba(106,48,184,0.25)", color: "#6a30b8", borderRadius: "0.75rem", padding: "0.75rem 2rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer", width: "100%", marginBottom: "0.75rem" }}>
+            💳 Migrar gastos do cartão (adiciona vencimento dia 10)
+          </button>
           <button onClick={resetCompleto} disabled={loading}
             style={{ backgroundColor: "#1a1510", color: "#fff", border: "none", borderRadius: "0.75rem", padding: "0.75rem 2rem", fontSize: "0.9rem", fontWeight: 700, cursor: "pointer", width: "100%", marginBottom: "0.75rem" }}>
             ⚠️ Reset completo (produtos, pedidos e gastos)
@@ -87,6 +99,11 @@ export default function ImportarDadosPage() {
                 {rolling ? "Desfazendo..." : "↩ Desfazer importação"}
               </button>
             </>
+          )}
+          {result.isMigrarCartao && (
+            <p style={{ color: "#6a30b8", fontSize: "0.9rem" }}>
+              💳 <strong>{result.updated}</strong> despesas do cartão atualizadas com vencimento dia 10!
+            </p>
           )}
           {result.isReset && (
             <p style={{ color: "#1a6a2a", fontSize: "0.9rem" }}>
