@@ -66,10 +66,13 @@ export default function FinanceiroPage() {
   const [filterSupplier, setFilterSupplier] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
 
-  // Filtros cartão
-  const nm = nextMonthRange();
-  const [cardFrom, setCardFrom] = useState(nm.from);
-  const [cardTo, setCardTo] = useState(nm.to);
+  // Filtros cartão — por mês (YYYY-MM)
+  const nowDate = new Date();
+  const nextM = new Date(nowDate.getFullYear(), nowDate.getMonth() + 1, 1);
+  const [cardMonth, setCardMonth] = useState(`${nextM.getFullYear()}-${String(nextM.getMonth() + 1).padStart(2, "0")}`);
+
+  const cardFrom = `${cardMonth}-01`;
+  const cardTo = (() => { const [y, m] = cardMonth.split("-").map(Number); return `${y}-${String(m).padStart(2,"0")}-${new Date(y, m, 0).getDate()}`; })();
 
   // Formulário nova despesa
   const [showForm, setShowForm] = useState(false);
@@ -101,7 +104,16 @@ export default function FinanceiroPage() {
   const loadCardExpenses = useCallback(async () => {
     const params = new URLSearchParams({ cartao: "1", from: cardFrom, to: cardTo });
     const res = await fetch(`/api/admin/despesas?${params}`);
-    if (res.ok) { const data = await res.json(); setCardExpenses(data.expenses); setCardTotal(data.total); }
+    if (res.ok) {
+      const data = await res.json();
+      setCardExpenses(data.expenses);
+      // Total usando valor por parcela
+      const t = data.expenses.reduce((s: number, e: Expense) => {
+        const p = e.installments && e.installments > 1 ? e.installments : 1;
+        return s + e.amount / p;
+      }, 0);
+      setCardTotal(t);
+    }
   }, [cardFrom, cardTo]);
 
   const loadSuppliers = async () => {
@@ -231,17 +243,13 @@ export default function FinanceiroPage() {
         <div>
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end", marginBottom: "1.5rem", backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1rem 1.25rem" }}>
             <div>
-              <label style={{ fontSize: "0.7rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>FATURA DE</label>
-              <input type="date" value={cardFrom} onChange={e => setCardFrom(e.target.value)} style={{ ...inp(), width: 160 }} />
-            </div>
-            <div>
-              <label style={{ fontSize: "0.7rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>ATÉ</label>
-              <input type="date" value={cardTo} onChange={e => setCardTo(e.target.value)} style={{ ...inp(), width: 160 }} />
+              <label style={{ fontSize: "0.7rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>MÊS DA FATURA</label>
+              <input type="month" value={cardMonth} onChange={e => setCardMonth(e.target.value)} style={{ ...inp(), width: 180 }} />
             </div>
             <div style={{ display: "flex", gap: "0.5rem" }}>
               {[
-                { label: "Este mês", fn: () => { setCardFrom(firstOfMonth()); setCardTo(today()); } },
-                { label: "Próximo mês", fn: () => { const n = nextMonthRange(); setCardFrom(n.from); setCardTo(n.to); } },
+                { label: "Mês atual", fn: () => setCardMonth(`${nowDate.getFullYear()}-${String(nowDate.getMonth() + 1).padStart(2, "0")}`) },
+                { label: "Próximo mês", fn: () => setCardMonth(`${nextM.getFullYear()}-${String(nextM.getMonth() + 1).padStart(2, "0")}`) },
               ].map(b => (
                 <button key={b.label} onClick={b.fn} style={{ backgroundColor: "#f0e8ff", border: "1px solid rgba(106,48,184,0.2)", color: "#6a30b8", fontWeight: 700, fontSize: "0.78rem", padding: "0.5rem 0.875rem", borderRadius: "0.625rem", cursor: "pointer" }}>
                   {b.label}
@@ -272,6 +280,8 @@ export default function FinanceiroPage() {
                   <tr><td colSpan={5} style={{ textAlign: "center", padding: "2rem", color: "#b8a080" }}>Nenhuma despesa no cartão neste período.</td></tr>
                 ) : cardExpenses.map(e => {
                   const isOverdue = e.dueDate && new Date(e.dueDate) < new Date();
+                  const parcelas = e.installments && e.installments > 1 ? e.installments : 1;
+                  const valorParcela = e.amount / parcelas;
                   return (
                     <tr key={e.id} style={{ borderBottom: "1px solid rgba(106,48,184,0.06)", backgroundColor: isOverdue ? "#fff0f0" : "transparent" }}>
                       <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem" }}>{new Date(e.date).toLocaleDateString("pt-BR")}</td>
@@ -281,9 +291,9 @@ export default function FinanceiroPage() {
                       </td>
                       <td style={{ padding: "0.75rem 1rem", color: "#1a1510", fontWeight: 600 }}>{e.description}</td>
                       <td style={{ padding: "0.75rem 1rem", color: "#6a30b8", fontSize: "0.78rem" }}>
-                        {e.installments && e.installments > 1 ? `${e.installmentNumber}/${e.installments}` : "À vista"}
+                        {parcelas > 1 ? `${e.installmentNumber || 1}/${parcelas}` : "À vista"}
                       </td>
-                      <td style={{ padding: "0.75rem 1rem", color: "#c04040", fontWeight: 700 }}>-{fmt(e.amount)}</td>
+                      <td style={{ padding: "0.75rem 1rem", color: "#c04040", fontWeight: 700 }}>-{fmt(valorParcela)}</td>
                     </tr>
                   );
                 })}
