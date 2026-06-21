@@ -10,7 +10,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const { id } = await params;
   const body = await req.json();
-  const { date, description, amount, category, paymentMethod, supplierId, notes } = body;
+  const { date, description, amount, category, paymentMethod, supplierId, notes, dueDate, installments } = body;
+
   const expense = await prisma.expense.update({
     where: { id },
     data: {
@@ -19,6 +20,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       category, paymentMethod,
       supplierId: supplierId || null,
       notes: notes || null,
+      dueDate: dueDate ? new Date(dueDate) : null,
+      installments: parseInt(installments) || 1,
     },
     include: { supplier: { select: { id: true, name: true } } },
   });
