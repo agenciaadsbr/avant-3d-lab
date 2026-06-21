@@ -6,6 +6,11 @@ import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
 
+const PAY_LABELS: Record<string, string> = {
+  pix: "Pix", cartao: "Cartão de crédito/débito",
+  dinheiro: "Dinheiro", link: "Link de Pagamento",
+};
+
 const inp = {
   padding: "0.75rem 1rem",
   border: "1px solid rgba(140,100,20,0.25)",
@@ -24,6 +29,7 @@ export default function CheckoutPage() {
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [type, setType] = useState<"compra" | "tryon">("compra");
+  const [payMethod, setPayMethod] = useState("pix");
   const [sent, setSent] = useState(false);
   // Campos Home Try-On
   const [cpf, setCpf] = useState("");
@@ -75,6 +81,7 @@ export default function CheckoutPage() {
       `📞 Telefone: ${phone}`,
       type === "tryon" && cpf ? `🪪 CPF: ${cpf}` : "",
       type === "tryon" ? `📍 Endereço: ${enderecoCompleto}` : city ? `📍 Cidade: ${city}` : "",
+      type === "compra" ? `💳 Pagamento: ${PAY_LABELS[payMethod] || payMethod}` : "",
       type === "tryon" ? `\n✅ *Li e aceito os termos do Home Try-On:*\n• Devolverei as peças em até 48h caso não queira ficar\n• Peças com avaria, sem etiqueta ou lavadas serão cobradas integralmente` : "",
     ].filter(Boolean).join("\n");
 
@@ -183,6 +190,20 @@ export default function CheckoutPage() {
                   <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>WhatsApp *</label>
                   <input style={inp} placeholder="(51) 9..." value={phone} onChange={e => setPhone(e.target.value)} />
                 </div>
+
+                {type === "compra" && (
+                  <div>
+                    <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>Forma de pagamento *</label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                      {Object.entries(PAY_LABELS).map(([val, label]) => (
+                        <button key={val} type="button" onClick={() => setPayMethod(val)}
+                          style={{ padding: "0.6rem 0.5rem", borderRadius: "0.625rem", border: `2px solid ${payMethod === val ? "#b8891a" : "rgba(140,100,20,0.15)"}`, backgroundColor: payMethod === val ? "#fff8e8" : "#FAF6EE", cursor: "pointer", fontSize: "0.82rem", fontWeight: 700, color: payMethod === val ? "#b8891a" : "#5a4a2a", textAlign: "center" }}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {type === "tryon" ? (
                   <>
