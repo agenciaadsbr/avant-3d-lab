@@ -25,6 +25,15 @@ export default function CheckoutPage() {
   const [city, setCity] = useState("");
   const [type, setType] = useState<"compra" | "tryon">("compra");
   const [sent, setSent] = useState(false);
+  // Campos Home Try-On
+  const [cpf, setCpf] = useState("");
+  const [street, setStreet] = useState("");
+  const [number, setNumber] = useState("");
+  const [complement, setComplement] = useState("");
+  const [neighborhood, setNeighborhood] = useState("");
+  const [state, setState] = useState("");
+  const [cep, setCep] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Busca SKUs dos produtos no carrinho
   useEffect(() => {
@@ -47,8 +56,12 @@ export default function CheckoutPage() {
     }).join("\n");
 
     const tipoTexto = type === "tryon"
-      ? "🏠 *Home Try-On* — vou experimentar e pagar só o que ficar"
+      ? "🏠 *Home Try-On* — experimentar em casa (48h para devolução)"
       : "🛍️ *Compra*";
+
+    const enderecoCompleto = type === "tryon"
+      ? `${street}, ${number}${complement ? ` - ${complement}` : ""}, ${neighborhood}, ${city} - ${state}, CEP: ${cep}`
+      : "";
 
     const msg = [
       `Olá! Gostaria de fazer um pedido na *Access Fit* 🌟`,
@@ -60,8 +73,10 @@ export default function CheckoutPage() {
       `📋 Tipo: ${tipoTexto}`,
       `👤 Nome: ${name}`,
       `📞 Telefone: ${phone}`,
-      city ? `📍 Cidade: ${city}` : "",
-    ].filter(l => l !== undefined).join("\n");
+      type === "tryon" && cpf ? `🪪 CPF: ${cpf}` : "",
+      type === "tryon" ? `📍 Endereço: ${enderecoCompleto}` : city ? `📍 Cidade: ${city}` : "",
+      type === "tryon" ? `\n✅ *Li e aceito os termos do Home Try-On:*\n• Devolverei as peças em até 48h caso não queira ficar\n• Peças com avaria, sem etiqueta ou lavadas serão cobradas integralmente` : "",
+    ].filter(Boolean).join("\n");
 
     const url = `https://wa.me/5551986596705?text=${encodeURIComponent(msg)}`;
     window.open(url, "_blank");
@@ -156,26 +171,98 @@ export default function CheckoutPage() {
 
             {/* Dados */}
             <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.12)", borderRadius: "1rem", padding: "1.5rem" }}>
-              <h2 style={{ fontWeight: 800, color: "#1a1510", marginBottom: "1rem", fontSize: "1rem" }}>Seus dados</h2>
+              <h2 style={{ fontWeight: 800, color: "#1a1510", marginBottom: "1rem", fontSize: "1rem" }}>
+                {type === "tryon" ? "📋 Cadastro Home Try-On" : "Seus dados"}
+              </h2>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 <div>
                   <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>Nome completo *</label>
-                  <input style={inp} placeholder="Seu nome" value={name} onChange={e => setName(e.target.value)} />
+                  <input style={inp} placeholder="Seu nome completo" value={name} onChange={e => setName(e.target.value)} />
                 </div>
                 <div>
                   <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>WhatsApp *</label>
                   <input style={inp} placeholder="(51) 9..." value={phone} onChange={e => setPhone(e.target.value)} />
                 </div>
-                <div>
-                  <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>Cidade</label>
-                  <input style={inp} placeholder="Sua cidade" value={city} onChange={e => setCity(e.target.value)} />
-                </div>
+
+                {type === "tryon" ? (
+                  <>
+                    <div>
+                      <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>CPF *</label>
+                      <input style={inp} placeholder="000.000.000-00" value={cpf} onChange={e => setCpf(e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>CEP *</label>
+                      <input style={inp} placeholder="00000-000" value={cep} onChange={e => setCep(e.target.value)} />
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "0.5rem" }}>
+                      <div>
+                        <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>Rua / Avenida *</label>
+                        <input style={inp} placeholder="Nome da rua" value={street} onChange={e => setStreet(e.target.value)} />
+                      </div>
+                      <div style={{ width: 90 }}>
+                        <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>Número *</label>
+                        <input style={inp} placeholder="Nº" value={number} onChange={e => setNumber(e.target.value)} />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>Complemento</label>
+                      <input style={inp} placeholder="Apto, bloco..." value={complement} onChange={e => setComplement(e.target.value)} />
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                      <div>
+                        <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>Bairro *</label>
+                        <input style={inp} placeholder="Bairro" value={neighborhood} onChange={e => setNeighborhood(e.target.value)} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>Estado *</label>
+                        <input style={inp} placeholder="RS" value={state} onChange={e => setState(e.target.value)} maxLength={2} />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>Cidade *</label>
+                      <input style={inp} placeholder="Sua cidade" value={city} onChange={e => setCity(e.target.value)} />
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <label style={{ fontSize: "0.78rem", fontWeight: 700, color: "#7a6030", display: "block", marginBottom: "0.3rem" }}>Cidade</label>
+                    <input style={inp} placeholder="Sua cidade" value={city} onChange={e => setCity(e.target.value)} />
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* Termos Home Try-On */}
+            {type === "tryon" && (
+              <div style={{ backgroundColor: "#fff8e1", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "1rem", padding: "1.25rem" }}>
+                <p style={{ fontWeight: 800, color: "#5a3a00", fontSize: "0.9rem", marginBottom: "0.75rem" }}>⚠️ Termos do Home Try-On</p>
+                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
+                  {[
+                    "Você tem até 48h para experimentar e devolver as peças que não quiser",
+                    "As peças devem ser devolvidas com etiqueta, sem avarias e sem sinais de uso",
+                    "Peças com avaria, manchas, sem etiqueta ou lavadas serão cobradas integralmente",
+                    "O pagamento das peças que ficarem é combinado no ato da devolução",
+                    "A Access Fit reserva o direito de cobrar pela peça em caso de não devolução no prazo",
+                  ].map((t, i) => (
+                    <li key={i} style={{ display: "flex", gap: "0.5rem", fontSize: "0.8rem", color: "#5a3a00", lineHeight: 1.5 }}>
+                      <span style={{ color: "#b8891a", flexShrink: 0 }}>•</span> {t}
+                    </li>
+                  ))}
+                </ul>
+                <label style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", cursor: "pointer" }}>
+                  <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)}
+                    style={{ width: 18, height: 18, marginTop: 2, accentColor: "#b8891a", flexShrink: 0, cursor: "pointer" }} />
+                  <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#1a1510", lineHeight: 1.5 }}>
+                    Li e aceito os termos do Home Try-On e me comprometo a devolver as peças dentro do prazo
+                  </span>
+                </label>
+              </div>
+            )}
+
             {/* Botão */}
-            <button onClick={handleWhatsApp} disabled={!name.trim() || !phone.trim()}
-              style={{ backgroundColor: (!name.trim() || !phone.trim()) ? "#d4b870" : "#25D366", color: "#fff", border: "none", borderRadius: "0.875rem", padding: "1rem", fontSize: "1rem", fontWeight: 900, cursor: (!name.trim() || !phone.trim()) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", boxShadow: "0 4px 16px rgba(37,211,102,0.3)" }}>
+            <button onClick={handleWhatsApp}
+              disabled={!name.trim() || !phone.trim() || (type === "tryon" && (!cpf.trim() || !street.trim() || !number.trim() || !neighborhood.trim() || !city.trim() || !cep.trim() || !termsAccepted))}
+              style={{ backgroundColor: (!name.trim() || !phone.trim() || (type === "tryon" && (!cpf.trim() || !street.trim() || !number.trim() || !neighborhood.trim() || !city.trim() || !cep.trim() || !termsAccepted))) ? "#d4b870" : "#25D366", color: "#fff", border: "none", borderRadius: "0.875rem", padding: "1rem", fontSize: "1rem", fontWeight: 900, cursor: (!name.trim() || !phone.trim()) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", boxShadow: "0 4px 16px rgba(37,211,102,0.3)" }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
               Enviar pelo WhatsApp
             </button>
