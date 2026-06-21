@@ -2,7 +2,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
-type OrderItem = { id: string; quantity: number; price: number; size?: string; product: { id: string; name: string; costPrice?: number | null } };
+type OrderItem = { id: string; quantity: number; price: number; size?: string; costPrice?: number | null; product: { id: string; name: string; costPrice?: number | null } };
 type Installment = { id: string; number: number; amount: number; dueDate: string; status: string; paidAt?: string | null };
 type Order = {
   id: string; status: string; paymentStatus: string; paymentMethod: string; amountPaid: number;
@@ -79,6 +79,8 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const [editDueDate, setEditDueDate] = useState("");
   const [editInstallments, setEditInstallments] = useState(1);
   const [togglingInstallment, setTogglingInstallment] = useState<string | null>(null);
+  const [editingItemCost, setEditingItemCost] = useState<string | null>(null);
+  const [itemCostValue, setItemCostValue] = useState("");
   const [editingInstallmentId, setEditingInstallmentId] = useState<string | null>(null);
   const [editInstallmentDate, setEditInstallmentDate] = useState("");
   const [editInstallmentAmount, setEditInstallmentAmount] = useState("");
@@ -106,7 +108,11 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const activeFiltered = filtered.filter(o => o.status !== "cancelled");
   const totalReceita = activeFiltered.reduce((s, o) => s + o.total, 0);
   const totalCusto = activeFiltered.reduce((s, o) =>
-    s + o.items.reduce((si, item) => si + (item.product.costPrice ?? item.price * 0.55) * item.quantity, 0), 0);
+    s + o.items.reduce((si, item) => si + (item.costPrice ?? item.product.costPrice ?? null) !== null
+      ? (item.costPrice ?? item.product.costPrice ?? 0) * item.quantity
+      : 0, 0), 0);
+  const itemsComCusto = activeFiltered.flatMap(o => o.items).filter(i => (i.costPrice ?? i.product.costPrice) !== null).length;
+  const totalItems = activeFiltered.flatMap(o => o.items).length;
   const lucroLiquido = totalReceita - totalCusto;
   const margemLucro = totalReceita > 0 ? (lucroLiquido / totalReceita) * 100 : 0;
   const totalEmAberto = filtered.filter(o => o.paymentStatus !== "paid").reduce((s, o) => s + (o.total - o.amountPaid), 0);
@@ -148,6 +154,20 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
       setLocalOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updated } : o));
     }
     setEditingPayment(null);
+  };
+
+  const saveItemCost = async (orderId: string, itemId: string) => {
+    const res = await fetch(`/api/admin/order-items/${itemId}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ costPrice: itemCostValue }),
+    });
+    if (res.ok) {
+      const cost = parseFloat(itemCostValue) || null;
+      setLocalOrders(prev => prev.map(o => o.id === orderId ? {
+        ...o, items: o.items.map(i => i.id === itemId ? { ...i, costPrice: cost } : i)
+      } : o));
+    }
+    setEditingItemCost(null);
   };
 
   const toggleInstallment = async (orderId: string, installmentId: string, currentStatus: string) => {
@@ -223,7 +243,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
         {[
           { emoji: "🛍️", label: "Total de Pedidos", value: filtered.length, gold: false },
           { emoji: "💰", label: "Receita", value: fmt(totalReceita), gold: true },
-          { emoji: "📈", label: "Lucro Líquido", value: fmt(lucroLiquido), gold: false, lucro: true, sub: `${margemLucro.toFixed(1)}% de margem` },
+          { emoji: "📈", label: "Lucro Líquido", value: fmt(lucroLiquido), gold: false, lucro: true, sub: itemsComCusto < totalItems ? `${margemLucro.toFixed(1)}% margem (${itemsComCusto}/${totalItems} itens)` : `${margemLucro.toFixed(1)}% de margem` },
           { emoji: "⏳", label: "Em Aberto", value: fmt(totalEmAberto), gold: false, warn: totalEmAberto > 0 },
           { emoji: "📒", label: "Caderno na Rua", value: fmt(cadernoTotal), gold: false, caderno: cadernoTotal > 0 },
           { emoji: "✅", label: "Entregues", value: filtered.filter(o => o.status === "delivered").length, gold: false },
@@ -377,12 +397,40 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                             {/* Itens */}
                             <div style={{ backgroundColor: "#fff", borderRadius: "0.75rem", padding: "1rem", border: "1px solid rgba(140,100,20,0.08)" }}>
                               <p style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.8rem", marginBottom: "0.75rem" }}>Itens do Pedido</p>
-                              {order.items.map(item => (
-                                <div key={item.id} style={{ display: "flex", justifyContent: "space-between", padding: "0.35rem 0", borderBottom: "1px solid rgba(140,100,20,0.06)", fontSize: "0.8rem" }}>
-                                  <span style={{ color: "#3a2a10" }}>{item.size ? `${item.product.name} (${item.size})` : item.product.name}</span>
-                                  <span style={{ color: "#1a1510", fontWeight: 700 }}>{fmt(item.price)}</span>
-                                </div>
-                              ))}
+                              {order.items.map(item => {
+                                const custo = item.costPrice ?? item.product.costPrice ?? null;
+                                const isEditingCost = editingItemCost === item.id;
+                                return (
+                                  <div key={item.id} style={{ padding: "0.4rem 0", borderBottom: "1px solid rgba(140,100,20,0.06)", fontSize: "0.8rem" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                      <span style={{ color: "#3a2a10" }}>{item.size ? `${item.product.name} (${item.size})` : item.product.name}</span>
+                                      <span style={{ color: "#1a1510", fontWeight: 700 }}>{fmt(item.price)}</span>
+                                    </div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "0.2rem" }}>
+                                      {isEditingCost ? (
+                                        <>
+                                          <input type="number" step="0.01" placeholder="Custo R$" value={itemCostValue}
+                                            onChange={e => setItemCostValue(e.target.value)}
+                                            style={{ ...inp, fontSize: "0.7rem", padding: "0.2rem 0.5rem", width: 90 }} />
+                                          <button onClick={() => saveItemCost(order.id, item.id)}
+                                            style={{ fontSize: "0.65rem", fontWeight: 700, padding: "0.2rem 0.5rem", backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.4rem", cursor: "pointer" }}>
+                                            Salvar
+                                          </button>
+                                          <button onClick={() => setEditingItemCost(null)}
+                                            style={{ fontSize: "0.65rem", color: "#9a8060", background: "none", border: "none", cursor: "pointer" }}>
+                                            ✕
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <button onClick={() => { setEditingItemCost(item.id); setItemCostValue(custo?.toString() ?? ""); }}
+                                          style={{ fontSize: "0.65rem", color: custo ? "#1a8a2a" : "#c04040", background: "none", border: "none", cursor: "pointer", fontWeight: 700 }}>
+                                          {custo ? `custo: ${fmt(custo)}` : "+ Inserir custo"}
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                               <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.5rem", fontWeight: 900, fontSize: "0.875rem" }}>
                                 <span style={{ color: "#1a1510" }}>Total</span>
                                 <span style={{ color: "#b8891a" }}>{fmt(order.total)}</span>
