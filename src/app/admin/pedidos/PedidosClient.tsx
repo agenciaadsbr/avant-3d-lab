@@ -273,7 +273,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
               ? new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
               : p.days === 0
                 ? now.toISOString().slice(0, 10)
-                : new Date(now.getTime() - p.days * 86400000).toISOString().slice(0, 10);
+                : new Date(now.getTime() - (p.days ?? 0) * 86400000).toISOString().slice(0, 10);
             const to = now.toISOString().slice(0, 10);
             const active = dateFrom === from && dateTo === to;
             return (
