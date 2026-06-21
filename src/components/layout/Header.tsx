@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { ShoppingBag, User, Menu, X } from "lucide-react";
+import { ShoppingBag, User, Menu, X, Search } from "lucide-react";
 import { useCart } from "@/store/cart";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const navLinks = [
   { href: "/produtos", label: "Coleção" },
@@ -19,10 +20,22 @@ const navLinks = [
 export default function Header() {
   const { data: session } = useSession();
   const { count, openCart } = useCart();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [mounted, setMounted] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
   useEffect(() => setMounted(true), []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    router.push(`/produtos?busca=${encodeURIComponent(searchQuery.trim())}`);
+    setSearchOpen(false);
+    setSearchQuery("");
+  };
 
   return (
     <>
@@ -64,6 +77,26 @@ export default function Header() {
 
           {/* Actions */}
           <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+
+            {/* Busca */}
+            <form onSubmit={handleSearch} style={{ display: "flex", alignItems: "center" }}>
+              {searchOpen && (
+                <input
+                  ref={searchRef}
+                  autoFocus
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onBlur={() => { if (!searchQuery) setSearchOpen(false); }}
+                  placeholder="Buscar produto..."
+                  style={{ width: 180, padding: "0.4rem 0.75rem", border: "1px solid rgba(184,137,26,0.35)", borderRadius: "999px", fontSize: "0.82rem", backgroundColor: "#FAF6EE", outline: "none", color: "#1a1510" }}
+                />
+              )}
+              <button type={searchOpen ? "submit" : "button"}
+                onClick={() => { setSearchOpen(true); setTimeout(() => searchRef.current?.focus(), 50); }}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: "10px", color: "#7a6030", display: "flex", alignItems: "center", borderRadius: "0.5rem" }}>
+                <Search size={20} />
+              </button>
+            </form>
 
             {/* User dropdown */}
             <div style={{ position: "relative" }}>
@@ -140,6 +173,17 @@ export default function Header() {
         {/* Mobile nav */}
         {menuOpen && (
           <div style={{ backgroundColor: "#F5EFE2", borderTop: "1px solid rgba(140,100,20,0.1)", padding: "0.5rem 1rem 1rem" }}>
+            <form onSubmit={handleSearch} style={{ display: "flex", gap: "0.5rem", padding: "0.5rem 0 0.75rem", borderBottom: "1px solid rgba(140,100,20,0.08)" }}>
+              <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Buscar produto..."
+                style={{ flex: 1, padding: "0.5rem 0.875rem", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "999px", fontSize: "0.875rem", backgroundColor: "#fff", outline: "none" }}
+              />
+              <button type="submit" style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "999px", padding: "0.5rem 1rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}>
+                Buscar
+              </button>
+            </form>
             {navLinks.map((link) => (
               <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}
                 style={{ display: "block", padding: "0.75rem 0.5rem", color: "#5a4020", fontSize: "0.95rem", fontWeight: 600, textDecoration: "none", borderBottom: "1px solid rgba(140,100,20,0.06)" }}>
