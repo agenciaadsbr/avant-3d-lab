@@ -2,7 +2,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
-type OrderItem = { id: string; quantity: number; price: number; size?: string; product: { id: string; name: string } };
+type OrderItem = { id: string; quantity: number; price: number; size?: string; product: { id: string; name: string; costPrice?: number | null } };
 type Installment = { id: string; number: number; amount: number; dueDate: string; status: string; paidAt?: string | null };
 type Order = {
   id: string; status: string; paymentStatus: string; paymentMethod: string; amountPaid: number;
@@ -103,7 +103,12 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
     });
   }, [localOrders, statusFilter, payFilter, methodFilter, dateFrom, dateTo, search]);
 
-  const totalReceita = filtered.filter(o => o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
+  const activeFiltered = filtered.filter(o => o.status !== "cancelled");
+  const totalReceita = activeFiltered.reduce((s, o) => s + o.total, 0);
+  const totalCusto = activeFiltered.reduce((s, o) =>
+    s + o.items.reduce((si, item) => si + (item.product.costPrice ?? item.price * 0.55) * item.quantity, 0), 0);
+  const lucroLiquido = totalReceita - totalCusto;
+  const margemLucro = totalReceita > 0 ? (lucroLiquido / totalReceita) * 100 : 0;
   const totalEmAberto = filtered.filter(o => o.paymentStatus !== "paid").reduce((s, o) => s + (o.total - o.amountPaid), 0);
   const cadernoTotal = localOrders.filter(o => o.paymentMethod === "caderno" && o.paymentStatus !== "paid")
     .reduce((s, o) => s + (o.total - o.amountPaid), 0);
@@ -218,6 +223,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
         {[
           { emoji: "🛍️", label: "Total de Pedidos", value: filtered.length, gold: false },
           { emoji: "💰", label: "Receita", value: fmt(totalReceita), gold: true },
+          { emoji: "📈", label: "Lucro Líquido", value: fmt(lucroLiquido), gold: false, lucro: true, sub: `${margemLucro.toFixed(1)}% de margem` },
           { emoji: "⏳", label: "Em Aberto", value: fmt(totalEmAberto), gold: false, warn: totalEmAberto > 0 },
           { emoji: "📒", label: "Caderno na Rua", value: fmt(cadernoTotal), gold: false, caderno: cadernoTotal > 0 },
           { emoji: "✅", label: "Entregues", value: filtered.filter(o => o.status === "delivered").length, gold: false },
@@ -231,10 +237,11 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
               cursor: (s as any).caderno ? "pointer" : "default",
             }}>
             <div style={{ fontSize: "1.25rem", marginBottom: "0.4rem" }}>{s.emoji}</div>
-            <div style={{ color: (s as any).caderno ? (methodFilter === "caderno" ? "#fff" : "#856404") : s.gold ? "#fff" : "#1a1510", fontSize: "1.4rem", fontWeight: 900 }}>{s.value}</div>
+            <div style={{ color: (s as any).lucro ? "#1a8a2a" : (s as any).caderno ? (methodFilter === "caderno" ? "#fff" : "#856404") : s.gold ? "#fff" : "#1a1510", fontSize: "1.4rem", fontWeight: 900 }}>{s.value}</div>
             <div style={{ color: (s as any).caderno ? (methodFilter === "caderno" ? "rgba(255,255,255,0.8)" : "#a07820") : s.gold ? "rgba(255,255,255,0.8)" : "#9a8060", fontSize: "0.75rem", marginTop: "0.2rem" }}>
               {s.label}{(s as any).caderno && cadernoCount > 0 ? ` (${cadernoCount} pedidos)` : ""}
             </div>
+            {(s as any).sub && <div style={{ color: "#1a8a2a", fontSize: "0.68rem", fontWeight: 700, marginTop: "0.1rem" }}>{(s as any).sub}</div>}
           </div>
         ))}
       </div>
