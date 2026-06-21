@@ -139,7 +139,7 @@ export default function FinanceiroPage() {
       amount: String(e.amount), category: e.category,
       paymentMethod: e.paymentMethod, supplierId: e.supplier?.id || "", notes: e.notes || "",
       installments: String(e.installments || 1),
-      dueDate: e.dueDate ? e.dueDate.split("T")[0] : "",
+      dueDate: e.dueDate ? e.dueDate.substring(0, 7) : "", // YYYY-MM
     });
     setError("");
     setShowForm(true);
@@ -507,13 +507,13 @@ export default function FinanceiroPage() {
                       </select>
                     </div>
                     <div>
-                      <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", display: "block", marginBottom: "0.4rem" }}>Vencimento da {parseInt(form.installments) > 1 ? "1ª " : ""}fatura</label>
-                      <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} style={inp()} />
+                      <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", display: "block", marginBottom: "0.4rem" }}>Mês {parseInt(form.installments) > 1 ? "da 1ª parcela" : "da fatura"}</label>
+                      <input type="month" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} style={inp()} />
                     </div>
                   </div>
                   {parseInt(form.installments) > 1 && form.amount && (
                     <p style={{ fontSize: "0.75rem", color: "#6a30b8" }}>
-                      → {form.installments}x de {fmt(parseFloat(form.amount.replace(",",".")) / parseInt(form.installments))} — vencimentos mensais a partir de {form.dueDate ? new Date(form.dueDate).toLocaleDateString("pt-BR") : "—"}
+                      → {form.installments}x de {fmt(parseFloat(form.amount.replace(",",".")) / parseInt(form.installments))} — vencimento dia 10 de cada mês{form.dueDate ? `, começando em ${new Date(form.dueDate + "-10").toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}` : ""}
                     </p>
                   )}
                 </div>
