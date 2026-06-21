@@ -58,6 +58,8 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const [statusFilter, setStatusFilter] = useState("");
   const [payFilter, setPayFilter] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const searchParams = useSearchParams();
   const [expanded, setExpanded] = useState<string | null>(searchParams.get("expand"));
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -89,6 +91,8 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
       if (statusFilter && o.status !== statusFilter) return false;
       if (payFilter && o.paymentStatus !== payFilter) return false;
       if (methodFilter && o.paymentMethod !== methodFilter) return false;
+      if (dateFrom && new Date(o.createdAt) < new Date(dateFrom)) return false;
+      if (dateTo && new Date(o.createdAt) > new Date(dateTo + "T23:59:59")) return false;
       if (search) {
         const q = search.toLowerCase();
         if (!o.user.name.toLowerCase().includes(q) &&
@@ -97,7 +101,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
       }
       return true;
     });
-  }, [localOrders, statusFilter, payFilter, methodFilter, search]);
+  }, [localOrders, statusFilter, payFilter, methodFilter, dateFrom, dateTo, search]);
 
   const totalReceita = filtered.filter(o => o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
   const totalEmAberto = filtered.filter(o => o.paymentStatus !== "paid").reduce((s, o) => s + (o.total - o.amountPaid), 0);
@@ -238,20 +242,51 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
       {/* Filtros */}
       <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1rem 1.25rem", marginBottom: "1.25rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
         <input type="text" placeholder="🔍 Buscar cliente ou pedido..." value={search} onChange={e => setSearch(e.target.value)} style={{ ...inp, minWidth: 200, flex: 1 }} />
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...inp, minWidth: 160 }}>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ ...inp, minWidth: 150 }}>
           <option value="">Todos os status</option>
           {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
-        <select value={payFilter} onChange={e => setPayFilter(e.target.value)} style={{ ...inp, minWidth: 150 }}>
+        <select value={payFilter} onChange={e => setPayFilter(e.target.value)} style={{ ...inp, minWidth: 140 }}>
           <option value="">Todos pagamentos</option>
           {Object.entries(PAY_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
-        <select value={methodFilter} onChange={e => setMethodFilter(e.target.value)} style={{ ...inp, minWidth: 150 }}>
+        <select value={methodFilter} onChange={e => setMethodFilter(e.target.value)} style={{ ...inp, minWidth: 140 }}>
           <option value="">Todas as formas</option>
           {Object.entries(METHOD_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
-        {(search || statusFilter || payFilter || methodFilter) && (
-          <button onClick={() => { setSearch(""); setStatusFilter(""); setPayFilter(""); setMethodFilter(""); }}
+        {/* Período */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+          <span style={{ fontSize: "0.75rem", color: "#9a8060", whiteSpace: "nowrap" }}>De:</span>
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ ...inp, width: 135 }} />
+          <span style={{ fontSize: "0.75rem", color: "#9a8060" }}>até:</span>
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ ...inp, width: 135 }} />
+        </div>
+        {/* Atalhos de período */}
+        <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
+          {[
+            { label: "Hoje", days: 0 },
+            { label: "7 dias", days: 7 },
+            { label: "Este mês", month: true },
+          ].map(p => {
+            const now = new Date();
+            const from = p.month
+              ? new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
+              : p.days === 0
+                ? now.toISOString().slice(0, 10)
+                : new Date(now.getTime() - p.days * 86400000).toISOString().slice(0, 10);
+            const to = now.toISOString().slice(0, 10);
+            const active = dateFrom === from && dateTo === to;
+            return (
+              <button key={p.label}
+                onClick={() => { if (active) { setDateFrom(""); setDateTo(""); } else { setDateFrom(from); setDateTo(to); } }}
+                style={{ fontSize: "0.72rem", fontWeight: 700, padding: "0.35rem 0.7rem", borderRadius: "999px", border: "none", cursor: "pointer", backgroundColor: active ? "#b8891a" : "#FAF6EE", color: active ? "#fff" : "#9a8060" }}>
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+        {(search || statusFilter || payFilter || methodFilter || dateFrom || dateTo) && (
+          <button onClick={() => { setSearch(""); setStatusFilter(""); setPayFilter(""); setMethodFilter(""); setDateFrom(""); setDateTo(""); }}
             style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", fontWeight: 700, fontSize: "0.75rem", padding: "0.55rem 0.875rem", borderRadius: "0.625rem", cursor: "pointer" }}>
             ✕ Limpar
           </button>
