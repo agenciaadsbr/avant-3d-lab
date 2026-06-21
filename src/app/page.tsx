@@ -147,8 +147,8 @@ export default async function HomePage() {
       <section style={{ background: "linear-gradient(135deg, #1a1510 0%, #2d2010 100%)", padding: "4rem 1.5rem", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(184,137,26,0.1) 0%, transparent 65%)", pointerEvents: "none" }} />
         <div style={{ maxWidth: 600, margin: "0 auto", position: "relative" }}>
-          <div style={{ width: 90, height: 90, position: "relative", margin: "0 auto 1.5rem" }}>
-            <Image src="/logo.png" alt="Access Fit" fill style={{ objectFit: "contain" }} />
+          <div style={{ width: 100, height: 100, borderRadius: "50%", overflow: "hidden", margin: "0 auto 1.5rem", flexShrink: 0 }}>
+            <Image src="/logo.png" alt="Access Fit" width={100} height={100} style={{ objectFit: "cover", transform: "scale(1.08)" }} />
           </div>
           <h2 style={{ fontSize: "clamp(1.5rem, 4vw, 2.25rem)", fontWeight: 900, color: "#FAF6EE", lineHeight: 1.2, marginBottom: "1rem" }}>
             Vista-se para <span className="gold-shimmer">transformar</span>

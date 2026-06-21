@@ -29,8 +29,8 @@ export default function SobrePage() {
         </div>
         <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.5rem" }}>
-            <div style={{ width: 110, height: 110, position: "relative" }}>
-              <Image src="/logo.png" alt="Access Fit" fill style={{ objectFit: "contain" }} />
+            <div style={{ width: 110, height: 110, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+              <Image src="/logo.png" alt="Access Fit" width={110} height={110} style={{ objectFit: "cover", transform: "scale(1.08)" }} />
             </div>
           </div>
           <p style={{ fontSize: "0.75rem", color: "#b8891a", fontWeight: 700, letterSpacing: "0.2em", marginBottom: "1rem" }}>ACCESS FIT</p>
