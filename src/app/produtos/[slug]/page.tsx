@@ -9,7 +9,7 @@ import Link from "next/link";
 type Product = {
   id: string; name: string; slug: string; description: string | null;
   price: number; compareAt: number | null; images: string;
-  sizes: string; colors: string; stock: number;
+  sizes: string; colors: string; stock: number; sku: string | null;
   category: { name: string; slug: string };
 };
 
@@ -150,9 +150,16 @@ export default function ProductPage() {
 
           {/* Detalhes */}
           <div>
-            <p style={{ fontSize: "0.75rem", color: "#b8891a", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              {product.category.name}
-            </p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+              <p style={{ fontSize: "0.75rem", color: "#b8891a", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                {product.category.name}
+              </p>
+              {product.sku && (
+                <span style={{ fontSize: "0.68rem", color: "#9a8060", fontFamily: "monospace", backgroundColor: "#F0E8D0", padding: "0.2rem 0.6rem", borderRadius: "999px", fontWeight: 700 }}>
+                  {product.sku}
+                </span>
+              )}
+            </div>
             <h1 style={{ fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 900, color: "#1a1510", marginTop: "0.4rem", lineHeight: 1.2 }}>
               {product.name}
             </h1>

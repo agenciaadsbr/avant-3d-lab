@@ -1,0 +1,18 @@
+{
+  "name": "Access Fit",
+  "short_name": "Access Fit",
+  "description": "Moda fitness feminina — Home Try-On",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF6EE",
+  "theme_color": "#b8891a",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Ver Coleção", "url": "/produtos", "description": "Explorar produtos" },
+    { "name": "Sobre Nós", "url": "/sobre", "description": "Conheça a Access Fit" }
+  ]
+}
