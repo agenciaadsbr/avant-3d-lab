@@ -41,6 +41,7 @@ export default function ProductForm({ categories, product }: { categories: Categ
     slug: product?.slug || "",
     description: product?.description || "",
     price: product?.price?.toString() || "",
+    costPrice: product?.costPrice?.toString() || "",
     compareAt: product?.compareAt?.toString() || "",
     images: product?.images ? JSON.parse(product.images).join("\n") : "",
     sizes: product?.sizes ? JSON.parse(product.sizes).join(", ") : "PP, P, M, G, GG",
@@ -90,6 +91,7 @@ export default function ProductForm({ categories, product }: { categories: Categ
     const body = {
       ...form,
       price: parseFloat(form.price),
+      costPrice: form.costPrice ? parseFloat(form.costPrice) : null,
       compareAt: form.compareAt ? parseFloat(form.compareAt) : null,
       stock: parseInt(form.stock),
       images: JSON.stringify(form.images.split("\n").map((s: string) => s.trim()).filter(Boolean)),
@@ -146,13 +148,17 @@ export default function ProductForm({ categories, product }: { categories: Categ
       {/* Preço e estoque */}
       <div style={card}>
         <h2 style={{ color: "#1a1510", fontWeight: 800, fontSize: "0.95rem", marginBottom: "1rem" }}>Preço e Estoque</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "1rem" }}>
           <div>
             <label style={label}>Preço de Venda (R$) *</label>
             <input type="number" step="0.01" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} required placeholder="149.90" style={field} onFocus={focus} onBlur={blur} />
           </div>
           <div>
-            <label style={label}>Preço Original (para desconto)</label>
+            <label style={label}>Preço de Custo (R$)</label>
+            <input type="number" step="0.01" value={form.costPrice} onChange={e => setForm({ ...form, costPrice: e.target.value })} placeholder="60.00" style={field} onFocus={focus} onBlur={blur} />
+          </div>
+          <div>
+            <label style={label}>Preço Original (desconto)</label>
             <input type="number" step="0.01" value={form.compareAt} onChange={e => setForm({ ...form, compareAt: e.target.value })} placeholder="189.90" style={field} onFocus={focus} onBlur={blur} />
           </div>
           <div>
