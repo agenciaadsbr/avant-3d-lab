@@ -7,7 +7,6 @@ import CartDrawer from "@/components/cart/CartDrawer";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
 import { SessionProvider } from "next-auth/react";
 import { headers } from "next/headers";
-import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,8 +14,6 @@ export const metadata: Metadata = {
   title: "Access Fit — Desbloqueie sua energia infinita",
   description: "Moda fitness feminina com estilo, conforto e qualidade. Leggings, tops, conjuntos e mais.",
   icons: { icon: "/favicon.ico", apple: "/logo.png" },
-  manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Access Fit" },
 };
 
 export const viewport: Viewport = {
@@ -33,11 +30,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="pt-BR">
       <body className={inter.className} style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-        <Script id="sw-register" strategy="afterInteractive">{`
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js');
-          }
-        `}</Script>
         <SessionProvider>
           {!isAdmin && <Header />}
           <main style={{ flex: 1 }}>{children}</main>
