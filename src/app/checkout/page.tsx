@@ -56,7 +56,7 @@ export default function CheckoutPage() {
     }).join("\n");
 
     const tipoTexto = type === "tryon"
-      ? "🏠 *Home Try-On* — experimentar em casa (48h para devolução)"
+      ? "🏠 *Home Try-On* — experimentar em casa (48h para devolução)\n⚠️ Taxa de R$ 30,00 caso devolva · Grátis se ficar com a peça"
       : "🛍️ *Compra*";
 
     const enderecoCompleto = type === "tryon"
@@ -155,7 +155,7 @@ export default function CheckoutPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                 {[
                   { value: "compra", emoji: "🛍️", title: "Compra normal", desc: "Recebo e fico com as peças" },
-                  { value: "tryon", emoji: "👗", title: "Home Try-On", desc: "Experimento em casa e pago só o que ficar" },
+                  { value: "tryon", emoji: "👗", title: "Home Try-On", desc: "Experimento em casa e pago só o que ficar · Taxa de R$ 30 se devolver" },
                 ].map(opt => (
                   <button key={opt.value} onClick={() => setType(opt.value as any)}
                     style={{ display: "flex", gap: "0.875rem", alignItems: "center", padding: "0.875rem 1rem", borderRadius: "0.75rem", border: `2px solid ${type === opt.value ? "#b8891a" : "rgba(140,100,20,0.15)"}`, backgroundColor: type === opt.value ? "#fff8e8" : "#FAF6EE", cursor: "pointer", textAlign: "left" }}>
@@ -236,6 +236,16 @@ export default function CheckoutPage() {
             {type === "tryon" && (
               <div style={{ backgroundColor: "#fff8e1", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "1rem", padding: "1.25rem" }}>
                 <p style={{ fontWeight: 800, color: "#5a3a00", fontSize: "0.9rem", marginBottom: "0.75rem" }}>⚠️ Termos do Home Try-On</p>
+                {/* Aviso taxa */}
+                <div style={{ backgroundColor: "#1a1510", borderRadius: "0.75rem", padding: "0.875rem 1rem", marginBottom: "1rem", display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
+                  <span style={{ fontSize: "1.25rem", flexShrink: 0 }}>💰</span>
+                  <div>
+                    <p style={{ fontWeight: 900, color: "#b8891a", fontSize: "0.9rem", marginBottom: "0.2rem" }}>Taxa de R$ 30,00</p>
+                    <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.8rem", lineHeight: 1.5 }}>
+                      Cobrada para cobrir o custo de levar e buscar a peça <strong style={{ color: "#fff" }}>somente se você devolver</strong>. Se ficar com a peça, não há nenhuma taxa adicional.
+                    </p>
+                  </div>
+                </div>
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
                   {[
                     "Você tem até 48h para experimentar e devolver as peças que não quiser",
