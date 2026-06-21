@@ -32,24 +32,44 @@ function firstOfMonth() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 }
 
+function nextMonthRange() {
+  const d = new Date();
+  const y = d.getMonth() === 11 ? d.getFullYear() + 1 : d.getFullYear();
+  const m = (d.getMonth() + 1) % 12;
+  const last = new Date(y, m + 1, 0);
+  return {
+    from: `${y}-${String(m + 1).padStart(2, "0")}-01`,
+    to: `${y}-${String(m + 1).padStart(2, "0")}-${String(last.getDate()).padStart(2, "0")}`,
+  };
+}
+
 type Supplier = { id: string; name: string };
 type Expense = {
   id: string; date: string; description: string; amount: number;
   category: string; paymentMethod: string; notes?: string;
+  dueDate?: string | null; installments?: number; installmentNumber?: number;
   supplier?: { id: string; name: string } | null;
 };
 
 export default function FinanceiroPage() {
+  const [tab, setTab] = useState<"despesas" | "cartao">("despesas");
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [cardExpenses, setCardExpenses] = useState<Expense[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [total, setTotal] = useState(0);
+  const [cardTotal, setCardTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Filtros
+  // Filtros despesas
   const [from, setFrom] = useState(firstOfMonth());
   const [to, setTo] = useState(today());
   const [filterSupplier, setFilterSupplier] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
+
+  // Filtros cartão
+  const nm = nextMonthRange();
+  const [cardFrom, setCardFrom] = useState(nm.from);
+  const [cardTo, setCardTo] = useState(nm.to);
 
   // Formulário nova despesa
   const [showForm, setShowForm] = useState(false);
@@ -57,6 +77,7 @@ export default function FinanceiroPage() {
   const [form, setForm] = useState({
     date: today(), description: "", amount: "",
     category: "outros", paymentMethod: "pix", supplierId: "", notes: "",
+    installments: "1", dueDate: "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -73,13 +94,15 @@ export default function FinanceiroPage() {
     if (filterSupplier) params.set("supplierId", filterSupplier);
     if (filterCategory) params.set("category", filterCategory);
     const res = await fetch(`/api/admin/despesas?${params}`);
-    if (res.ok) {
-      const data = await res.json();
-      setExpenses(data.expenses);
-      setTotal(data.total);
-    }
+    if (res.ok) { const data = await res.json(); setExpenses(data.expenses); setTotal(data.total); }
     setLoading(false);
   }, [from, to, filterSupplier, filterCategory]);
+
+  const loadCardExpenses = useCallback(async () => {
+    const params = new URLSearchParams({ cartao: "1", from: cardFrom, to: cardTo });
+    const res = await fetch(`/api/admin/despesas?${params}`);
+    if (res.ok) { const data = await res.json(); setCardExpenses(data.expenses); setCardTotal(data.total); }
+  }, [cardFrom, cardTo]);
 
   const loadSuppliers = async () => {
     const res = await fetch("/api/admin/fornecedores");
@@ -87,11 +110,12 @@ export default function FinanceiroPage() {
   };
 
   useEffect(() => { loadExpenses(); }, [loadExpenses]);
+  useEffect(() => { loadCardExpenses(); }, [loadCardExpenses]);
   useEffect(() => { loadSuppliers(); }, []);
 
   const openNew = () => {
     setEditId(null);
-    setForm({ date: today(), description: "", amount: "", category: "outros", paymentMethod: "pix", supplierId: "", notes: "" });
+    setForm({ date: today(), description: "", amount: "", category: "outros", paymentMethod: "pix", supplierId: "", notes: "", installments: "1", dueDate: "" });
     setError("");
     setShowForm(true);
   };
@@ -102,6 +126,8 @@ export default function FinanceiroPage() {
       date: e.date.split("T")[0], description: e.description,
       amount: String(e.amount), category: e.category,
       paymentMethod: e.paymentMethod, supplierId: e.supplier?.id || "", notes: e.notes || "",
+      installments: String(e.installments || 1),
+      dueDate: e.dueDate ? e.dueDate.split("T")[0] : "",
     });
     setError("");
     setShowForm(true);
@@ -111,16 +137,19 @@ export default function FinanceiroPage() {
     if (!form.description.trim()) { setError("Informe a descrição."); return; }
     const amt = parseFloat(form.amount.replace(",", "."));
     if (!amt || amt <= 0) { setError("Informe um valor válido."); return; }
+    const isCard = form.paymentMethod === "cartao_credito";
+    const parcelas = parseInt(form.installments) || 1;
+    if (isCard && parcelas > 1 && !form.dueDate) { setError("Informe o vencimento da 1ª parcela."); return; }
 
     setSaving(true); setError("");
     const url = editId ? `/api/admin/despesas/${editId}` : "/api/admin/despesas";
     const method = editId ? "PUT" : "POST";
     const res = await fetch(url, {
       method, headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, amount: amt }),
+      body: JSON.stringify({ ...form, amount: amt, installments: parcelas }),
     });
     setSaving(false);
-    if (res.ok) { setShowForm(false); loadExpenses(); }
+    if (res.ok) { setShowForm(false); loadExpenses(); loadCardExpenses(); }
     else { const d = await res.json(); setError(d.error || "Erro ao salvar."); }
   };
 
@@ -184,6 +213,95 @@ export default function FinanceiroPage() {
         </div>
       </div>
 
+      {/* Abas */}
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", borderBottom: "2px solid rgba(140,100,20,0.1)", paddingBottom: "0" }}>
+        {[
+          { key: "despesas", label: "📋 Despesas" },
+          { key: "cartao", label: "💳 Cartão de Crédito" },
+        ].map(t => (
+          <button key={t.key} onClick={() => setTab(t.key as any)}
+            style={{ padding: "0.6rem 1.25rem", border: "none", borderBottom: `3px solid ${tab === t.key ? "#b8891a" : "transparent"}`, backgroundColor: "transparent", fontWeight: 700, fontSize: "0.875rem", color: tab === t.key ? "#b8891a" : "#9a8060", cursor: "pointer", marginBottom: "-2px" }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Aba Cartão */}
+      {tab === "cartao" && (
+        <div>
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end", marginBottom: "1.5rem", backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1rem 1.25rem" }}>
+            <div>
+              <label style={{ fontSize: "0.7rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>FATURA DE</label>
+              <input type="date" value={cardFrom} onChange={e => setCardFrom(e.target.value)} style={{ ...inp(), width: 160 }} />
+            </div>
+            <div>
+              <label style={{ fontSize: "0.7rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>ATÉ</label>
+              <input type="date" value={cardTo} onChange={e => setCardTo(e.target.value)} style={{ ...inp(), width: 160 }} />
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              {[
+                { label: "Este mês", fn: () => { setCardFrom(firstOfMonth()); setCardTo(today()); } },
+                { label: "Próximo mês", fn: () => { const n = nextMonthRange(); setCardFrom(n.from); setCardTo(n.to); } },
+              ].map(b => (
+                <button key={b.label} onClick={b.fn} style={{ backgroundColor: "#f0e8ff", border: "1px solid rgba(106,48,184,0.2)", color: "#6a30b8", fontWeight: 700, fontSize: "0.78rem", padding: "0.5rem 0.875rem", borderRadius: "0.625rem", cursor: "pointer" }}>
+                  {b.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: "#6a30b8", borderRadius: "1rem", padding: "1.25rem 1.75rem", marginBottom: "1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.75rem", fontWeight: 700 }}>TOTAL DA FATURA NO PERÍODO</p>
+              <p style={{ color: "#fff", fontSize: "1.75rem", fontWeight: 900 }}>{fmt(cardTotal)}</p>
+            </div>
+            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.8rem" }}>{cardExpenses.length} lançamentos</p>
+          </div>
+
+          <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+              <thead>
+                <tr style={{ backgroundColor: "#f0e8ff" }}>
+                  {["Compra", "Vencimento", "Descrição", "Parcela", "Valor"].map(h => (
+                    <th key={h} style={{ textAlign: "left", padding: "0.75rem 1rem", color: "#6a30b8", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid rgba(106,48,184,0.1)" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {cardExpenses.length === 0 ? (
+                  <tr><td colSpan={5} style={{ textAlign: "center", padding: "2rem", color: "#b8a080" }}>Nenhuma despesa no cartão neste período.</td></tr>
+                ) : cardExpenses.map(e => {
+                  const isOverdue = e.dueDate && new Date(e.dueDate) < new Date();
+                  return (
+                    <tr key={e.id} style={{ borderBottom: "1px solid rgba(106,48,184,0.06)", backgroundColor: isOverdue ? "#fff0f0" : "transparent" }}>
+                      <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem" }}>{new Date(e.date).toLocaleDateString("pt-BR")}</td>
+                      <td style={{ padding: "0.75rem 1rem", fontWeight: 700, color: isOverdue ? "#c04040" : "#6a30b8", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+                        {e.dueDate ? new Date(e.dueDate).toLocaleDateString("pt-BR") : "—"}
+                        {isOverdue && " ⚠️"}
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem", color: "#1a1510", fontWeight: 600 }}>{e.description}</td>
+                      <td style={{ padding: "0.75rem 1rem", color: "#6a30b8", fontSize: "0.78rem" }}>
+                        {e.installments && e.installments > 1 ? `${e.installmentNumber}/${e.installments}` : "À vista"}
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem", color: "#c04040", fontWeight: 700 }}>-{fmt(e.amount)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              {cardExpenses.length > 0 && (
+                <tfoot>
+                  <tr style={{ backgroundColor: "#f0e8ff" }}>
+                    <td colSpan={4} style={{ padding: "0.75rem 1rem", fontWeight: 700, color: "#6a30b8" }}>Total</td>
+                    <td style={{ padding: "0.75rem 1rem", fontWeight: 900, color: "#6a30b8" }}>-{fmt(cardTotal)}</td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+        </div>
+      )}
+
+      {tab !== "cartao" && <>
       {/* Filtros */}
       <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end" }}>
         <div>
@@ -320,6 +438,7 @@ export default function FinanceiroPage() {
           </div>
         )}
       </div>
+      </>}
 
       {/* Modal Nova/Editar Despesa */}
       {showForm && (
@@ -358,11 +477,37 @@ export default function FinanceiroPage() {
                 </div>
                 <div>
                   <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", display: "block", marginBottom: "0.4rem" }}>Pagamento</label>
-                  <select value={form.paymentMethod} onChange={e => setForm(f => ({ ...f, paymentMethod: e.target.value }))} style={inp()}>
+                  <select value={form.paymentMethod} onChange={e => setForm(f => ({ ...f, paymentMethod: e.target.value, installments: "1", dueDate: "" }))} style={inp()}>
                     {PAYMENTS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                   </select>
                 </div>
               </div>
+
+              {/* Campos cartão de crédito */}
+              {form.paymentMethod === "cartao_credito" && (
+                <div style={{ backgroundColor: "#f0e8ff", border: "1px solid rgba(106,48,184,0.2)", borderRadius: "0.75rem", padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <p style={{ fontSize: "0.75rem", fontWeight: 800, color: "#6a30b8" }}>💳 Parcelamento no Cartão</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                    <div>
+                      <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", display: "block", marginBottom: "0.4rem" }}>Parcelas</label>
+                      <select value={form.installments} onChange={e => setForm(f => ({ ...f, installments: e.target.value }))} style={inp()}>
+                        {[1,2,3,4,5,6,7,8,9,10,11,12].map(n => (
+                          <option key={n} value={n}>{n}x {n > 1 && form.amount ? `de ${fmt(parseFloat(form.amount.replace(",",".")) / n)}` : ""}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", display: "block", marginBottom: "0.4rem" }}>Vencimento da {parseInt(form.installments) > 1 ? "1ª " : ""}fatura</label>
+                      <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} style={inp()} />
+                    </div>
+                  </div>
+                  {parseInt(form.installments) > 1 && form.amount && (
+                    <p style={{ fontSize: "0.75rem", color: "#6a30b8" }}>
+                      → {form.installments}x de {fmt(parseFloat(form.amount.replace(",",".")) / parseInt(form.installments))} — vencimentos mensais a partir de {form.dueDate ? new Date(form.dueDate).toLocaleDateString("pt-BR") : "—"}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
