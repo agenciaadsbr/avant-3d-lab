@@ -108,9 +108,10 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const activeFiltered = filtered.filter(o => o.status !== "cancelled");
   const totalReceita = activeFiltered.reduce((s, o) => s + o.total, 0);
   const totalCusto = activeFiltered.reduce((s, o) =>
-    s + o.items.reduce((si, item) => si + (item.costPrice ?? item.product.costPrice ?? null) !== null
-      ? (item.costPrice ?? item.product.costPrice ?? 0) * item.quantity
-      : 0, 0), 0);
+    s + o.items.reduce((si, item) => {
+      const c = item.costPrice ?? item.product.costPrice;
+      return si + (c != null ? c * item.quantity : 0);
+    }, 0), 0);
   const itemsComCusto = activeFiltered.flatMap(o => o.items).filter(i => (i.costPrice ?? i.product.costPrice) !== null).length;
   const totalItems = activeFiltered.flatMap(o => o.items).length;
   const lucroLiquido = totalReceita - totalCusto;
