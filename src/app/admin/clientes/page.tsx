@@ -14,9 +14,29 @@ export default async function ClientesPage() {
     select: {
       id: true, name: true, email: true, phone: true, createdAt: true,
       _count: { select: { orders: true } },
+      orders: {
+        where: { status: { not: "cancelled" } },
+        select: { total: true, amountPaid: true, paymentStatus: true, createdAt: true },
+      },
     },
     orderBy: { name: "asc" },
   });
 
-  return <ClientesClient clientes={clientes as any} />;
+  // Enriquecer com dados calculados
+  const clientesEnriquecidos = clientes.map(c => ({
+    id: c.id,
+    name: c.name,
+    email: c.email,
+    phone: c.phone,
+    createdAt: c.createdAt.toISOString(),
+    totalPedidos: c._count.orders,
+    totalGasto: c.orders.reduce((s, o) => s + o.total, 0),
+    totalPago: c.orders.reduce((s, o) => s + o.amountPaid, 0),
+    saldoAberto: c.orders.reduce((s, o) => s + (o.total - o.amountPaid), 0),
+    ultimaCompra: c.orders.length > 0
+      ? c.orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0].createdAt.toISOString()
+      : null,
+  }));
+
+  return <ClientesClient clientes={clientesEnriquecidos} />;
 }

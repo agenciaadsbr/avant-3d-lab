@@ -1,10 +1,12 @@
 "use client";
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type Cliente = {
   id: string; name: string | null; email: string; phone: string | null;
-  createdAt: string; _count: { orders: number };
+  createdAt: string; totalPedidos: number; totalGasto: number;
+  totalPago: number; saldoAberto: number; ultimaCompra: string | null;
 };
 
 const inp = {
@@ -13,9 +15,14 @@ const inp = {
   outline: "none", width: "100%", boxSizing: "border-box" as const,
 };
 
+function fmt(n: number) {
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
 export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<"nome" | "gasto" | "pedidos" | "saldo">("nome");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
@@ -28,71 +35,46 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
   const [merging, setMerging] = useState(false);
 
   const filtered = useMemo(() => {
-    if (!search) return clientes;
-    const q = search.toLowerCase();
-    return clientes.filter(c =>
-      (c.name || "").toLowerCase().includes(q) ||
-      c.email.toLowerCase().includes(q) ||
-      (c.phone || "").includes(q)
-    );
-  }, [clientes, search]);
+    let list = clientes;
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(c =>
+        (c.name || "").toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q) ||
+        (c.phone || "").includes(q)
+      );
+    }
+    return [...list].sort((a, b) => {
+      if (sort === "gasto") return b.totalGasto - a.totalGasto;
+      if (sort === "pedidos") return b.totalPedidos - a.totalPedidos;
+      if (sort === "saldo") return b.saldoAberto - a.saldoAberto;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+  }, [clientes, search, sort]);
 
-  const startEdit = (c: Cliente) => {
-    setEditingId(c.id);
-    setEditName(c.name || "");
-    setEditPhone(c.phone || "");
-  };
+  // KPIs
+  const totalClientes = clientes.length;
+  const totalGastoGeral = clientes.reduce((s, c) => s + c.totalGasto, 0);
+  const totalSaldoGeral = clientes.reduce((s, c) => s + c.saldoAberto, 0);
+  const clientesAtivos = clientes.filter(c => c.ultimaCompra && new Date(c.ultimaCompra) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length;
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
     setSaving(true);
     const email = `${newName.toLowerCase().replace(/\s+/g, ".")}.${Date.now()}@cliente.accessfit.com.br`;
     await fetch("/api/admin/clientes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: newName.trim(), phone: newPhone.trim() || null, email }),
     });
     setSaving(false);
-    setShowNew(false);
-    setNewName("");
-    setNewPhone("");
+    setShowNew(false); setNewName(""); setNewPhone("");
     router.refresh();
-  };
-
-  const handleMerge = async (keepId: string, removeId: string) => {
-    setMerging(true);
-    const res = await fetch("/api/admin/clientes/merge", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ keepId, removeId }),
-    });
-    setMerging(false);
-    if (res.ok) {
-      setMergingId(null);
-      setMergeSearch("");
-      router.refresh();
-    } else {
-      const d = await res.json();
-      alert(d.error || "Erro ao unificar.");
-    }
-  };
-
-  const handleDelete = async (id: string, name: string | null) => {
-    if (!confirm(`Excluir "${name || "cliente"}"? Esta ação não pode ser desfeita.`)) return;
-    const res = await fetch(`/api/admin/clientes/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      router.refresh();
-    } else {
-      const d = await res.json();
-      alert(d.error || "Erro ao excluir.");
-    }
   };
 
   const handleSave = async (id: string) => {
     setSaving(true);
     await fetch(`/api/admin/clientes/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: editName, phone: editPhone }),
     });
     setSaving(false);
@@ -100,15 +82,32 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
     router.refresh();
   };
 
+  const handleDelete = async (id: string, name: string | null) => {
+    if (!confirm(`Excluir "${name || "cliente"}"?`)) return;
+    const res = await fetch(`/api/admin/clientes/${id}`, { method: "DELETE" });
+    if (res.ok) router.refresh();
+    else { const d = await res.json(); alert(d.error || "Erro ao excluir."); }
+  };
+
+  const handleMerge = async (keepId: string, removeId: string) => {
+    setMerging(true);
+    const res = await fetch("/api/admin/clientes/merge", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keepId, removeId }),
+    });
+    setMerging(false);
+    if (res.ok) { setMergingId(null); setMergeSearch(""); router.refresh(); }
+    else { const d = await res.json(); alert(d.error || "Erro ao unificar."); }
+  };
+
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", padding: "2rem 1.5rem", backgroundColor: "#FAF6EE", minHeight: "100vh" }}>
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "2rem 1.25rem", backgroundColor: "#FAF6EE", minHeight: "100vh" }}>
 
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <a href="/admin" style={{ color: "#b8891a", fontSize: "0.875rem", textDecoration: "none" }}>← Admin</a>
-          <h1 style={{ color: "#1a1510", fontSize: "1.75rem", fontWeight: 900, marginTop: "0.2rem" }}>👥 Clientes</h1>
-          <p style={{ color: "#9a8060", fontSize: "0.875rem", marginTop: "0.2rem" }}>{clientes.length} cadastros</p>
+          <h1 style={{ fontSize: "1.75rem", fontWeight: 900, color: "#1a1510" }}>👥 Clientes</h1>
+          <p style={{ color: "#9a8060", fontSize: "0.875rem", marginTop: "0.2rem" }}>{totalClientes} cadastros</p>
         </div>
         <button onClick={() => setShowNew(v => !v)}
           style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.75rem", padding: "0.6rem 1.25rem", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer" }}>
@@ -116,7 +115,23 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
         </button>
       </div>
 
-      {/* Formulário novo cliente */}
+      {/* KPIs */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "0.875rem", marginBottom: "1.5rem" }}>
+        {[
+          { emoji: "👥", label: "Total", value: totalClientes },
+          { emoji: "🔥", label: "Ativos (30 dias)", value: clientesAtivos },
+          { emoji: "💰", label: "Total faturado", value: fmt(totalGastoGeral) },
+          { emoji: "📒", label: "Saldo em aberto", value: fmt(totalSaldoGeral), warn: totalSaldoGeral > 0 },
+        ].map(k => (
+          <div key={k.label} style={{ backgroundColor: "#fff", border: `1px solid ${(k as any).warn ? "rgba(184,137,26,0.3)" : "rgba(140,100,20,0.1)"}`, borderRadius: "0.875rem", padding: "0.875rem 1rem" }}>
+            <div style={{ fontSize: "1.1rem", marginBottom: "0.25rem" }}>{k.emoji}</div>
+            <div style={{ fontSize: "1.2rem", fontWeight: 900, color: (k as any).warn ? "#856404" : "#1a1510" }}>{k.value}</div>
+            <div style={{ fontSize: "0.7rem", color: "#9a8060", marginTop: "0.15rem" }}>{k.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Novo cliente */}
       {showNew && (
         <div style={{ backgroundColor: "#fff", border: "1px solid rgba(184,137,26,0.25)", borderRadius: "1rem", padding: "1.25rem", marginBottom: "1.25rem" }}>
           <p style={{ fontWeight: 800, color: "#1a1510", marginBottom: "0.875rem" }}>Novo Cliente</p>
@@ -143,22 +158,34 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
         </div>
       )}
 
-      {/* Busca */}
-      <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "0.875rem 1.25rem", marginBottom: "1.25rem" }}>
-        <input
-          type="text" placeholder="🔍 Buscar por nome, e-mail ou telefone..."
+      {/* Busca e ordenação */}
+      <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "0.875rem 1.25rem", marginBottom: "1rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+        <input type="text" placeholder="🔍 Buscar cliente..."
           value={search} onChange={e => setSearch(e.target.value)}
-          style={{ ...inp, backgroundColor: "#FAF6EE" }}
-        />
+          style={{ ...inp, flex: 1, minWidth: 180 }} />
+        <div style={{ display: "flex", gap: "0.4rem" }}>
+          <span style={{ fontSize: "0.75rem", color: "#9a8060", alignSelf: "center" }}>Ordenar:</span>
+          {[
+            { key: "nome", label: "Nome" },
+            { key: "gasto", label: "Maior gasto" },
+            { key: "pedidos", label: "Mais pedidos" },
+            { key: "saldo", label: "Saldo aberto" },
+          ].map(s => (
+            <button key={s.key} onClick={() => setSort(s.key as any)}
+              style={{ padding: "0.3rem 0.75rem", borderRadius: "999px", border: "none", cursor: "pointer", fontSize: "0.75rem", fontWeight: 700, backgroundColor: sort === s.key ? "#b8891a" : "#FAF6EE", color: sort === s.key ? "#fff" : "#7a6030" }}>
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tabela */}
-      <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+      <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
             <thead>
               <tr style={{ backgroundColor: "#FAF6EE" }}>
-                {["Nome", "E-mail", "Telefone", "Pedidos", "Cadastro", ""].map(h => (
+                {["Cliente", "Contato", "Pedidos", "Total gasto", "Saldo", "Última compra", ""].map(h => (
                   <th key={h} style={{ textAlign: "left", padding: "0.875rem 1rem", color: "#9a8060", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.1)", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
@@ -168,106 +195,107 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
                 const isEditing = editingId === c.id;
                 return (
                   <React.Fragment key={c.id}>
-                  <tr style={{ borderBottom: "1px solid rgba(140,100,20,0.06)", backgroundColor: isEditing ? "#fffbf0" : undefined }}>
-                    <td style={{ padding: "0.75rem 1rem" }}>
-                      {isEditing ? (
-                        <input style={inp} value={editName} onChange={e => setEditName(e.target.value)} autoFocus placeholder="Nome completo" />
-                      ) : (
-                        <span style={{ fontWeight: 600, color: "#1a1510" }}>{c.name || <span style={{ color: "#ccc" }}>—</span>}</span>
-                      )}
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem", color: "#5a4a2a", fontSize: "0.8rem" }}>{c.email}</td>
-                    <td style={{ padding: "0.75rem 1rem" }}>
-                      {isEditing ? (
-                        <input style={inp} value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="(47) 9..." />
-                      ) : (
-                        <span style={{ color: "#5a4a2a", fontSize: "0.8rem" }}>{c.phone || "—"}</span>
-                      )}
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem", color: "#5a4a2a" }}>{c._count.orders}</td>
-                    <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
-                      {new Date(c.createdAt).toLocaleDateString("pt-BR")}
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem" }}>
-                      {isEditing ? (
-                        <div style={{ display: "flex", gap: "0.4rem" }}>
-                          <button onClick={() => handleSave(c.id)} disabled={saving}
-                            style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.4rem", padding: "0.35rem 0.75rem", fontWeight: 700, fontSize: "0.75rem", cursor: "pointer", whiteSpace: "nowrap" }}>
-                            {saving ? "..." : "Salvar"}
-                          </button>
-                          <button onClick={() => setEditingId(null)}
-                            style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", borderRadius: "0.4rem", padding: "0.35rem 0.75rem", fontWeight: 700, fontSize: "0.75rem", cursor: "pointer" }}>
-                            ✕
-                          </button>
-                        </div>
-                      ) : (
-                        <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                          <button onClick={() => startEdit(c)}
-                            style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(184,137,26,0.3)", color: "#b8891a", fontSize: "0.75rem", fontWeight: 700, padding: "0.35rem 0.75rem", borderRadius: "0.5rem", cursor: "pointer", whiteSpace: "nowrap" }}>
-                            ✏️ Editar
-                          </button>
-                          <button onClick={() => { setMergingId(mergingId === c.id ? null : c.id); setMergeSearch(""); }}
-                            style={{ backgroundColor: "#f0e8ff", border: "1px solid rgba(106,48,184,0.2)", color: "#6a30b8", fontSize: "0.75rem", fontWeight: 700, padding: "0.35rem 0.6rem", borderRadius: "0.5rem", cursor: "pointer", whiteSpace: "nowrap" }}>
-                            🔗 Unificar
-                          </button>
-                          {c._count.orders === 0 && (
-                            <button onClick={() => handleDelete(c.id, c.name)}
-                              style={{ backgroundColor: "#fee8e8", border: "1px solid rgba(192,64,64,0.2)", color: "#c04040", fontSize: "0.75rem", fontWeight: 700, padding: "0.35rem 0.6rem", borderRadius: "0.5rem", cursor: "pointer" }}>
-                              🗑️
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                  {/* Painel de unificação */}
-                  {mergingId === c.id && (
-                    <tr>
-                      <td colSpan={6} style={{ padding: "0.5rem 1rem 1rem", backgroundColor: "#f8f0ff" }}>
-                        <div style={{ padding: "0.875rem 1rem", backgroundColor: "#fff", borderRadius: "0.75rem", border: "1px solid rgba(106,48,184,0.2)" }}>
-                          <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "#5a1090", marginBottom: "0.5rem" }}>
-                            🔗 Unificar com qual cliente? Os pedidos serão movidos para <strong>{c.name}</strong> e o duplicado será excluído.
-                          </p>
-                          <input style={inp} placeholder="Buscar duplicata pelo nome..." value={mergeSearch}
-                            onChange={e => setMergeSearch(e.target.value)} autoFocus />
-                          {mergeSearch.length >= 2 && (
-                            <div style={{ marginTop: "0.5rem", border: "1px solid rgba(106,48,184,0.15)", borderRadius: "0.5rem", overflow: "hidden" }}>
-                              {clientes
-                                .filter(x => x.id !== c.id && (x.name || "").toLowerCase().includes(mergeSearch.toLowerCase()))
-                                .slice(0, 5)
-                                .map(x => (
-                                  <button key={x.id} disabled={merging}
-                                    onClick={() => {
-                                      if (confirm(`Mover todos os pedidos de "${x.name}" para "${c.name}" e excluir "${x.name}"?`))
-                                        handleMerge(c.id, x.id);
-                                    }}
-                                    style={{ display: "flex", justifyContent: "space-between", width: "100%", textAlign: "left", padding: "0.5rem 0.75rem", background: "#fff", border: "none", borderBottom: "1px solid rgba(106,48,184,0.08)", cursor: "pointer", fontSize: "0.8rem" }}
-                                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#f8f0ff")}
-                                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#fff")}>
-                                    <span style={{ fontWeight: 700, color: "#1a1510" }}>{x.name}</span>
-                                    <span style={{ color: "#9a8060", fontSize: "0.72rem" }}>{x._count.orders} pedido(s)</span>
-                                  </button>
-                                ))}
-                              {clientes.filter(x => x.id !== c.id && (x.name || "").toLowerCase().includes(mergeSearch.toLowerCase())).length === 0 && (
-                                <p style={{ padding: "0.5rem 0.75rem", color: "#9a8060", fontSize: "0.8rem" }}>Nenhum cliente encontrado.</p>
-                              )}
+                    <tr style={{ borderBottom: "1px solid rgba(140,100,20,0.06)", backgroundColor: isEditing ? "#fffbf0" : undefined }}>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        {isEditing ? (
+                          <input style={inp} value={editName} onChange={e => setEditName(e.target.value)} autoFocus />
+                        ) : (
+                          <div>
+                            <Link href={`/admin/clientes/${c.id}`} style={{ fontWeight: 700, color: "#1a1510", textDecoration: "none", fontSize: "0.875rem" }}
+                              onMouseOver={e => (e.currentTarget.style.color = "#b8891a")}
+                              onMouseOut={e => (e.currentTarget.style.color = "#1a1510")}>
+                              {c.name || "—"}
+                            </Link>
+                            <div style={{ fontSize: "0.68rem", color: "#b8a080", marginTop: "0.1rem" }}>
+                              desde {new Date(c.createdAt).toLocaleDateString("pt-BR")}
                             </div>
-                          )}
-                          <button onClick={() => setMergingId(null)} style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#9a8060", background: "none", border: "none", cursor: "pointer" }}>Cancelar</button>
-                        </div>
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        {isEditing ? (
+                          <input style={inp} value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="Telefone" />
+                        ) : (
+                          <div style={{ fontSize: "0.8rem", color: "#5a4a2a" }}>
+                            {c.phone || <span style={{ color: "#ccc" }}>—</span>}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem", color: "#5a4a2a", fontWeight: 600 }}>{c.totalPedidos}</td>
+                      <td style={{ padding: "0.75rem 1rem", color: "#1a8a2a", fontWeight: 700 }}>{fmt(c.totalGasto)}</td>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        {c.saldoAberto > 0
+                          ? <span style={{ backgroundColor: "#fff8e1", color: "#856404", fontWeight: 700, fontSize: "0.8rem", padding: "0.2rem 0.5rem", borderRadius: 999 }}>{fmt(c.saldoAberto)}</span>
+                          : <span style={{ color: "#b8a080", fontSize: "0.8rem" }}>—</span>
+                        }
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+                        {c.ultimaCompra ? new Date(c.ultimaCompra).toLocaleDateString("pt-BR") : "—"}
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        {isEditing ? (
+                          <div style={{ display: "flex", gap: "0.4rem" }}>
+                            <button onClick={() => handleSave(c.id)} disabled={saving}
+                              style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.4rem", padding: "0.35rem 0.75rem", fontWeight: 700, fontSize: "0.75rem", cursor: "pointer" }}>
+                              {saving ? "..." : "Salvar"}
+                            </button>
+                            <button onClick={() => setEditingId(null)}
+                              style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", borderRadius: "0.4rem", padding: "0.35rem 0.5rem", fontWeight: 700, fontSize: "0.75rem", cursor: "pointer" }}>✕</button>
+                          </div>
+                        ) : (
+                          <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+                            <Link href={`/admin/clientes/${c.id}`}
+                              style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(184,137,26,0.3)", color: "#b8891a", fontSize: "0.72rem", fontWeight: 700, padding: "0.3rem 0.625rem", borderRadius: "0.4rem", textDecoration: "none", whiteSpace: "nowrap" }}>
+                              Ver perfil
+                            </Link>
+                            <button onClick={() => { setEditingId(c.id); setEditName(c.name || ""); setEditPhone(c.phone || ""); }}
+                              style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#7a6030", fontSize: "0.72rem", fontWeight: 700, padding: "0.3rem 0.5rem", borderRadius: "0.4rem", cursor: "pointer" }}>
+                              ✏️
+                            </button>
+                            <button onClick={() => { setMergingId(mergingId === c.id ? null : c.id); setMergeSearch(""); }}
+                              style={{ backgroundColor: "#f0e8ff", border: "1px solid rgba(106,48,184,0.2)", color: "#6a30b8", fontSize: "0.72rem", fontWeight: 700, padding: "0.3rem 0.5rem", borderRadius: "0.4rem", cursor: "pointer" }}>
+                              🔗
+                            </button>
+                            {c.totalPedidos === 0 && (
+                              <button onClick={() => handleDelete(c.id, c.name)}
+                                style={{ backgroundColor: "#fee8e8", border: "1px solid rgba(192,64,64,0.2)", color: "#c04040", fontSize: "0.72rem", fontWeight: 700, padding: "0.3rem 0.5rem", borderRadius: "0.4rem", cursor: "pointer" }}>
+                                🗑️
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
-                  )}
-                </React.Fragment>
-              );
+                    {mergingId === c.id && (
+                      <tr>
+                        <td colSpan={7} style={{ padding: "0.5rem 1rem 1rem", backgroundColor: "#f8f0ff" }}>
+                          <div style={{ padding: "0.875rem", backgroundColor: "#fff", borderRadius: "0.75rem", border: "1px solid rgba(106,48,184,0.2)" }}>
+                            <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "#5a1090", marginBottom: "0.5rem" }}>
+                              🔗 Unificar com qual cliente? Pedidos serão movidos para <strong>{c.name}</strong>.
+                            </p>
+                            <input style={inp} placeholder="Buscar duplicata..." value={mergeSearch} onChange={e => setMergeSearch(e.target.value)} autoFocus />
+                            {mergeSearch.length >= 2 && (
+                              <div style={{ marginTop: "0.5rem", border: "1px solid rgba(106,48,184,0.15)", borderRadius: "0.5rem", overflow: "hidden" }}>
+                                {clientes.filter(x => x.id !== c.id && (x.name || "").toLowerCase().includes(mergeSearch.toLowerCase())).slice(0, 5).map(x => (
+                                  <button key={x.id} disabled={merging}
+                                    onClick={() => { if (confirm(`Mover pedidos de "${x.name}" para "${c.name}"?`)) handleMerge(c.id, x.id); }}
+                                    style={{ display: "flex", justifyContent: "space-between", width: "100%", textAlign: "left", padding: "0.5rem 0.75rem", background: "#fff", border: "none", borderBottom: "1px solid rgba(106,48,184,0.08)", cursor: "pointer", fontSize: "0.8rem" }}>
+                                    <span style={{ fontWeight: 700 }}>{x.name}</span>
+                                    <span style={{ color: "#9a8060" }}>{x.totalPedidos} pedidos</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            <button onClick={() => setMergingId(null)} style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "#9a8060", background: "none", border: "none", cursor: "pointer" }}>Cancelar</button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
               })}
-
               {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: "center", padding: "3rem", color: "#b8a080" }}>
-                    Nenhum cliente encontrado.
-                  </td>
-                </tr>
+                <tr><td colSpan={7} style={{ textAlign: "center", padding: "3rem", color: "#b8a080" }}>Nenhum cliente encontrado.</td></tr>
               )}
             </tbody>
           </table>
