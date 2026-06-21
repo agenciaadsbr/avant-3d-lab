@@ -7,7 +7,7 @@ import { slugify } from "@/lib/utils";
 type Category = { id: string; name: string };
 type Product = {
   id: string; name: string; slug: string; description: string | null;
-  price: number; compareAt: number | null; images: string;
+  price: number; costPrice: number | null; compareAt: number | null; images: string;
   sizes: string; colors: string; stock: number;
   featured: boolean; active: boolean; categoryId: string;
 };
