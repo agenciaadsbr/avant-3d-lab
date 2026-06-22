@@ -719,6 +719,12 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                     📝 {order.notes}
                                   </div>
                                 )}
+                                {order.status !== "cancelled" && (
+                                  <button onClick={() => { if (confirm("Cancelar este pedido?")) updateStatus(order.id, "cancelled"); }}
+                                    style={{ marginTop: "0.875rem", width: "100%", padding: "0.5rem", backgroundColor: "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.2)", borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer" }}>
+                                    🚫 Cancelar Pedido
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
