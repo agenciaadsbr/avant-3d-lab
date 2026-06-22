@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import ClientesClient from "./ClientesClientV2";
 
 export const dynamic = 'force-dynamic';
-// v2
+// v3
 
 export default async function ClientesPage() {
   const session = await auth();
