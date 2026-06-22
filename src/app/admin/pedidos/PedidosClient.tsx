@@ -81,6 +81,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const [togglingInstallment, setTogglingInstallment] = useState<string | null>(null);
   const [editingItemCost, setEditingItemCost] = useState<string | null>(null);
   const [itemCostValue, setItemCostValue] = useState("");
+  const [removingItemId, setRemovingItemId] = useState<string | null>(null);
   const [editingInstallmentId, setEditingInstallmentId] = useState<string | null>(null);
   const [editInstallmentDate, setEditInstallmentDate] = useState("");
   const [editInstallmentAmount, setEditInstallmentAmount] = useState("");
@@ -155,6 +156,22 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
       setLocalOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updated } : o));
     }
     setEditingPayment(null);
+  };
+
+  const removeItem = async (orderId: string, itemId: string) => {
+    if (!confirm("Remover este item do pedido?")) return;
+    setRemovingItemId(itemId);
+    const res = await fetch(`/api/admin/order-items/${itemId}`, { method: "DELETE" });
+    if (res.ok) {
+      const { newTotal } = await res.json();
+      setLocalOrders(prev => prev.map(o => o.id === orderId ? {
+        ...o,
+        items: o.items.filter(i => i.id !== itemId),
+        total: newTotal,
+        subtotal: newTotal,
+      } : o));
+    }
+    setRemovingItemId(null);
   };
 
   const saveItemCost = async (orderId: string, itemId: string) => {
@@ -405,9 +422,12 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                 const isEditingCost = editingItemCost === item.id;
                                 return (
                                   <div key={item.id} style={{ padding: "0.4rem 0", borderBottom: "1px solid rgba(140,100,20,0.06)", fontSize: "0.8rem" }}>
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                      <span style={{ color: "#3a2a10" }}>{item.size ? `${item.product.name} (${item.size})` : item.product.name}</span>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
+                                      <span style={{ color: "#3a2a10", flex: 1 }}>{item.size ? `${item.product.name} (${item.size})` : item.product.name}</span>
                                       <span style={{ color: "#1a1510", fontWeight: 700 }}>{fmt(item.price)}</span>
+                                      <button onClick={() => removeItem(order.id, item.id)} disabled={removingItemId === item.id}
+                                        style={{ background: "none", border: "none", cursor: "pointer", color: "#c04040", fontSize: "0.9rem", padding: "0 2px", lineHeight: 1, opacity: removingItemId === item.id ? 0.4 : 1 }}
+                                        title="Remover item">✕</button>
                                     </div>
                                     <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginTop: "0.2rem" }}>
                                       {isEditingCost ? (
