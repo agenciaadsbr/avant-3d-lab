@@ -79,17 +79,17 @@ export default function CartDrawer() {
                     {item.size !== "Único" && <p style={{ color: "#9a8060", fontSize: "0.75rem" }}>{item.size}</p>}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "0.5rem" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                        <button onClick={() => updateQuantity(item.productId, item.size, item.color, item.quantity - 1)} style={{ width: 24, height: 24, borderRadius: "50%", border: "1px solid rgba(140,100,20,0.2)", backgroundColor: "#FAF6EE", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <button onClick={() => updateQuantity(item.id, item.quantity - 1)} style={{ width: 24, height: 24, borderRadius: "50%", border: "1px solid rgba(140,100,20,0.2)", backgroundColor: "#FAF6EE", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <Minus size={12} color="#7a6030" />
                         </button>
                         <span style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.875rem", minWidth: 20, textAlign: "center" }}>{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.productId, item.size, item.color, item.quantity + 1)} style={{ width: 24, height: 24, borderRadius: "50%", border: "1px solid rgba(140,100,20,0.2)", backgroundColor: "#FAF6EE", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <button onClick={() => updateQuantity(item.id, item.quantity + 1)} style={{ width: 24, height: 24, borderRadius: "50%", border: "1px solid rgba(140,100,20,0.2)", backgroundColor: "#FAF6EE", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <Plus size={12} color="#7a6030" />
                         </button>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                         <span style={{ fontWeight: 900, color: "#b8891a" }}>{formatCurrency(item.price * item.quantity)}</span>
-                        <button onClick={() => removeItem(item.productId, item.size, item.color)} style={{ background: "none", border: "none", cursor: "pointer", color: "#c04040", padding: "0.25rem" }}>
+                        <button onClick={() => removeItem(item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#c04040", padding: "0.25rem" }}>
                           <Trash2 size={14} />
                         </button>
                       </div>
