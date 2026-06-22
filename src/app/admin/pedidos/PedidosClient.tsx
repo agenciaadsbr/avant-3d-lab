@@ -342,7 +342,9 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                 const isExpanded = expanded === order.id;
                 const firstItem = order.items[0];
                 const produtoNome = firstItem
-                  ? (firstItem.size || firstItem.product?.name || "—")
+                  ? (firstItem.product?.name !== "Venda Manual"
+                      ? `${firstItem.product?.name}${firstItem.size ? ` (${firstItem.size})` : ""}`
+                      : firstItem.size || firstItem.product?.name || "—")
                   : "—";
                 const maisItens = order.items.length > 1 ? ` +${order.items.length - 1}` : "";
                 return (

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
+import CancelButton from "./CancelButton";
 
 export const dynamic = "force-dynamic";
 
@@ -97,9 +98,12 @@ export default async function MeusPedidosPage() {
                     </div>
 
                     {order.status === "pending" && (
-                      <div style={{ marginTop: "0.75rem", padding: "0.625rem 0.875rem", backgroundColor: "#fff8e1", borderRadius: "0.625rem", fontSize: "0.78rem", color: "#856404" }}>
-                        Seu pedido foi recebido! Entraremos em contato pelo WhatsApp para confirmar.
-                      </div>
+                      <>
+                        <div style={{ marginTop: "0.75rem", padding: "0.625rem 0.875rem", backgroundColor: "#fff8e1", borderRadius: "0.625rem", fontSize: "0.78rem", color: "#856404" }}>
+                          Seu pedido foi recebido! Entraremos em contato pelo WhatsApp para confirmar.
+                        </div>
+                        <CancelButton orderId={order.id} />
+                      </>
                     )}
                     {order.status === "shipped" && (
                       <div style={{ marginTop: "0.75rem", padding: "0.625rem 0.875rem", backgroundColor: "#f0e8ff", borderRadius: "0.625rem", fontSize: "0.78rem", color: "#6a30b8" }}>
