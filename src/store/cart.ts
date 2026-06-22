@@ -15,6 +15,8 @@ export type CartItem = {
 type CartStore = {
   items: CartItem[];
   isOpen: boolean;
+  couponCode: string;
+  couponDiscount: number | null;
   addItem: (item: Omit<CartItem, "id">) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
@@ -24,6 +26,8 @@ type CartStore = {
   closeCart: () => void;
   total: () => number;
   count: () => number;
+  setCoupon: (code: string, discount: number) => void;
+  clearCoupon: () => void;
 };
 
 export const useCart = create<CartStore>()(
@@ -31,54 +35,38 @@ export const useCart = create<CartStore>()(
     (set, get) => ({
       items: [],
       isOpen: false,
+      couponCode: "",
+      couponDiscount: null,
 
       addItem: (item) => {
         const items = get().items;
         const key = `${item.productId}-${item.size}-${item.color}`;
         const existing = items.find(
-          (i) =>
-            i.productId === item.productId &&
-            i.size === item.size &&
-            i.color === item.color
+          (i) => i.productId === item.productId && i.size === item.size && i.color === item.color
         );
         if (existing) {
-          set({
-            items: items.map((i) =>
-              i.id === existing.id
-                ? { ...i, quantity: i.quantity + item.quantity }
-                : i
-            ),
-          });
+          set({ items: items.map((i) => i.id === existing.id ? { ...i, quantity: i.quantity + item.quantity } : i) });
         } else {
           set({ items: [...items, { ...item, id: key + Date.now() }] });
         }
       },
 
-      removeItem: (id) =>
-        set({ items: get().items.filter((i) => i.id !== id) }),
+      removeItem: (id) => set({ items: get().items.filter((i) => i.id !== id) }),
 
       updateQuantity: (id, quantity) => {
-        if (quantity < 1) {
-          get().removeItem(id);
-          return;
-        }
-        set({
-          items: get().items.map((i) =>
-            i.id === id ? { ...i, quantity } : i
-          ),
-        });
+        if (quantity < 1) { get().removeItem(id); return; }
+        set({ items: get().items.map((i) => i.id === id ? { ...i, quantity } : i) });
       },
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ items: [], couponCode: "", couponDiscount: null }),
       toggleCart: () => set({ isOpen: !get().isOpen }),
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
+      setCoupon: (code, discount) => set({ couponCode: code, couponDiscount: discount }),
+      clearCoupon: () => set({ couponCode: "", couponDiscount: null }),
 
-      total: () =>
-        get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
-
-      count: () =>
-        get().items.reduce((sum, i) => sum + i.quantity, 0),
+      total: () => get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+      count: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
     }),
     { name: "access-fit-cart" }
   )

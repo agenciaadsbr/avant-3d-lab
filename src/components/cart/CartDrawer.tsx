@@ -7,9 +7,8 @@ import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 
 export default function CartDrawer() {
-  const { items, isOpen, closeCart, removeItem, updateQuantity, total } = useCart();
-  const [couponCode, setCouponCode] = useState("");
-  const [couponDiscount, setCouponDiscount] = useState<number | null>(null);
+  const { items, isOpen, closeCart, removeItem, updateQuantity, total, couponCode, couponDiscount, setCoupon, clearCoupon } = useCart();
+  const [couponInput, setCouponInput] = useState("");
   const [couponError, setCouponError] = useState("");
   const [checkingCoupon, setCheckingCoupon] = useState(false);
 
@@ -20,24 +19,23 @@ export default function CartDrawer() {
   const totalFinal = subtotal - desconto;
 
   const applyCoupon = async () => {
-    if (!couponCode.trim()) return;
+    if (!couponInput.trim()) return;
     setCheckingCoupon(true);
     setCouponError("");
-    const res = await fetch(`/api/cupom?code=${encodeURIComponent(couponCode.trim())}`);
+    const res = await fetch(`/api/cupom?code=${encodeURIComponent(couponInput.trim())}`);
     setCheckingCoupon(false);
     if (res.ok) {
       const data = await res.json();
-      setCouponDiscount(data.discount);
+      setCoupon(data.code, data.discount);
     } else {
       const data = await res.json();
       setCouponError(data.error || "Cupom inválido");
-      setCouponDiscount(null);
     }
   };
 
   const removeCoupon = () => {
-    setCouponCode("");
-    setCouponDiscount(null);
+    setCouponInput("");
+    clearCoupon();
     setCouponError("");
   };
 
@@ -115,12 +113,12 @@ export default function CartDrawer() {
                 <div style={{ display: "flex", gap: "0.5rem" }}>
                   <input
                     placeholder="Cupom de desconto"
-                    value={couponCode}
-                    onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }}
+                    value={couponInput}
+                    onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError(""); }}
                     onKeyDown={e => e.key === "Enter" && applyCoupon()}
                     style={{ flex: 1, padding: "0.5rem 0.75rem", border: "1px solid rgba(140,100,20,0.25)", borderRadius: "0.5rem", fontSize: "0.8rem", backgroundColor: "#FAF6EE", outline: "none" }}
                   />
-                  <button onClick={applyCoupon} disabled={checkingCoupon || !couponCode.trim()}
+                  <button onClick={applyCoupon} disabled={checkingCoupon || !couponInput.trim()}
                     style={{ padding: "0.5rem 0.875rem", backgroundColor: "#1a1510", color: "#FAF6EE", border: "none", borderRadius: "0.5rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", whiteSpace: "nowrap" }}>
                     {checkingCoupon ? "..." : "Aplicar"}
                   </button>

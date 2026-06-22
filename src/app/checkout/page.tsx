@@ -23,7 +23,7 @@ const inp = {
 };
 
 export default function CheckoutPage() {
-  const { items, total, clearCart } = useCart();
+  const { items, total, clearCart, couponCode, couponDiscount } = useCart();
   const [skus, setSkus] = useState<Record<string, string>>({});
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -51,39 +51,65 @@ export default function CheckoutPage() {
       .catch(() => {});
   }, [items]);
 
-  const handleWhatsApp = () => {
+  const desconto = couponDiscount ? (total() * couponDiscount) / 100 : 0;
+  const totalFinal = total() - desconto;
+
+  const handleWhatsApp = async () => {
     if (!name.trim() || !phone.trim()) return;
 
     const linhas = items.map(item => {
       const sku = skus[item.productId] ? `[${skus[item.productId]}] ` : "";
-      const tam = item.size && item.size !== "Único" ? ` — Tam. ${item.size}` : "";
-      const qtd = item.quantity > 1 ? ` × ${item.quantity}` : "";
-      return `👗 ${sku}${item.name}${tam}${qtd} — ${formatCurrency(item.price * item.quantity)}`;
+      const tam = item.size && item.size !== "Unico" ? ` - Tam. ${item.size}` : "";
+      const qtd = item.quantity > 1 ? ` x${item.quantity}` : "";
+      return `- ${sku}${item.name}${tam}${qtd}: ${formatCurrency(item.price * item.quantity)}`;
     }).join("\n");
 
     const tipoTexto = type === "tryon"
-      ? "🏠 *Home Try-On* — experimentar em casa (48h para devolução)\n⚠️ Taxa de R$ 30,00 caso devolva · Grátis se ficar com a peça"
-      : "🛍️ *Compra*";
+      ? "Home Try-On (experimentar em casa - 48h para devolver)\nTaxa de R$ 30,00 se devolver"
+      : "Compra";
 
     const enderecoCompleto = type === "tryon"
       ? `${street}, ${number}${complement ? ` - ${complement}` : ""}, ${neighborhood}, ${city} - ${state}, CEP: ${cep}`
       : "";
 
+    const cupomLinha = couponCode && couponDiscount
+      ? `\nCupom: ${couponCode} (-${couponDiscount}%) = -${formatCurrency(desconto)}`
+      : "";
+
     const msg = [
-      `Olá! Gostaria de fazer um pedido na *Access Fit* 🌟`,
+      `Ola! Gostaria de fazer um pedido na Access Fit`,
       ``,
       linhas,
       ``,
-      `💰 *Total: ${formatCurrency(total())}*`,
+      `*Total: ${formatCurrency(totalFinal)}*${cupomLinha}`,
       ``,
-      `📋 Tipo: ${tipoTexto}`,
-      `👤 Nome: ${name}`,
-      `📞 Telefone: ${phone}`,
-      type === "tryon" && cpf ? `🪪 CPF: ${cpf}` : "",
-      type === "tryon" ? `📍 Endereço: ${enderecoCompleto}` : city ? `📍 Cidade: ${city}` : "",
-      type === "compra" ? `💳 Pagamento: ${PAY_LABELS[payMethod] || payMethod}` : "",
-      type === "tryon" ? `\n✅ *Li e aceito os termos do Home Try-On:*\n• Devolverei as peças em até 48h caso não queira ficar\n• Peças com avaria, sem etiqueta ou lavadas serão cobradas integralmente` : "",
+      `Tipo: ${tipoTexto}`,
+      `Nome: ${name}`,
+      `Telefone: ${phone}`,
+      type === "tryon" && cpf ? `CPF: ${cpf}` : "",
+      type === "tryon" ? `Endereco: ${enderecoCompleto}` : city ? `Cidade: ${city}` : "",
+      type === "compra" ? `Pagamento: ${PAY_LABELS[payMethod] || payMethod}` : "",
     ].filter(Boolean).join("\n");
+
+    // Criar pedido no banco
+    try {
+      await fetch("/api/pedidos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map(i => ({ productId: i.productId, quantity: i.quantity, price: i.price, size: i.size })),
+          total: totalFinal,
+          subtotal: total(),
+          discount: desconto,
+          paymentMethod: type === "tryon" ? "pix" : payMethod,
+          notes: `${name} | ${phone}${city ? ` | ${city}` : ""}${couponCode ? ` | Cupom: ${couponCode}` : ""}`,
+          couponCode: couponCode || null,
+          status: type === "tryon" ? "try-on" : "pending",
+        }),
+      });
+    } catch (e) {
+      // não bloqueia o fluxo se falhar
+    }
 
     const url = `https://wa.me/5551986596705?text=${encodeURIComponent(msg)}`;
     window.open(url, "_blank");
@@ -147,9 +173,23 @@ export default function CheckoutPage() {
                 </div>
               ))}
             </div>
-            <div style={{ borderTop: "1px solid rgba(140,100,20,0.1)", paddingTop: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontWeight: 700, color: "#1a1510" }}>Total</span>
-              <span style={{ fontWeight: 900, fontSize: "1.25rem", color: "#b8891a" }}>{formatCurrency(total())}</span>
+            <div style={{ borderTop: "1px solid rgba(140,100,20,0.1)", paddingTop: "1rem" }}>
+              {couponCode && couponDiscount && (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem" }}>
+                    <span style={{ color: "#5a4a2a", fontSize: "0.875rem" }}>Subtotal</span>
+                    <span style={{ color: "#5a4a2a" }}>{formatCurrency(total())}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem" }}>
+                    <span style={{ color: "#1a8a2a", fontSize: "0.875rem", fontWeight: 700 }}>Cupom {couponCode} (-{couponDiscount}%)</span>
+                    <span style={{ color: "#1a8a2a", fontWeight: 700 }}>-{formatCurrency(desconto)}</span>
+                  </div>
+                </>
+              )}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontWeight: 700, color: "#1a1510" }}>Total</span>
+                <span style={{ fontWeight: 900, fontSize: "1.25rem", color: "#b8891a" }}>{formatCurrency(totalFinal)}</span>
+              </div>
             </div>
           </div>
 
