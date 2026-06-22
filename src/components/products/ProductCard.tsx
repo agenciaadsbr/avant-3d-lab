@@ -22,8 +22,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     if (outOfStock) return;
-    addItem({ productId: product.id, name: product.name, price: product.price, image: images[0] || "", size: sizes[0] || "Único", color: "Padrão", quantity: 1 });
-    openCart();
+    window.location.href = `/produtos/${product.slug}`;
   };
 
   return (
@@ -83,7 +82,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
           <button onClick={handleAddToCart} disabled={outOfStock}
             style={{ width: "100%", padding: "0.6rem", backgroundColor: outOfStock ? "#e8e0d0" : "#1a1510", color: outOfStock ? "#9a8060" : "#FAF6EE", fontWeight: 800, fontSize: "0.8rem", border: "none", borderRadius: "0.625rem", cursor: outOfStock ? "not-allowed" : "pointer", letterSpacing: "0.03em" }}>
-            {outOfStock ? "Esgotado" : "Ver opções"}
+            {outOfStock ? "Esgotado" : "Ver produto"}
           </button>
         </div>
       </div>
