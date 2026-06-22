@@ -167,6 +167,7 @@ model Order {
   shipping      Float    @default(0)
   discount      Float    @default(0)
   notes         String?
+  couponCode    String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

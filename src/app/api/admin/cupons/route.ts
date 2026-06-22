@@ -9,7 +9,26 @@ export async function GET() {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const cupons = await prisma.coupon.findMany({ orderBy: { createdAt: "desc" } });
-  return NextResponse.json(cupons);
+
+  // Buscar estatísticas de uso por cupom
+  const stats = await prisma.order.groupBy({
+    by: ["couponCode"],
+    where: { couponCode: { not: null }, status: { not: "cancelled" } },
+    _count: { id: true },
+    _sum: { total: true },
+  });
+
+  const statsMap = Object.fromEntries(
+    stats.filter(s => s.couponCode).map(s => [s.couponCode!, { count: s._count.id, total: s._sum.total || 0 }])
+  );
+
+  const result = cupons.map(c => ({
+    ...c,
+    usageCount: statsMap[c.code]?.count || 0,
+    usageTotal: statsMap[c.code]?.total || 0,
+  }));
+
+  return NextResponse.json(result);
 }
 
 export async function POST(req: Request) {

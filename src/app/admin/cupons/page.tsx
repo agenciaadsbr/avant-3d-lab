@@ -5,6 +5,7 @@ type Coupon = {
   id: string; code: string; discount: number; type: string;
   maxUses: number | null; usedCount: number; active: boolean;
   expiresAt: string | null; createdAt: string;
+  usageCount: number; usageTotal: number;
 };
 
 const inp = {
@@ -119,7 +120,7 @@ export default function CuponsPage() {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
             <thead>
               <tr style={{ backgroundColor: "#FAF6EE" }}>
-                {["Código", "Desconto", "Usos", "Validade", "Status", ""].map(h => (
+                {["Código", "Desconto", "Vendas", "Total gerado", "Limite", "Validade", "Status", ""].map(h => (
                   <th key={h} style={{ textAlign: "left", padding: "0.875rem 1rem", color: "#9a8060", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.1)" }}>{h}</th>
                 ))}
               </tr>
@@ -137,6 +138,22 @@ export default function CuponsPage() {
                     </td>
                     <td style={{ padding: "0.875rem 1rem", fontWeight: 900, color: "#b8891a", fontSize: "1.1rem" }}>
                       {c.discount}%
+                    </td>
+                    <td style={{ padding: "0.875rem 1rem" }}>
+                      {c.usageCount > 0 ? (
+                        <span style={{ fontWeight: 700, color: "#1a8a2a" }}>{c.usageCount} venda{c.usageCount !== 1 ? "s" : ""}</span>
+                      ) : (
+                        <span style={{ color: "#b8a080", fontSize: "0.8rem" }}>Nenhuma</span>
+                      )}
+                    </td>
+                    <td style={{ padding: "0.875rem 1rem" }}>
+                      {c.usageTotal > 0 ? (
+                        <span style={{ fontWeight: 700, color: "#1a8a2a" }}>
+                          {c.usageTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        </span>
+                      ) : (
+                        <span style={{ color: "#b8a080", fontSize: "0.8rem" }}>—</span>
+                      )}
                     </td>
                     <td style={{ padding: "0.875rem 1rem", color: "#5a4a2a", fontSize: "0.85rem" }}>
                       {c.usedCount}{c.maxUses ? ` / ${c.maxUses}` : " / ∞"}
