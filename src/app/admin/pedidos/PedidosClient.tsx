@@ -263,8 +263,8 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
         {[
           { emoji: "🛍️", label: "Total de Pedidos", value: filtered.length, gold: false },
           { emoji: "💰", label: "Receita", value: fmt(totalReceita), gold: true },
-          ...(hideProfit ? [] : [{ emoji: "📈", label: "Lucro Líquido", value: fmt(lucroLiquido), gold: false, lucro: true, sub: itemsComCusto < totalItems ? `${margemLucro.toFixed(1)}% margem (${itemsComCusto}/${totalItems} itens)` : `${margemLucro.toFixed(1)}% de margem` }]),
-          ...(hideProfit ? [] : [{ emoji: "⏳", label: "Em Aberto", value: fmt(totalEmAberto), gold: false, warn: totalEmAberto > 0 }]),
+          { emoji: "📈", label: "Lucro Líquido", value: fmt(lucroLiquido), gold: false, lucro: true, sub: itemsComCusto < totalItems ? `${margemLucro.toFixed(1)}% margem (${itemsComCusto}/${totalItems} itens)` : `${margemLucro.toFixed(1)}% de margem` },
+          { emoji: "⏳", label: "Em Aberto", value: fmt(totalEmAberto), gold: false, warn: totalEmAberto > 0 },
           { emoji: "📒", label: "Caderno na Rua", value: fmt(cadernoTotal), gold: false, caderno: cadernoTotal > 0 },
           { emoji: "✅", label: "Entregues", value: filtered.filter(o => o.status === "delivered").length, gold: false },
           { emoji: "🚫", label: "Cancelados", value: localOrders.filter(o => o.status === "cancelled").length, gold: false, cancel: true },
@@ -278,11 +278,13 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
               cursor: (s as any).caderno || (s as any).cancel ? "pointer" : "default",
             }}>
             <div style={{ fontSize: "1.25rem", marginBottom: "0.4rem" }}>{s.emoji}</div>
-            <div style={{ color: (s as any).lucro ? "#1a8a2a" : (s as any).caderno ? (methodFilter === "caderno" ? "#fff" : "#856404") : (s as any).cancel ? (statusFilter === "cancelled" ? "#fff" : "#c04040") : s.gold ? "#fff" : "#1a1510", fontSize: "1.4rem", fontWeight: 900 }}>{s.value}</div>
+            <div style={{ color: hideProfit ? "#e8e0d0" : ((s as any).lucro ? "#1a8a2a" : (s as any).caderno ? (methodFilter === "caderno" ? "#fff" : "#856404") : (s as any).cancel ? (statusFilter === "cancelled" ? "#fff" : "#c04040") : s.gold ? "#fff" : "#1a1510"), fontSize: "1.4rem", fontWeight: 900 }}>
+              {hideProfit ? "—" : s.value}
+            </div>
             <div style={{ color: (s as any).caderno ? (methodFilter === "caderno" ? "rgba(255,255,255,0.8)" : "#a07820") : (s as any).cancel ? (statusFilter === "cancelled" ? "rgba(255,255,255,0.8)" : "#c04040") : s.gold ? "rgba(255,255,255,0.8)" : "#9a8060", fontSize: "0.75rem", marginTop: "0.2rem" }}>
               {s.label}{(s as any).caderno && cadernoCount > 0 ? ` (${cadernoCount} pedidos)` : ""}
             </div>
-            {(s as any).sub && <div style={{ color: "#1a8a2a", fontSize: "0.68rem", fontWeight: 700, marginTop: "0.1rem" }}>{(s as any).sub}</div>}
+            {(s as any).sub && <div style={{ color: hideProfit ? "#e8e0d0" : "#1a8a2a", fontSize: "0.68rem", fontWeight: 700, marginTop: "0.1rem" }}>{hideProfit ? "—" : (s as any).sub}</div>}
           </div>
         ))}
       </div>
