@@ -1,6 +1,7 @@
 "use client";
 export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback } from "react";
+import ProjecaoCaixa from "../ProjecaoCaixa";
 
 const CATEGORIES = [
   { value: "estoque", label: "🛍️ Reposição de Estoque" },
@@ -237,6 +238,9 @@ export default function FinanceiroPage() {
           </button>
         ))}
       </div>
+
+      {/* Projeção de Caixa */}
+      <ProjecaoCaixa />
 
       {/* Aba Cartão */}
       {tab === "cartao" && (
