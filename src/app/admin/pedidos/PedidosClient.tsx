@@ -265,18 +265,19 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
           { emoji: "⏳", label: "Em Aberto", value: fmt(totalEmAberto), gold: false, warn: totalEmAberto > 0 },
           { emoji: "📒", label: "Caderno na Rua", value: fmt(cadernoTotal), gold: false, caderno: cadernoTotal > 0 },
           { emoji: "✅", label: "Entregues", value: filtered.filter(o => o.status === "delivered").length, gold: false },
+          { emoji: "🚫", label: "Cancelados", value: localOrders.filter(o => o.status === "cancelled").length, gold: false, cancel: true },
         ].map(s => (
           <div key={s.label}
-            onClick={(s as any).caderno ? () => setMethodFilter(methodFilter === "caderno" ? "" : "caderno") : undefined}
+            onClick={(s as any).caderno ? () => setMethodFilter(methodFilter === "caderno" ? "" : "caderno") : (s as any).cancel ? () => setStatusFilter(statusFilter === "cancelled" ? "" : "cancelled") : undefined}
             style={{
-              backgroundColor: (s as any).caderno ? (methodFilter === "caderno" ? "#856404" : "#fffbea") : s.gold ? "#b8891a" : "#fff",
-              border: `1px solid ${(s as any).warn ? "rgba(192,64,64,0.25)" : (s as any).caderno ? "rgba(133,100,4,0.3)" : s.gold ? "none" : "rgba(140,100,20,0.1)"}`,
+              backgroundColor: (s as any).caderno ? (methodFilter === "caderno" ? "#856404" : "#fffbea") : (s as any).cancel ? (statusFilter === "cancelled" ? "#c04040" : "#fff5f5") : s.gold ? "#b8891a" : "#fff",
+              border: `1px solid ${(s as any).warn ? "rgba(192,64,64,0.25)" : (s as any).caderno ? "rgba(133,100,4,0.3)" : (s as any).cancel ? "rgba(192,64,64,0.2)" : s.gold ? "none" : "rgba(140,100,20,0.1)"}`,
               borderRadius: "0.875rem", padding: "1rem 1.25rem", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-              cursor: (s as any).caderno ? "pointer" : "default",
+              cursor: (s as any).caderno || (s as any).cancel ? "pointer" : "default",
             }}>
             <div style={{ fontSize: "1.25rem", marginBottom: "0.4rem" }}>{s.emoji}</div>
-            <div style={{ color: (s as any).lucro ? "#1a8a2a" : (s as any).caderno ? (methodFilter === "caderno" ? "#fff" : "#856404") : s.gold ? "#fff" : "#1a1510", fontSize: "1.4rem", fontWeight: 900 }}>{s.value}</div>
-            <div style={{ color: (s as any).caderno ? (methodFilter === "caderno" ? "rgba(255,255,255,0.8)" : "#a07820") : s.gold ? "rgba(255,255,255,0.8)" : "#9a8060", fontSize: "0.75rem", marginTop: "0.2rem" }}>
+            <div style={{ color: (s as any).lucro ? "#1a8a2a" : (s as any).caderno ? (methodFilter === "caderno" ? "#fff" : "#856404") : (s as any).cancel ? (statusFilter === "cancelled" ? "#fff" : "#c04040") : s.gold ? "#fff" : "#1a1510", fontSize: "1.4rem", fontWeight: 900 }}>{s.value}</div>
+            <div style={{ color: (s as any).caderno ? (methodFilter === "caderno" ? "rgba(255,255,255,0.8)" : "#a07820") : (s as any).cancel ? (statusFilter === "cancelled" ? "rgba(255,255,255,0.8)" : "#c04040") : s.gold ? "rgba(255,255,255,0.8)" : "#9a8060", fontSize: "0.75rem", marginTop: "0.2rem" }}>
               {s.label}{(s as any).caderno && cadernoCount > 0 ? ` (${cadernoCount} pedidos)` : ""}
             </div>
             {(s as any).sub && <div style={{ color: "#1a8a2a", fontSize: "0.68rem", fontWeight: 700, marginTop: "0.1rem" }}>{(s as any).sub}</div>}
