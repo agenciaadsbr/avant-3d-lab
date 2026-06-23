@@ -243,7 +243,7 @@ export default async function AdminPage() {
       <DashboardKPIs kpis={[
         { emoji: "💰", label: "Receita este mês", value: formatCurrency(receitaMes), sub: `${variacaoReceita >= 0 ? "▲" : "▼"} ${Math.abs(variacaoReceita).toFixed(0)}% vs mês ant.`, subOk: variacaoReceita >= 0 },
         { emoji: "📈", label: "Lucro acumulado", value: formatCurrency(lucroLiquido), sub: `despesas: ${formatCurrency(gastosMes)}`, subOk: lucroLiquido >= 0, hideWhen: "profit" },
-        { emoji: "📦", label: "Pedidos este mês", value: ordersThisMonth, sub: `${orderCount} total` },
+        { emoji: "📦", label: "Pedidos este mês", value: String(ordersThisMonth), sub: `${orderCount} total` },
         { emoji: "👗", label: "Em estoque", value: formatCurrency(valorVenda), sub: `${lowStock > 0 ? `${lowStock} com estoque baixo` : "tudo ok"}`, subOk: lowStock === 0 },
       ]} />
 
