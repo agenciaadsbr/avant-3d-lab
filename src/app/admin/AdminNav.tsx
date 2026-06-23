@@ -1,5 +1,6 @@
 "use client";
 import { usePathname } from "next/navigation";
+import { useAdmin } from "@/store/admin";
 
 const links = [
   { href: "/admin",             label: "Início",      emoji: "🏠" },
@@ -30,6 +31,7 @@ const Stars = () => (
 
 export default function AdminNav() {
   const pathname = usePathname();
+  const { hideProfit, toggleHideProfit } = useAdmin();
   const isActive = (href: string) =>
     href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 
@@ -45,14 +47,20 @@ export default function AdminNav() {
       }}>
         <Stars />
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 1.5rem" }}>
-          {/* Logo + título */}
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem 0 0.75rem" }}>
+          {/* Logo + título + toggle */}
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem 0 0.75rem", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
             <img src="/logo.png" alt="Access Fit"
               style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", boxShadow: "0 2px 12px rgba(184,137,26,0.3)", flexShrink: 0 }} />
-            <div>
-              <div style={{ fontSize: "1.35rem", fontWeight: 900, color: "#1a1510", letterSpacing: "-0.03em", lineHeight: 1 }}>Access Fit</div>
-              <div style={{ fontSize: "0.65rem", color: "#b8891a", fontWeight: 700, letterSpacing: "0.1em", marginTop: "0.2rem" }}>PAINEL ADMINISTRATIVO</div>
+              <div>
+                <div style={{ fontSize: "1.35rem", fontWeight: 900, color: "#1a1510", letterSpacing: "-0.03em", lineHeight: 1 }}>Access Fit</div>
+                <div style={{ fontSize: "0.65rem", color: "#b8891a", fontWeight: 700, letterSpacing: "0.1em", marginTop: "0.2rem" }}>PAINEL ADMINISTRATIVO</div>
+              </div>
             </div>
+            <button onClick={toggleHideProfit} className="hide-mobile" title={hideProfit ? "Modo apresentação: ON" : "Modo apresentação: OFF"}
+              style={{ alignItems: "center", gap: "0.5rem", padding: "0.5rem 1rem", backgroundColor: hideProfit ? "#b8891a" : "#f5f5f5", color: hideProfit ? "#fff" : "#7a6040", border: "1px solid rgba(184,137,26,0.2)", borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, display: "flex" }}>
+              {hideProfit ? "👁️ ON" : "👁️ OFF"}
+            </button>
           </div>
 
           {/* Links de navegação */}

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
+import DashboardKPIs from "./DashboardKPIs";
 
 export const dynamic = 'force-dynamic';
 
@@ -239,21 +240,12 @@ export default async function AdminPage() {
       </div>
 
       {/* ===== KPIs MENORES ===== */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
-        {[
-          { emoji: "💰", label: "Receita este mês", value: formatCurrency(receitaMes), sub: `${variacaoReceita >= 0 ? "▲" : "▼"} ${Math.abs(variacaoReceita).toFixed(0)}% vs mês ant.`, subOk: variacaoReceita >= 0 },
-          { emoji: "📈", label: "Lucro acumulado", value: formatCurrency(lucroLiquido), sub: `despesas: ${formatCurrency(gastosMes)}`, subOk: lucroLiquido >= 0 },
-          { emoji: "📦", label: "Pedidos este mês", value: ordersThisMonth, sub: `${orderCount} total` },
-          { emoji: "👗", label: "Em estoque", value: formatCurrency(valorVenda), sub: `${lowStock > 0 ? `${lowStock} com estoque baixo` : "tudo ok"}`, subOk: lowStock === 0 },
-        ].map(k => (
-          <div key={k.label} style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "0.875rem", padding: "0.875rem 1rem", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-            <div style={{ fontSize: "1.1rem", marginBottom: "0.25rem" }}>{k.emoji}</div>
-            <div style={{ color: "#1a1510", fontSize: "1.15rem", fontWeight: 900, lineHeight: 1 }}>{k.value}</div>
-            <div style={{ color: "#9a8060", fontSize: "0.7rem", fontWeight: 700, marginTop: "0.25rem" }}>{k.label}</div>
-            {k.sub && <div style={{ color: (k as any).subOk === false ? "#c04040" : "#9a8060", fontSize: "0.65rem", marginTop: "0.15rem" }}>{k.sub}</div>}
-          </div>
-        ))}
-      </div>
+      <DashboardKPIs kpis={[
+        { emoji: "💰", label: "Receita este mês", value: formatCurrency(receitaMes), sub: `${variacaoReceita >= 0 ? "▲" : "▼"} ${Math.abs(variacaoReceita).toFixed(0)}% vs mês ant.`, subOk: variacaoReceita >= 0 },
+        { emoji: "📈", label: "Lucro acumulado", value: formatCurrency(lucroLiquido), sub: `despesas: ${formatCurrency(gastosMes)}`, subOk: lucroLiquido >= 0, hideWhen: "profit" },
+        { emoji: "📦", label: "Pedidos este mês", value: ordersThisMonth, sub: `${orderCount} total` },
+        { emoji: "👗", label: "Em estoque", value: formatCurrency(valorVenda), sub: `${lowStock > 0 ? `${lowStock} com estoque baixo` : "tudo ok"}`, subOk: lowStock === 0 },
+      ]} />
 
       {/* ===== PEDIDOS RECENTES ===== */}
       <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
