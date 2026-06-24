@@ -71,7 +71,7 @@ export default async function AdminPage() {
   const variacaoReceita = receitaMesPassado > 0 ? ((receitaMes - receitaMesPassado) / receitaMesPassado) * 100 : 0;
   const totalGastos = totalExpenses._sum.amount || 0;
   const gastosMes = expensesThisMonth._sum.amount || 0;
-  const lucroLiquido = (revenue._sum.total || 0) - totalGastos;
+  const lucroLiquido = receitaMes - gastosMes;
   const valorVenda = stockData.reduce((a, p) => a + p.price * p.stock, 0);
 
   // Home Try-On vencidos (dueDate < now ou sem dueDate e criado há +2 dias)
