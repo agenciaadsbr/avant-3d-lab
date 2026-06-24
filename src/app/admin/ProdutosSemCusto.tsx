@@ -7,6 +7,7 @@ interface Produto {
   quantity: number;
   count: number;
   priceRange: { min: number; max: number };
+  firstOrderId?: string;
 }
 
 function fmt(n: number) {
@@ -71,7 +72,7 @@ export default function ProdutosSemCusto() {
             {products.map((p, idx) => (
               <tr key={p.id} style={{ borderBottom: "1px solid rgba(255,100,100,0.1)" }}>
                 <td style={{ padding: "0.75rem 1rem", fontWeight: 600, color: "#1a1510" }}>
-                  <Link href={`/admin/produtos/${p.id}`} style={{ color: "#c04040", textDecoration: "none", fontWeight: 600 }}>
+                  <Link href={p.firstOrderId ? `/admin/pedidos?expand=${p.firstOrderId}` : `/admin/produtos/${p.id}`} style={{ color: "#c04040", textDecoration: "none", fontWeight: 600 }}>
                     {p.name}
                   </Link>
                 </td>

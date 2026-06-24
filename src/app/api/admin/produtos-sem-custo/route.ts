@@ -21,6 +21,7 @@ export async function GET() {
     quantity: number;
     count: number;
     priceRange: { min: number; max: number };
+    firstOrderId?: string;
   }> = {};
 
   orders.forEach(order => {
@@ -34,6 +35,7 @@ export async function GET() {
             quantity: 0,
             count: 0,
             priceRange: { min: item.price, max: item.price },
+            firstOrderId: order.id,
           };
         }
         productosSemCusto[item.productId].quantity += item.quantity;
