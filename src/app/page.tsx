@@ -182,12 +182,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* WHATSAPP FLUTUANTE */}
-      <a href="https://wa.me/5551986596705?text=Olá! Quero conhecer os produtos da Access Fit" target="_blank" rel="noopener noreferrer"
-        style={{ position: "fixed", bottom: 24, right: 24, zIndex: 999, width: 56, height: 56, backgroundColor: "#25D366", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(37,211,102,0.45)", textDecoration: "none", fontSize: "1.5rem" }}>
-        📲
-      </a>
-
     </div>
   );
 }
