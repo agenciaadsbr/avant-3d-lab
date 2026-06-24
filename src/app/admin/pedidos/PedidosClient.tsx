@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAdmin } from "@/store/admin";
+import ProdutosSemCusto from "../ProdutosSemCusto";
 
 type OrderItem = { id: string; quantity: number; price: number; size?: string; costPrice?: number | null; product: { id: string; name: string; costPrice?: number | null } };
 type Installment = { id: string; number: number; amount: number; dueDate: string; status: string; paidAt?: string | null };
@@ -263,6 +264,9 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
           + Novo Pedido
         </a>
       </div>
+
+      {/* Aviso produtos sem custo */}
+      <ProdutosSemCusto />
 
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "0.875rem", marginBottom: "1.5rem" }}>
