@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
+import RelatorioClientes from "../RelatorioClientes";
+import DashboardVendas from "../DashboardVendas";
 
 export const dynamic = 'force-dynamic';
 
@@ -318,6 +320,12 @@ export default async function RelatoriosPage() {
           </div>
         </div>
       </div>
+
+      {/* Dashboard de Vendas */}
+      <DashboardVendas />
+
+      {/* Relatório de Clientes */}
+      <RelatorioClientes />
 
     </div>
   );
