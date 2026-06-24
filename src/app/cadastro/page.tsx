@@ -19,7 +19,7 @@ const inputStyle = {
 
 export default function CadastroPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", birthDate: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -74,6 +74,8 @@ export default function CadastroPage() {
             {[
               { label: "Nome completo", key: "name", type: "text", placeholder: "Seu nome" },
               { label: "E-mail", key: "email", type: "email", placeholder: "seu@email.com" },
+              { label: "WhatsApp / Celular", key: "phone", type: "tel", placeholder: "(11) 9 9999-9999" },
+              { label: "Data de nascimento", key: "birthDate", type: "date", placeholder: "" },
               { label: "Senha", key: "password", type: "password", placeholder: "Mínimo 6 caracteres" },
             ].map(({ label, key, type, placeholder }) => (
               <div key={key} style={{ marginBottom: "1.25rem" }}>

@@ -16,6 +16,7 @@ model User {
   image         String?
   role          String    @default("customer")
   phone         String?
+  birthDate     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
