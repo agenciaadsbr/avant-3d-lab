@@ -1,6 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import { formatCurrency, parseJson } from "@/lib/utils";
+import BulkEditModal from "./BulkEditModal";
 
 type Category = { id: string; name: string; slug: string };
 type Product = {
@@ -14,6 +15,9 @@ export default function AdminProdutosClient({ products, categories }: { products
   const [catFilter, setCatFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [sizeFilter, setSizeFilter] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Todos os tamanhos únicos disponíveis
   const allSizes = useMemo(() => {
@@ -105,12 +109,36 @@ export default function AdminProdutosClient({ products, categories }: { products
         )}
       </div>
 
+      {/* Bulk Edit Bar */}
+      {selected.size > 0 && (
+        <div style={{ backgroundColor: "rgba(184,137,26,0.08)", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "1rem", padding: "1rem 1.25rem", marginBottom: "1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
+          <span style={{ fontWeight: 700, color: "#5a4a2a" }}>{selected.size} produto(s) selecionado(s)</span>
+          <div style={{ display: "flex", gap: "0.75rem" }}>
+            <button onClick={() => setSelected(new Set())}
+              style={{ backgroundColor: "#fff", border: "1px solid #ddd", color: "#5a4a2a", fontWeight: 700, fontSize: "0.85rem", padding: "0.6rem 1.2rem", borderRadius: "0.625rem", cursor: "pointer" }}>
+              Desselecionar
+            </button>
+            <button onClick={() => setShowBulkEdit(true)}
+              style={{ backgroundColor: "#b8891a", border: "none", color: "#fff", fontWeight: 700, fontSize: "0.85rem", padding: "0.6rem 1.2rem", borderRadius: "0.625rem", cursor: "pointer" }}>
+              ⚙️ Editar em Massa
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Tabela */}
       <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
             <thead>
               <tr style={{ backgroundColor: "#FAF6EE" }}>
+                <th style={{ width: 40, padding: "0.875rem 0.75rem", borderBottom: "1px solid rgba(140,100,20,0.1)" }}>
+                  <input type="checkbox" onChange={(e) => {
+                    if (e.target.checked) setSelected(new Set(filtered.map(p => p.id)));
+                    else setSelected(new Set());
+                  }} checked={selected.size === filtered.length && filtered.length > 0}
+                    style={{ cursor: "pointer" }} />
+                </th>
                 {["Produto", "Categoria", "Tamanhos", "Custo", "Preço", "Estoque", "Valor Est.", "Status", ""].map(h => (
                   <th key={h} style={{ textAlign: "left", padding: "0.875rem 1rem", color: "#9a8060", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.1)", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
@@ -121,8 +149,18 @@ export default function AdminProdutosClient({ products, categories }: { products
                 const images = parseJson<string[]>(p.images, []);
                 const estoqueColor = p.stock === 0 ? "#c04040" : p.stock <= 5 ? "#b8891a" : "#2a8a2a";
                 const estoqueBg = p.stock === 0 ? "#fee8e8" : p.stock <= 5 ? "#fff8e1" : "#e8f8e8";
+                const isSelected = selected.has(p.id);
                 return (
-                  <tr key={p.id} style={{ borderBottom: "1px solid rgba(140,100,20,0.06)" }}>
+                  <tr key={p.id} style={{ borderBottom: "1px solid rgba(140,100,20,0.06)", backgroundColor: isSelected ? "rgba(184,137,26,0.05)" : "transparent" }}>
+                    <td style={{ padding: "0.875rem 0.75rem" }}>
+                      <input type="checkbox" onChange={(e) => {
+                        const newSet = new Set(selected);
+                        if (e.target.checked) newSet.add(p.id);
+                        else newSet.delete(p.id);
+                        setSelected(newSet);
+                      }} checked={isSelected}
+                        style={{ cursor: "pointer" }} />
+                    </td>
                     <td style={{ padding: "0.875rem 1rem" }}>
                       <a href={`/admin/produtos/${p.id}`} style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "0.75rem" }}>
                         <div style={{ width: 40, height: 40, backgroundColor: "#F0E8D0", borderRadius: "0.5rem", overflow: "hidden", flexShrink: 0 }}>
@@ -174,7 +212,7 @@ export default function AdminProdutosClient({ products, categories }: { products
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: "center", padding: "3rem", color: "#b8a080" }}>
+                  <td colSpan={10} style={{ textAlign: "center", padding: "3rem", color: "#b8a080" }}>
                     {products.length === 0
                       ? <><span>Nenhum produto cadastrado. </span><a href="/admin/importar" style={{ color: "#b8891a", fontWeight: 700 }}>Importar Excel</a></>
                       : "Nenhum produto encontrado com esses filtros."
@@ -186,6 +224,21 @@ export default function AdminProdutosClient({ products, categories }: { products
           </table>
         </div>
       </div>
+
+      {/* Modal */}
+      {showBulkEdit && (
+        <BulkEditModal
+          selected={Array.from(selected)}
+          products={filtered}
+          onClose={() => setShowBulkEdit(false)}
+          onSuccess={() => {
+            setSelected(new Set());
+            setShowBulkEdit(false);
+            setRefreshKey(k => k + 1);
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }
