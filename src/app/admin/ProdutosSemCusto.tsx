@@ -17,6 +17,7 @@ export default function ProdutosSemCusto() {
   const [products, setProducts] = useState<Produto[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [autofilling, setAutofilling] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/produtos-sem-custo")
@@ -29,14 +30,31 @@ export default function ProdutosSemCusto() {
       .catch(() => setLoading(false));
   }, []);
 
+  const handleAutofill = async () => {
+    if (!confirm(`Definir 50% do preço de venda como custo para ${products.length} produtos?`)) return;
+    setAutofilling(true);
+    const res = await fetch("/api/admin/auto-custo", { method: "POST" });
+    if (res.ok) {
+      setProducts([]);
+      setTotal(0);
+    }
+    setAutofilling(false);
+  };
+
   if (loading) return <div>Carregando...</div>;
   if (products.length === 0) return null;
 
   return (
     <div style={{ backgroundColor: "#fff", border: "1px solid rgba(255,100,100,0.3)", borderRadius: "1rem", overflow: "hidden", marginBottom: "1.5rem", background: "linear-gradient(135deg, #fee8e8 0%, #fff5f5 100%)" }}>
-      <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid rgba(255,100,100,0.2)" }}>
-        <h3 style={{ color: "#c04040", fontWeight: 800, fontSize: "0.9rem", margin: 0 }}>⚠️ {products.length} Produtos sem Custo</h3>
-        <p style={{ color: "#b87070", fontSize: "0.75rem", margin: "0.3rem 0 0" }}>{total} itens vendidos sem custo registrado</p>
+      <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid rgba(255,100,100,0.2)", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <h3 style={{ color: "#c04040", fontWeight: 800, fontSize: "0.9rem", margin: 0 }}>⚠️ {products.length} Produtos sem Custo</h3>
+          <p style={{ color: "#b87070", fontSize: "0.75rem", margin: "0.3rem 0 0" }}>{total} itens vendidos sem custo registrado</p>
+        </div>
+        <button onClick={handleAutofill} disabled={autofilling}
+          style={{ backgroundColor: "#c04040", color: "#fff", border: "none", borderRadius: "0.5rem", padding: "0.5rem 1rem", fontWeight: 700, fontSize: "0.75rem", cursor: autofilling ? "not-allowed" : "pointer", opacity: autofilling ? 0.6 : 1, whiteSpace: "nowrap", marginLeft: "1rem" }}>
+          {autofilling ? "Preenchendo..." : "Auto 50%"}
+        </button>
       </div>
 
       <div style={{ overflowX: "auto" }}>
