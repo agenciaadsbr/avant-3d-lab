@@ -117,8 +117,14 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
     }, 0), 0);
   const itemsComCusto = activeFiltered.flatMap(o => o.items).filter(i => (i.costPrice ?? i.product.costPrice) !== null).length;
   const totalItems = activeFiltered.flatMap(o => o.items).length;
+  // Receita apenas dos itens com custo registrado
+  const receitaComCusto = activeFiltered.reduce((s, o) =>
+    s + o.items.reduce((si, item) => {
+      const c = item.costPrice ?? item.product.costPrice;
+      return si + (c != null ? item.price * item.quantity : 0);
+    }, 0), 0);
   const lucroLiquido = totalReceita - totalCusto;
-  const margemLucro = totalReceita > 0 ? (lucroLiquido / totalReceita) * 100 : 0;
+  const margemLucro = receitaComCusto > 0 ? ((receitaComCusto - totalCusto) / receitaComCusto) * 100 : 0;
   const totalEmAberto = filtered.filter(o => o.paymentStatus !== "paid").reduce((s, o) => s + (o.total - o.amountPaid), 0);
   const cadernoTotal = localOrders.filter(o => o.paymentMethod === "caderno" && o.paymentStatus !== "paid")
     .reduce((s, o) => s + (o.total - o.amountPaid), 0);
