@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 type Cliente = {
-  id: string; name: string | null; email: string; phone: string | null;
+  id: string; name: string | null; email: string; phone: string | null; birthDate?: string | null;
   createdAt: string; totalPedidos: number; totalGasto: number;
   totalPago: number; saldoAberto: number; ultimaCompra: string | null;
 };
