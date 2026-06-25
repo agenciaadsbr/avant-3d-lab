@@ -9,6 +9,7 @@ const CATEGORIES = [
   { value: "embalagem", label: "📦 Embalagem" },
   { value: "frete", label: "🚚 Frete" },
   { value: "cartao", label: "💳 Cartão / Taxa" },
+  { value: "taxa_operadora", label: "💰 Taxa de Operadora" },
   { value: "outros", label: "📋 Outros" },
 ];
 
@@ -53,12 +54,14 @@ type Expense = {
 };
 
 export default function FinanceiroPage() {
-  const [tab, setTab] = useState<"despesas" | "cartao">("despesas");
+  const [tab, setTab] = useState<"despesas" | "cartao" | "taxa_operadora">("despesas");
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [cardExpenses, setCardExpenses] = useState<Expense[]>([]);
+  const [operatorFees, setOperatorFees] = useState<Expense[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [total, setTotal] = useState(0);
   const [cardTotal, setCardTotal] = useState(0);
+  const [feeTotal, setFeeTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Filtros despesas
@@ -117,6 +120,16 @@ export default function FinanceiroPage() {
     }
   }, [cardFrom, cardTo]);
 
+  const loadOperatorFees = useCallback(async () => {
+    const params = new URLSearchParams({ category: "taxa_operadora", from, to });
+    const res = await fetch(`/api/admin/despesas?${params}`);
+    if (res.ok) {
+      const data = await res.json();
+      setOperatorFees(data.expenses);
+      setFeeTotal(data.total);
+    }
+  }, [from, to]);
+
   const loadSuppliers = async () => {
     const res = await fetch("/api/admin/fornecedores");
     if (res.ok) setSuppliers(await res.json());
@@ -124,6 +137,7 @@ export default function FinanceiroPage() {
 
   useEffect(() => { loadExpenses(); }, [loadExpenses]);
   useEffect(() => { loadCardExpenses(); }, [loadCardExpenses]);
+  useEffect(() => { loadOperatorFees(); }, [loadOperatorFees]);
   useEffect(() => { loadSuppliers(); }, []);
 
   const openNew = () => {
@@ -231,6 +245,7 @@ export default function FinanceiroPage() {
         {[
           { key: "despesas", label: "📋 Despesas" },
           { key: "cartao", label: "💳 Cartão de Crédito" },
+          { key: "taxa_operadora", label: "💰 Taxa de Operadora" },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key as any)}
             style={{ padding: "0.6rem 1.25rem", border: "none", borderBottom: `3px solid ${tab === t.key ? "#b8891a" : "transparent"}`, backgroundColor: "transparent", fontWeight: 700, fontSize: "0.875rem", color: tab === t.key ? "#b8891a" : "#9a8060", cursor: "pointer", marginBottom: "-2px" }}>
@@ -315,7 +330,7 @@ export default function FinanceiroPage() {
         </div>
       )}
 
-      {tab !== "cartao" && <>
+      {tab === "despesas" && <>
       {/* Filtros */}
       <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end" }}>
         <div>
@@ -453,6 +468,75 @@ export default function FinanceiroPage() {
         )}
       </div>
       </>}
+
+      {/* Aba Taxa de Operadora */}
+      {tab === "taxa_operadora" && (
+        <div>
+          <div style={{ backgroundColor: "#b8891a", borderRadius: "1rem", padding: "1.5rem 2rem", display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 200, marginBottom: "1.5rem", maxWidth: 300 }}>
+            <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.75rem", fontWeight: 700, marginBottom: "0.5rem" }}>TOTAL DE TAXAS</div>
+            <div style={{ color: "#fff", fontSize: "2rem", fontWeight: 900, lineHeight: 1 }}>{fmt(feeTotal)}</div>
+            <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.7rem", marginTop: "0.4rem" }}>{operatorFees.length} lançamentos</div>
+          </div>
+
+          {/* Tabela */}
+          <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid rgba(140,100,20,0.08)", backgroundColor: "#FAF6EE" }}>
+              <h2 style={{ color: "#1a1510", fontWeight: 800, fontSize: "1rem" }}>Descontos de Operadora</h2>
+              <span style={{ fontSize: "0.75rem", color: "#9a8060" }}>{operatorFees.length} registros</span>
+            </div>
+            {operatorFees.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "3rem" }}>
+                <p style={{ color: "#b8a080", marginBottom: "1rem" }}>Nenhuma taxa de operadora registrada.</p>
+              </div>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+                  <thead>
+                    <tr style={{ backgroundColor: "#FDFAF4" }}>
+                      {["Data", "Descrição", "Método", "Valor", ""].map(h => (
+                        <th key={h} style={{ textAlign: "left", padding: "0.75rem 1rem", color: "#9a8060", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.08)", whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {operatorFees.map(e => (
+                      <tr key={e.id} style={{ borderBottom: "1px solid rgba(140,100,20,0.05)" }}>
+                        <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+                          {new Date(e.date).toLocaleDateString("pt-BR")}
+                        </td>
+                        <td style={{ padding: "0.75rem 1rem", color: "#1a1510", fontWeight: 600 }}>
+                          {e.description}
+                          {e.notes && <div style={{ color: "#9a8060", fontSize: "0.7rem", fontWeight: 400 }}>{e.notes}</div>}
+                        </td>
+                        <td style={{ padding: "0.75rem 1rem", color: "#5a4a2a", fontSize: "0.8rem" }}>{payLabel(e.paymentMethod)}</td>
+                        <td style={{ padding: "0.75rem 1rem", color: "#c04040", fontWeight: 700, whiteSpace: "nowrap" }}>
+                          -{fmt(e.amount)}
+                        </td>
+                        <td style={{ padding: "0.75rem 1rem" }}>
+                          <button onClick={() => handleDelete(e.id)} style={{ backgroundColor: "#fee8e8", border: "1px solid rgba(192,64,64,0.2)", color: "#c04040", fontWeight: 700, fontSize: "0.7rem", padding: "0.3rem 0.625rem", borderRadius: "0.5rem", cursor: "pointer" }}>
+                            Excluir
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ backgroundColor: "#FAF6EE" }}>
+                      <td colSpan={3} style={{ padding: "0.75rem 1rem", fontWeight: 700, color: "#1a1510", textAlign: "right" }}>
+                        TOTAL:
+                      </td>
+                      <td style={{ padding: "0.75rem 1rem", fontWeight: 900, color: "#c04040" }}>
+                        -{fmt(feeTotal)}
+                      </td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modal Nova/Editar Despesa */}
       {showForm && (
