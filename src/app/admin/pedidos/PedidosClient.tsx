@@ -755,8 +755,8 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                     📝 {order.notes}
                                   </div>
                                 )}
-                                <button onClick={() => generateShareLink(order.id)} disabled={copyingLinkId === order.id}
-                                  style={{ marginTop: "0.875rem", width: "100%", padding: "0.5rem", backgroundColor: "#e8f4fd", color: "#1a6a9a", border: "1px solid rgba(26,106,154,0.2)", borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer" }}>
+                                <button onClick={() => generateShareLink(order.id)}
+                                  style={{ marginTop: "0.875rem", width: "100%", padding: "0.5rem", backgroundColor: copyingLinkId === order.id ? "#e8f8e8" : "#e8f4fd", color: copyingLinkId === order.id ? "#1a8a2a" : "#1a6a9a", border: `1px solid ${copyingLinkId === order.id ? "rgba(26,138,42,0.2)" : "rgba(26,106,154,0.2)"}`, borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer" }}>
                                   {copyingLinkId === order.id ? "✓ Link copiado!" : "📋 Gerar link para cliente"}
                                 </button>
 
