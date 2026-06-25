@@ -7,7 +7,7 @@ type OrderItem = {
   id: string;
   quantity: number;
   price: number;
-  product: { name: string; image?: string };
+  product: { name: string; images: string };
 };
 
 type Order = {
@@ -22,6 +22,14 @@ type Order = {
 
 function fmt(n: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function parseJson<T>(json: string, fallback: T): T {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return fallback;
+  }
 }
 
 export default function PedidoPreviewPage() {
@@ -85,10 +93,13 @@ export default function PedidoPreviewPage() {
           {/* Itens */}
           <div style={{ padding: "1.5rem", borderBottom: "1px solid rgba(140,100,20,0.1)" }}>
             <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#5a4a2a", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "1rem" }}>Itens do Pedido</h3>
-            {order.items.map((item, i) => (
+            {order.items.map((item, i) => {
+              const images = parseJson<string[]>(item.product.images, []);
+              const imgSrc = images[0] || "https://via.placeholder.com/80";
+              return (
               <div key={item.id} style={{ display: "flex", gap: "1rem", paddingBottom: "1rem", ...(i < order.items.length - 1 ? { borderBottom: "1px solid rgba(140,100,20,0.05)" } : {}) }}>
                 {/* Foto */}
-                <img src={item.product.image || "https://via.placeholder.com/80"} alt={item.product.name}
+                <img src={imgSrc} alt={item.product.name}
                   style={{ width: 80, height: 80, borderRadius: "0.625rem", objectFit: "cover", flexShrink: 0 }} />
 
                 {/* Info */}
@@ -100,7 +111,8 @@ export default function PedidoPreviewPage() {
                   <p style={{ fontWeight: 700, color: "#b8891a", fontSize: "0.9rem", margin: 0 }}>{fmt(item.price * item.quantity)}</p>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
 
           {/* Total */}
