@@ -384,7 +384,14 @@ export default function NovoPedidoPage() {
                     <option value="pending">Pendente</option>
                   </select>
                 </div>
-                {paymentStatus !== "paid" && (
+                {paymentMethod === "link" && paymentStatus !== "paid" && (
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={label}>💰 Valor Recebido (com desconto da operadora)</label>
+                    <input style={inp} type="number" min="0" step="0.01" placeholder={`Ex: ${subtotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} value={amountPaid}
+                      onChange={e => setAmountPaid(e.target.value)} />
+                  </div>
+                )}
+                {paymentStatus !== "paid" && paymentMethod !== "link" && (
                   <>
                     <div>
                       <label style={label}>Valor já pago (R$)</label>
