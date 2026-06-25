@@ -9,6 +9,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Carrinho vazio" }, { status: 400 });
 
   // Cria um "rascunho" de pedido com status "preview"
+  // Usa um usuário dummy para pedidos de preview (será atualizado quando cliente fizer login/checkout)
+  let guestUser = await prisma.user.findUnique({
+    where: { email: "preview@accessfit.local" },
+  });
+
+  if (!guestUser) {
+    guestUser = await prisma.user.create({
+      data: {
+        email: "preview@accessfit.local",
+        name: "Preview",
+        role: "customer",
+      },
+    });
+  }
+
   const order = await prisma.order.create({
     data: {
       status: "preview",
@@ -18,6 +33,7 @@ export async function POST(req: Request) {
       subtotal: subtotal || total,
       discount: discount || 0,
       couponCode: couponCode || undefined,
+      userId: guestUser.id,
       items: {
         create: items.map((item: any) => ({
           productId: item.productId,
