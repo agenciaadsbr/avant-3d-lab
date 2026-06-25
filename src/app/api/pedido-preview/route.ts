@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     previewToken: order.id,
-    shareUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/pedido-preview/${order.id}`
+    shareUrl: `${process.env.NEXT_PUBLIC_BASE_URL || "https://access-fit.vercel.app"}/pedido-preview/${order.id}`
   });
 }
 
