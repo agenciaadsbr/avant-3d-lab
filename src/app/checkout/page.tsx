@@ -62,8 +62,9 @@ export default function CheckoutPage() {
       body: JSON.stringify({
         items: items.map(i => ({ productId: i.productId, quantity: i.quantity, price: i.price })),
         total: totalFinal,
+        subtotal: total(),
+        discount: desconto,
         couponCode,
-        couponDiscount,
       }),
     });
     const data = await res.json();

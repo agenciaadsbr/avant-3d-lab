@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
-  const { items, total, couponCode, couponDiscount } = await req.json();
+  const { items, total, subtotal, couponCode, discount } = await req.json();
 
   if (!items || items.length === 0)
     return NextResponse.json({ error: "Carrinho vazio" }, { status: 400 });
@@ -15,8 +15,9 @@ export async function POST(req: Request) {
       paymentStatus: "pending",
       paymentMethod: "whatsapp",
       total,
+      subtotal: subtotal || total,
+      discount: discount || 0,
       couponCode: couponCode || undefined,
-      couponDiscount,
       items: {
         create: items.map((item: any) => ({
           productId: item.productId,

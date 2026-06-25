@@ -13,8 +13,9 @@ type OrderItem = {
 type Order = {
   id: string;
   total: number;
+  subtotal: number;
+  discount: number;
   couponCode?: string;
-  couponDiscount?: number;
   items: OrderItem[];
   createdAt: string;
 };
@@ -66,8 +67,7 @@ export default function PedidoPreviewPage() {
     </div>
   );
 
-  const subtotal = order.items.reduce((s, i) => s + i.price * i.quantity, 0);
-  const discount = order.couponDiscount ? (subtotal * order.couponDiscount) / 100 : 0;
+  const subtotal = order.subtotal || order.items.reduce((s, i) => s + i.price * i.quantity, 0);
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#FAF6EE", padding: "2rem 1.5rem" }}>
@@ -109,10 +109,10 @@ export default function PedidoPreviewPage() {
               <span>Subtotal</span>
               <span>{fmt(subtotal)}</span>
             </div>
-            {order.couponCode && (
+            {order.discount > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", color: "#2a6a2a", marginBottom: "0.75rem" }}>
-                <span>Cupom {order.couponCode} (-{order.couponDiscount}%)</span>
-                <span>-{fmt(discount)}</span>
+                <span>Desconto {order.couponCode ? `(${order.couponCode})` : ""}</span>
+                <span>-{fmt(order.discount)}</span>
               </div>
             )}
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.1rem", fontWeight: 900, color: "#1a1510", paddingTop: "0.75rem", borderTop: "1px solid rgba(140,100,20,0.15)" }}>
