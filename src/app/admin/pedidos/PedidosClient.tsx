@@ -638,6 +638,14 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                         {Object.entries(METHOD_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                                       </select>
                                     </div>
+                                    {editPaymentMethod === "link" && (
+                                      <div>
+                                        <label style={{ fontSize: "0.72rem", color: "#9a8060", display: "block", marginBottom: "0.2rem" }}>💰 Valor Recebido (com desconto da operadora)</label>
+                                        <input type="number" step="0.01" value={editAmountPaid} onChange={e => setEditAmountPaid(e.target.value)}
+                                          placeholder={`Ex: ${order.total}`}
+                                          style={{ ...inp, width: "100%", boxSizing: "border-box" as const }} />
+                                      </div>
+                                    )}
                                     <div>
                                       <label style={{ fontSize: "0.72rem", color: "#9a8060", display: "block", marginBottom: "0.2rem" }}>Status de Pagamento</label>
                                       <select value={editPaymentStatus} onChange={e => setEditPaymentStatus(e.target.value)}
