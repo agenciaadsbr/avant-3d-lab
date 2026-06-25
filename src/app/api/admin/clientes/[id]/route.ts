@@ -14,6 +14,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (body.name !== undefined) data.name = body.name;
   if (body.phone !== undefined) data.phone = body.phone;
   if (body.email !== undefined) data.email = body.email;
+  if (body.birthDate !== undefined) data.birthDate = body.birthDate ? new Date(body.birthDate) : null;
 
   const user = await prisma.user.update({ where: { id }, data });
   return NextResponse.json(user);

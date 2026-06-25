@@ -25,7 +25,9 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
   const [sort, setSort] = useState<"nome" | "gasto" | "pedidos" | "saldo">("nome");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const [editBirthDate, setEditBirthDate] = useState("");
   const [saving, setSaving] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState("");
@@ -85,7 +87,12 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
     setSaving(true);
     await fetch(`/api/admin/clientes/${id}`, {
       method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editName, phone: editPhone }),
+      body: JSON.stringify({
+        name: editName,
+        email: editEmail,
+        phone: editPhone,
+        birthDate: editBirthDate || null,
+      }),
     });
     setSaving(false);
     setEditingId(null);
@@ -232,10 +239,14 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
                       </td>
                       <td style={{ padding: "0.75rem 1rem" }}>
                         {isEditing ? (
-                          <input style={inp} value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="Telefone" />
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+                            <input style={inp} type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="E-mail" />
+                            <input style={inp} type="tel" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="Telefone" />
+                            <input style={inp} type="date" value={editBirthDate} onChange={e => setEditBirthDate(e.target.value)} placeholder="Data de nascimento" />
+                          </div>
                         ) : (
                           <div style={{ fontSize: "0.8rem", color: "#5a4a2a" }}>
-                            {c.phone || <span style={{ color: "#ccc" }}>—</span>}
+                            <div>{c.phone || <span style={{ color: "#ccc" }}>—</span>}</div>
                           </div>
                         )}
                       </td>
@@ -266,7 +277,7 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
                               style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(184,137,26,0.3)", color: "#b8891a", fontSize: "0.72rem", fontWeight: 700, padding: "0.3rem 0.625rem", borderRadius: "0.4rem", textDecoration: "none", whiteSpace: "nowrap" }}>
                               Ver perfil
                             </Link>
-                            <button onClick={() => { setEditingId(c.id); setEditName(c.name || ""); setEditPhone(c.phone || ""); }}
+                            <button onClick={() => { setEditingId(c.id); setEditName(c.name || ""); setEditEmail(c.email); setEditPhone(c.phone || ""); setEditBirthDate(c.birthDate ? new Date(c.birthDate).toISOString().slice(0, 10) : ""); }}
                               style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#7a6030", fontSize: "0.72rem", fontWeight: 700, padding: "0.3rem 0.5rem", borderRadius: "0.4rem", cursor: "pointer" }}>
                               ✏️
                             </button>
