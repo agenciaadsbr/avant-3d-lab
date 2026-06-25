@@ -29,7 +29,9 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
   const [saving, setSaving] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
   const [newPhone, setNewPhone] = useState("");
+  const [newBirthDate, setNewBirthDate] = useState("");
   const [mergingId, setMergingId] = useState<string | null>(null);
   const [mergeSearch, setMergeSearch] = useState("");
   const [merging, setMerging] = useState(false);
@@ -59,15 +61,23 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
   const clientesAtivos = clientes.filter(c => c.ultimaCompra && new Date(c.ultimaCompra) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length;
 
   const handleCreate = async () => {
-    if (!newName.trim()) return;
+    if (!newName.trim() || !newEmail.trim()) return;
     setSaving(true);
-    const email = `${newName.toLowerCase().replace(/\s+/g, ".")}.${Date.now()}@cliente.accessfit.com.br`;
     await fetch("/api/admin/clientes", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newName.trim(), phone: newPhone.trim() || null, email }),
+      body: JSON.stringify({
+        name: newName.trim(),
+        email: newEmail.trim(),
+        phone: newPhone.trim() || null,
+        birthDate: newBirthDate || null,
+      }),
     });
     setSaving(false);
-    setShowNew(false); setNewName(""); setNewPhone("");
+    setShowNew(false);
+    setNewName("");
+    setNewEmail("");
+    setNewPhone("");
+    setNewBirthDate("");
     router.refresh();
   };
 
@@ -137,12 +147,20 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
           <p style={{ fontWeight: 800, color: "#1a1510", marginBottom: "0.875rem" }}>Novo Cliente</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.875rem" }}>
             <div>
-              <label style={{ fontSize: "0.75rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>Nome *</label>
-              <input style={inp} placeholder="Nome completo" value={newName} onChange={e => setNewName(e.target.value)} autoFocus />
+              <label style={{ fontSize: "0.75rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>Nome completo *</label>
+              <input style={inp} placeholder="Nome completo" value={newName} onChange={e => setNewName(e.target.value)} autoFocus required />
             </div>
             <div>
-              <label style={{ fontSize: "0.75rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>Telefone</label>
-              <input style={inp} placeholder="(47) 9..." value={newPhone} onChange={e => setNewPhone(e.target.value)} />
+              <label style={{ fontSize: "0.75rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>E-mail *</label>
+              <input style={inp} type="email" placeholder="email@exemplo.com" value={newEmail} onChange={e => setNewEmail(e.target.value)} required />
+            </div>
+            <div>
+              <label style={{ fontSize: "0.75rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>WhatsApp / Celular</label>
+              <input style={inp} type="tel" placeholder="(47) 9 9999-9999" value={newPhone} onChange={e => setNewPhone(e.target.value)} />
+            </div>
+            <div>
+              <label style={{ fontSize: "0.75rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>Data de nascimento</label>
+              <input style={inp} type="date" value={newBirthDate} onChange={e => setNewBirthDate(e.target.value)} />
             </div>
           </div>
           <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -150,7 +168,7 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
               style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.5rem 1.25rem", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer" }}>
               {saving ? "Salvando..." : "Cadastrar"}
             </button>
-            <button onClick={() => { setShowNew(false); setNewName(""); setNewPhone(""); }}
+            <button onClick={() => { setShowNew(false); setNewName(""); setNewEmail(""); setNewPhone(""); setNewBirthDate(""); }}
               style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", borderRadius: "0.625rem", padding: "0.5rem 0.875rem", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer" }}>
               Cancelar
             </button>

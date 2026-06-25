@@ -21,11 +21,17 @@ export async function POST(req: Request) {
   if (!session || (session.user as any)?.role !== "admin")
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  const { name, email, phone } = await req.json();
+  const { name, email, phone, birthDate } = await req.json();
   if (!name || !email) return NextResponse.json({ error: "Nome e e-mail obrigatórios" }, { status: 400 });
 
   const user = await prisma.user.create({
-    data: { name, email, phone: phone || null, role: "customer" },
+    data: {
+      name,
+      email,
+      phone: phone || null,
+      birthDate: birthDate ? new Date(birthDate) : null,
+      role: "customer",
+    },
   });
   return NextResponse.json(user, { status: 201 });
 }
