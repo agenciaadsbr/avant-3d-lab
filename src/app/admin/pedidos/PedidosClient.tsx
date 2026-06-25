@@ -169,19 +169,21 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
     setEditingPayment(null);
   };
 
-  const generateShareLink = async (orderId: string) => {
-    setCopyingLinkId(orderId);
+  const generateShareLink = (orderId: string) => {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://access-fit.vercel.app";
     const link = `${baseUrl}/pedido-preview/${orderId}`;
-    setShareLink(link);
 
     try {
-      await navigator.clipboard.writeText(link);
-      setTimeout(() => setShareLink(null), 2000);
+      navigator.clipboard.writeText(link).then(() => {
+        setCopyingLinkId(orderId);
+        setTimeout(() => setCopyingLinkId(null), 2000);
+        alert(`✓ Link copiado!\n\n${link}`);
+      }).catch(() => {
+        alert(`Link para copiar:\n\n${link}`);
+      });
     } catch (e) {
-      console.log("Copy failed, but link is ready");
+      alert(`Link:\n\n${link}`);
     }
-    setCopyingLinkId(null);
   };
 
   const removeItem = async (orderId: string, itemId: string) => {
