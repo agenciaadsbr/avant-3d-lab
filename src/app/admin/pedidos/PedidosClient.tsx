@@ -91,6 +91,8 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const [reassigningId, setReassigningId] = useState<string | null>(null);
   const [reassignSearch, setReassignSearch] = useState("");
   const [reassignSaving, setReassignSaving] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [copyingLinkId, setCopyingLinkId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return localOrders.filter(o => {
@@ -165,6 +167,21 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
       setLocalOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updated } : o));
     }
     setEditingPayment(null);
+  };
+
+  const generateShareLink = async (orderId: string) => {
+    setCopyingLinkId(orderId);
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://access-fit.vercel.app";
+    const link = `${baseUrl}/pedido-preview/${orderId}`;
+    setShareLink(link);
+
+    try {
+      await navigator.clipboard.writeText(link);
+      setTimeout(() => setShareLink(null), 2000);
+    } catch (e) {
+      console.log("Copy failed, but link is ready");
+    }
+    setCopyingLinkId(null);
   };
 
   const removeItem = async (orderId: string, itemId: string) => {
@@ -736,9 +753,14 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                     📝 {order.notes}
                                   </div>
                                 )}
+                                <button onClick={() => generateShareLink(order.id)} disabled={copyingLinkId === order.id}
+                                  style={{ marginTop: "0.875rem", width: "100%", padding: "0.5rem", backgroundColor: "#e8f4fd", color: "#1a6a9a", border: "1px solid rgba(26,106,154,0.2)", borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer" }}>
+                                  {copyingLinkId === order.id ? "✓ Link copiado!" : "📋 Gerar link para cliente"}
+                                </button>
+
                                 {order.status !== "cancelled" && (
                                   <button onClick={() => { if (confirm("Cancelar este pedido?")) updateStatus(order.id, "cancelled"); }}
-                                    style={{ marginTop: "0.875rem", width: "100%", padding: "0.5rem", backgroundColor: "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.2)", borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer" }}>
+                                    style={{ marginTop: "0.5rem", width: "100%", padding: "0.5rem", backgroundColor: "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.2)", borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer" }}>
                                     🚫 Cancelar Pedido
                                   </button>
                                 )}

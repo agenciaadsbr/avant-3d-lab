@@ -63,7 +63,7 @@ export async function GET(req: Request) {
     include: { items: { include: { product: true } } },
   });
 
-  if (!order || order.status !== "preview")
+  if (!order)
     return NextResponse.json({ error: "Pedido não encontrado" }, { status: 404 });
 
   return NextResponse.json(order);
