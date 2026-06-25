@@ -154,6 +154,9 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
 
   const savePayment = async (orderId: string) => {
     const amountPaid = parseFloat(editAmountPaid) || 0;
+    const order = localOrders.find(o => o.id === orderId);
+    if (!order) return;
+
     const res = await fetch(`/api/admin/pedidos/${orderId}`, {
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -162,6 +165,22 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
         generateInstallments: !!editDueDate && editInstallments > 0,
       }),
     });
+
+    // Se é link de pagamento e houve desconto, registra como despesa
+    if (editPaymentMethod === "link" && amountPaid > 0 && amountPaid < order.total) {
+      const taxAmount = order.total - amountPaid;
+      await fetch("/api/admin/despesas", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: new Date().toISOString(),
+          description: `Taxa operadora - Pedido #${order.id.slice(-8).toUpperCase()}`,
+          amount: taxAmount,
+          category: "taxa_operadora",
+          paymentMethod: "link",
+          notes: `Valor total: R$ ${order.total}, Recebido: R$ ${amountPaid}`,
+        }),
+      }).catch(() => {});
+    }
     if (res.ok) {
       const updated = await res.json();
       setLocalOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updated } : o));
