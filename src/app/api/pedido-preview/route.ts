@@ -15,9 +15,8 @@ export async function POST(req: Request) {
       paymentStatus: "pending",
       paymentMethod: "whatsapp",
       total,
-      couponCode,
+      couponCode: couponCode || undefined,
       couponDiscount,
-      userId: null,
       items: {
         create: items.map((item: any) => ({
           productId: item.productId,
