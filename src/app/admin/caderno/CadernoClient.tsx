@@ -73,7 +73,8 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
     });
     if (res.ok) {
       alert("✅ Pagamentos consolidados!");
-      loadClientPedidos(selectedClientId);
+      // Recarrega a página para atualizar Projeção de Caixa e Fluxo do Mês
+      setTimeout(() => window.location.reload(), 500);
     } else {
       alert("❌ Erro ao consolidar");
     }
