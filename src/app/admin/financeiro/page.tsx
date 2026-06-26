@@ -50,6 +50,7 @@ type Expense = {
   id: string; date: string; description: string; amount: number;
   category: string; paymentMethod: string; notes?: string;
   dueDate?: string | null; installments?: number; installmentNumber?: number;
+  groupId?: string | null;
   supplier?: { id: string; name: string } | null;
 };
 
