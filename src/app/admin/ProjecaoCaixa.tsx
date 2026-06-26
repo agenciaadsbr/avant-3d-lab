@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useMobileView } from "@/hooks/useMediaQuery";
 
 interface Month {
   month: string;
@@ -29,6 +30,7 @@ export default function ProjecaoCaixa() {
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [pedidosModal, setPedidosModal] = useState<Pedido[]>([]);
   const [loadingModal, setLoadingModal] = useState(false);
+  const isMobile = useMobileView();
 
   useEffect(() => {
     fetch("/api/admin/projecao-caixa")
@@ -63,7 +65,41 @@ export default function ProjecaoCaixa() {
         <div style={{ padding: "2rem 1.25rem", textAlign: "center", color: "#9a8060" }}>
           Sem pagamentos agendados nos próximos 12 meses
         </div>
+      ) : isMobile ? (
+        // MOBILE: Cards
+        <div style={{ padding: "1rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {comRecebimento.map(m => (
+              <div key={m.month} onClick={() => handleSelectMonth(m.month)} style={{ backgroundColor: "#FAF6EE", borderRadius: "0.75rem", padding: "1rem", borderLeft: "4px solid #b8891a", cursor: "pointer" }}>
+                <div style={{ fontWeight: 700, color: "#1a1510", marginBottom: "0.75rem", fontSize: "1rem" }}>{m.label}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
+                  <div>
+                    <div style={{ fontSize: "0.75rem", color: "#9a8060", marginBottom: "0.2rem" }}>Caderno</div>
+                    <div style={{ fontWeight: 700, color: m.caderno > 0 ? "#b8891a" : "#d0d0d0" }}>{m.caderno > 0 ? fmt(m.caderno) : "—"}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "0.75rem", color: "#9a8060", marginBottom: "0.2rem" }}>Pix</div>
+                    <div style={{ fontWeight: 700, color: m.pix > 0 ? "#b8891a" : "#d0d0d0" }}>{m.pix > 0 ? fmt(m.pix) : "—"}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "0.75rem", color: "#9a8060", marginBottom: "0.2rem" }}>Cartão</div>
+                    <div style={{ fontWeight: 700, color: m.cartao > 0 ? "#b8891a" : "#d0d0d0" }}>{m.cartao > 0 ? fmt(m.cartao) : "—"}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "0.75rem", color: "#9a8060", marginBottom: "0.2rem" }}>Qtd</div>
+                    <div style={{ fontWeight: 700, color: "#1a1510" }}>{m.count > 0 ? m.count : "—"}</div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "0.75rem", borderTop: "1px solid rgba(140,100,20,0.1)" }}>
+                  <span style={{ fontSize: "0.75rem", color: "#9a8060" }}>Total</span>
+                  <span style={{ fontSize: "1.1rem", fontWeight: 900, color: "#b8891a" }}>{fmt(m.total)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : (
+        // DESKTOP: Table
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
             <thead>
