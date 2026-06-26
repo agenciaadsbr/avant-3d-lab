@@ -54,7 +54,7 @@ type Expense = {
 };
 
 export default function FinanceiroPage() {
-  const [tab, setTab] = useState<"despesas" | "cartao" | "taxa_operadora">("despesas");
+  const [tab, setTab] = useState<"resumo" | "despesas" | "cartao" | "taxa_operadora">("resumo");
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [cardExpenses, setCardExpenses] = useState<Expense[]>([]);
   const [operatorFees, setOperatorFees] = useState<Expense[]>([]);
@@ -243,6 +243,7 @@ export default function FinanceiroPage() {
       {/* Abas */}
       <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", borderBottom: "2px solid rgba(140,100,20,0.1)", paddingBottom: "0" }}>
         {[
+          { key: "resumo", label: "📊 Resumo" },
           { key: "despesas", label: "📋 Despesas" },
           { key: "cartao", label: "💳 Cartão de Crédito" },
           { key: "taxa_operadora", label: "💰 Taxa de Operadora" },
@@ -254,8 +255,37 @@ export default function FinanceiroPage() {
         ))}
       </div>
 
+      {/* Aba Resumo */}
+      {tab === "resumo" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem", marginBottom: "2rem" }}>
+          <div style={{ backgroundColor: "#b8891a", borderRadius: "1rem", padding: "2rem", display: "flex", flexDirection: "column", justifyContent: "space-between", boxShadow: "0 4px 12px rgba(184,137,26,0.15)" }}>
+            <div>
+              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.75rem", fontWeight: 700, marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total de Despesas</div>
+              <div style={{ color: "#fff", fontSize: "2.5rem", fontWeight: 900, lineHeight: 1, marginBottom: "0.5rem" }}>{fmt(total)}</div>
+              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.8rem" }}>{expenses.length} lançamentos</div>
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: "#6a30b8", borderRadius: "1rem", padding: "2rem", display: "flex", flexDirection: "column", justifyContent: "space-between", boxShadow: "0 4px 12px rgba(106,48,184,0.15)" }}>
+            <div>
+              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.75rem", fontWeight: 700, marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Cartão de Crédito</div>
+              <div style={{ color: "#fff", fontSize: "2.5rem", fontWeight: 900, lineHeight: 1, marginBottom: "0.5rem" }}>{fmt(cardTotal)}</div>
+              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.8rem" }}>{cardExpenses.length} parcelas</div>
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: "#c04040", borderRadius: "1rem", padding: "2rem", display: "flex", flexDirection: "column", justifyContent: "space-between", boxShadow: "0 4px 12px rgba(192,64,64,0.15)" }}>
+            <div>
+              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.75rem", fontWeight: 700, marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Taxa de Operadora</div>
+              <div style={{ color: "#fff", fontSize: "2.5rem", fontWeight: 900, lineHeight: 1, marginBottom: "0.5rem" }}>{fmt(feeTotal)}</div>
+              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.8rem" }}>{operatorFees.length} lançamentos</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Projeção de Caixa */}
-      <ProjecaoCaixa />
+      {tab === "resumo" && <ProjecaoCaixa />}
 
       {/* Aba Cartão */}
       {tab === "cartao" && (
@@ -275,14 +305,6 @@ export default function FinanceiroPage() {
                 </button>
               ))}
             </div>
-          </div>
-
-          <div style={{ backgroundColor: "#6a30b8", borderRadius: "1rem", padding: "1.25rem 1.75rem", marginBottom: "1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.75rem", fontWeight: 700 }}>TOTAL DA FATURA NO PERÍODO</p>
-              <p style={{ color: "#fff", fontSize: "1.75rem", fontWeight: 900 }}>{fmt(cardTotal)}</p>
-            </div>
-            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.8rem" }}>{cardExpenses.length} lançamentos</p>
           </div>
 
           <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
@@ -364,37 +386,6 @@ export default function FinanceiroPage() {
         </button>
       </div>
 
-      {/* KPI total + gráfico por categoria */}
-      <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
-        <div style={{ backgroundColor: "#b8891a", borderRadius: "1rem", padding: "1.5rem 2rem", display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 200 }}>
-          <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.75rem", fontWeight: 700, marginBottom: "0.5rem" }}>TOTAL NO PERÍODO</div>
-          <div style={{ color: "#fff", fontSize: "2rem", fontWeight: 900, lineHeight: 1 }}>{fmt(total)}</div>
-          <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.7rem", marginTop: "0.4rem" }}>{expenses.length} lançamentos</div>
-        </div>
-
-        {byCategory.length > 0 ? (
-          <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1.25rem" }}>
-            <h3 style={{ color: "#1a1510", fontWeight: 800, fontSize: "0.875rem", marginBottom: "1rem" }}>Gastos por Categoria</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-              {byCategory.map(c => (
-                <div key={c.value}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem" }}>
-                    <span style={{ fontSize: "0.75rem", color: "#5a4a2a" }}>{c.label}</span>
-                    <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#1a1510" }}>{fmt(c.total)}</span>
-                  </div>
-                  <div style={{ height: 8, backgroundColor: "#f0e8d0", borderRadius: 999 }}>
-                    <div style={{ height: "100%", width: `${Math.round((c.total / maxCat) * 100)}%`, backgroundColor: "#b8891a", borderRadius: 999 }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "2rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <p style={{ color: "#b8a080", fontSize: "0.875rem" }}>Nenhuma despesa no período selecionado.</p>
-          </div>
-        )}
-      </div>
 
       {/* Tabela */}
       <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
@@ -472,12 +463,6 @@ export default function FinanceiroPage() {
       {/* Aba Taxa de Operadora */}
       {tab === "taxa_operadora" && (
         <div>
-          <div style={{ backgroundColor: "#b8891a", borderRadius: "1rem", padding: "1.5rem 2rem", display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 200, marginBottom: "1.5rem", maxWidth: 300 }}>
-            <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.75rem", fontWeight: 700, marginBottom: "0.5rem" }}>TOTAL DE TAXAS</div>
-            <div style={{ color: "#fff", fontSize: "2rem", fontWeight: 900, lineHeight: 1 }}>{fmt(feeTotal)}</div>
-            <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.7rem", marginTop: "0.4rem" }}>{operatorFees.length} lançamentos</div>
-          </div>
-
           {/* Tabela */}
           <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid rgba(140,100,20,0.08)", backgroundColor: "#FAF6EE" }}>
