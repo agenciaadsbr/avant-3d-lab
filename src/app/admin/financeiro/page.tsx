@@ -361,7 +361,6 @@ export default function FinanceiroPage() {
                 ) : cardExpenses.map(e => {
                   const isOverdue = e.dueDate && new Date(e.dueDate) < new Date();
                   const parcelas = e.installments && e.installments > 1 ? e.installments : 1;
-                  const valorParcela = e.amount / parcelas;
                   return (
                     <tr key={e.id} style={{ borderBottom: "1px solid rgba(106,48,184,0.06)", backgroundColor: isOverdue ? "#fff0f0" : "transparent" }}>
                       <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem" }}>{new Date(e.date).toLocaleDateString("pt-BR")}</td>
@@ -373,7 +372,7 @@ export default function FinanceiroPage() {
                       <td style={{ padding: "0.75rem 1rem", color: "#6a30b8", fontSize: "0.78rem" }}>
                         {parcelas > 1 ? `${e.installmentNumber || 1}/${parcelas}` : "À vista"}
                       </td>
-                      <td style={{ padding: "0.75rem 1rem", color: "#c04040", fontWeight: 700 }}>-{fmt(valorParcela)}</td>
+                      <td style={{ padding: "0.75rem 1rem", color: "#c04040", fontWeight: 700 }}>-{fmt(e.amount)}</td>
                       <td style={{ padding: "0.75rem 1rem" }}>
                         <div style={{ display: "flex", gap: "0.4rem" }}>
                           <button onClick={() => openEdit(e)} style={{ backgroundColor: "#f0e8ff", border: "1px solid rgba(106,48,184,0.2)", color: "#6a30b8", fontWeight: 700, fontSize: "0.7rem", padding: "0.3rem 0.625rem", borderRadius: "0.5rem", cursor: "pointer" }}>
