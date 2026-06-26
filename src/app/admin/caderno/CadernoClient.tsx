@@ -23,6 +23,11 @@ function fmt(n: number) {
 export default function CadernoClient({ clientsData }: { clientsData: ClientData[] }) {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [parcelas, setParcelas] = useState("3");
+  const [primeiroVencimento, setPrimeiroVencimento] = useState(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 1);
+    return d.toISOString().split("T")[0];
+  });
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(false);
   const [consolidando, setConsolidando] = useState(false);
@@ -49,12 +54,13 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
   const valorParcela = totalDevido / numParcelas;
 
   const projecao = Array.from({ length: numParcelas }, (_, i) => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + i + 1);
+    const d = new Date(primeiroVencimento);
+    d.setMonth(d.getMonth() + i);
     const mes = d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    const dia = d.toLocaleDateString("pt-BR", { day: "2-digit" });
     const isLast = i === numParcelas - 1;
     const valor = isLast ? totalDevido - valorParcela * (numParcelas - 1) : valorParcela;
-    return { mes, valor, mes_key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` };
+    return { mes, dia, valor, data: d.toISOString().split("T")[0], mes_key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` };
   });
 
   const handleConsolidar = async () => {
@@ -63,7 +69,7 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
     const res = await fetch(`/api/admin/caderno/consolidar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clientId: selectedClientId, parcelas: numParcelas }),
+      body: JSON.stringify({ clientId: selectedClientId, parcelas: numParcelas, primeiroVencimento }),
     });
     if (res.ok) {
       alert("✅ Pagamentos consolidados!");
@@ -114,12 +120,21 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
           </div>
 
           <div style={{ marginBottom: "2rem" }}>
-            <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "#5a4a2a", marginBottom: "1rem", textTransform: "uppercase" }}>Parcelar em</h3>
-            <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-              <input type="number" min="1" max="12" value={parcelas} onChange={e => setParcelas(e.target.value)} style={{ width: "80px", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid rgba(140,100,20,0.2)", fontSize: "1rem", fontWeight: 700 }} />
-              <span style={{ color: "#5a4a2a", fontWeight: 600 }}>vezes</span>
-              <span style={{ color: "#b8891a", fontWeight: 700 }}>({fmt(valorParcela)}/mês)</span>
+            <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "#5a4a2a", marginBottom: "1rem", textTransform: "uppercase" }}>Parcelamento</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#5a4a2a", marginBottom: "0.4rem" }}>Quantidade de Parcelas</label>
+                <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                  <input type="number" min="1" max="12" value={parcelas} onChange={e => setParcelas(e.target.value)} style={{ width: "100px", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid rgba(140,100,20,0.2)", fontSize: "1rem", fontWeight: 700 }} />
+                  <span style={{ color: "#9a8060", fontWeight: 600 }}>vezes</span>
+                </div>
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#5a4a2a", marginBottom: "0.4rem" }}>1º Vencimento</label>
+                <input type="date" value={primeiroVencimento} onChange={e => setPrimeiroVencimento(e.target.value)} style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid rgba(140,100,20,0.2)", fontSize: "1rem", fontWeight: 700 }} />
+              </div>
             </div>
+            <div style={{ color: "#b8891a", fontWeight: 700, fontSize: "0.95rem" }}>Valor/parcela: {fmt(valorParcela)}</div>
           </div>
 
           <div style={{ marginBottom: "2rem" }}>
@@ -127,8 +142,9 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "1rem" }}>
               {projecao.map((p, i) => (
                 <div key={i} style={{ backgroundColor: "#FAF6EE", borderRadius: "0.75rem", padding: "1rem", textAlign: "center" }}>
-                  <div style={{ color: "#9a8060", fontSize: "0.8rem", marginBottom: "0.5rem", textTransform: "capitalize" }}>{p.mes}</div>
-                  <div style={{ fontSize: "1.25rem", fontWeight: 900, color: "#b8891a" }}>{fmt(p.valor)}</div>
+                  <div style={{ color: "#9a8060", fontSize: "0.75rem", marginBottom: "0.3rem" }}>Vencimento</div>
+                  <div style={{ color: "#5a4a2a", fontSize: "0.9rem", fontWeight: 700, marginBottom: "0.5rem" }}>{p.dia} de {p.mes}</div>
+                  <div style={{ fontSize: "1.35rem", fontWeight: 900, color: "#b8891a" }}>{fmt(p.valor)}</div>
                 </div>
               ))}
             </div>

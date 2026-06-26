@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   if (!session || (session.user as any)?.role !== "admin")
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
-  const { clientId, parcelas } = await req.json();
+  const { clientId, parcelas, primeiroVencimento } = await req.json();
 
   if (!clientId || !parcelas)
     return NextResponse.json({ error: "clientId e parcelas obrigatórios" }, { status: 400 });
@@ -28,14 +28,13 @@ export async function POST(req: Request) {
   if (pedidos.length === 0)
     return NextResponse.json({ error: "Nenhum pedido encontrado" }, { status: 404 });
 
-  // Calcula o total de SALDO PENDENTE (não o total integral)
   const totalDevido = pedidos.reduce((s, p) => s + (p.total - p.amountPaid), 0);
   const valorParcela = totalDevido / numParcelas;
 
   for (let i = 0; i < pedidos.length; i++) {
     const parcelaIndex = i % numParcelas;
-    const d = new Date();
-    d.setMonth(d.getMonth() + parcelaIndex + 1);
+    const d = new Date(primeiroVencimento || new Date().toISOString().split("T")[0]);
+    d.setMonth(d.getMonth() + parcelaIndex);
 
     await prisma.order.update({
       where: { id: pedidos[i].id },
