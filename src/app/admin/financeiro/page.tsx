@@ -330,7 +330,7 @@ export default function FinanceiroPage() {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
               <thead>
                 <tr style={{ backgroundColor: "#f0e8ff" }}>
-                  {["Compra", "Vencimento", "Descrição", "Parcela", "Valor"].map(h => (
+                  {["Compra", "Vencimento", "Descrição", "Parcela", "Valor", ""].map(h => (
                     <th key={h} style={{ textAlign: "left", padding: "0.75rem 1rem", color: "#6a30b8", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid rgba(106,48,184,0.1)" }}>{h}</th>
                   ))}
                 </tr>
@@ -354,6 +354,16 @@ export default function FinanceiroPage() {
                         {parcelas > 1 ? `${e.installmentNumber || 1}/${parcelas}` : "À vista"}
                       </td>
                       <td style={{ padding: "0.75rem 1rem", color: "#c04040", fontWeight: 700 }}>-{fmt(valorParcela)}</td>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        <div style={{ display: "flex", gap: "0.4rem" }}>
+                          <button onClick={() => openEdit(e)} style={{ backgroundColor: "#f0e8ff", border: "1px solid rgba(106,48,184,0.2)", color: "#6a30b8", fontWeight: 700, fontSize: "0.7rem", padding: "0.3rem 0.625rem", borderRadius: "0.5rem", cursor: "pointer" }}>
+                            Editar
+                          </button>
+                          <button onClick={() => handleDelete(e.id)} style={{ backgroundColor: "#fee8e8", border: "1px solid rgba(192,64,64,0.2)", color: "#c04040", fontWeight: 700, fontSize: "0.7rem", padding: "0.3rem 0.625rem", borderRadius: "0.5rem", cursor: "pointer" }}>
+                            Excluir
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -363,6 +373,7 @@ export default function FinanceiroPage() {
                   <tr style={{ backgroundColor: "#f0e8ff" }}>
                     <td colSpan={4} style={{ padding: "0.75rem 1rem", fontWeight: 700, color: "#6a30b8" }}>Total</td>
                     <td style={{ padding: "0.75rem 1rem", fontWeight: 900, color: "#6a30b8" }}>-{fmt(cardTotal)}</td>
+                    <td />
                   </tr>
                 </tfoot>
               )}
