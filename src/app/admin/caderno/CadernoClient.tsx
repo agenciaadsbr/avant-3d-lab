@@ -72,9 +72,8 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
       body: JSON.stringify({ clientId: selectedClientId, parcelas: numParcelas, primeiroVencimento }),
     });
     if (res.ok) {
-      alert("✅ Pagamentos consolidados!");
       // Recarrega a página para atualizar Projeção de Caixa e Fluxo do Mês
-      setTimeout(() => window.location.reload(), 500);
+      window.location.reload();
     } else {
       alert("❌ Erro ao consolidar");
     }
