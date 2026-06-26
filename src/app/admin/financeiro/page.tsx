@@ -206,6 +206,20 @@ export default function FinanceiroPage() {
   const catLabel = (v: string) => CATEGORIES.find(c => c.value === v)?.label || v;
   const payLabel = (v: string) => PAYMENTS.find(p => p.value === v)?.label || v;
 
+  // Agrupa despesas parceladas e ordena por data
+  const groupedExpenses = (() => {
+    const seen = new Set<string>();
+    return expenses
+      .filter(e => {
+        if (e.groupId) {
+          if (seen.has(e.groupId)) return false;
+          seen.add(e.groupId);
+        }
+        return true;
+      })
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  })();
+
   // Totais por categoria no período
   const byCategory = CATEGORIES.map(c => ({
     ...c,
@@ -426,7 +440,7 @@ export default function FinanceiroPage() {
         </div>
         {loading ? (
           <div style={{ textAlign: "center", padding: "3rem", color: "#b8a080" }}>Carregando...</div>
-        ) : expenses.length === 0 ? (
+        ) : groupedExpenses.length === 0 ? (
           <div style={{ textAlign: "center", padding: "3rem" }}>
             <p style={{ color: "#b8a080", marginBottom: "1rem" }}>Nenhuma despesa encontrada.</p>
             <button onClick={openNew} style={{ backgroundColor: "#b8891a", color: "#fff", fontWeight: 700, padding: "0.6rem 1.25rem", borderRadius: "0.75rem", border: "none", cursor: "pointer" }}>
@@ -444,13 +458,20 @@ export default function FinanceiroPage() {
                 </tr>
               </thead>
               <tbody>
-                {expenses.map(e => (
+                {groupedExpenses.map(e => {
+                  const totalAmount = e.groupId
+                    ? expenses.filter(x => x.groupId === e.groupId).reduce((s, x) => s + x.amount, 0)
+                    : e.amount;
+                  return (
                   <tr key={e.id} style={{ borderBottom: "1px solid rgba(140,100,20,0.05)" }}>
                     <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
                       {new Date(e.date).toLocaleDateString("pt-BR")}
                     </td>
                     <td style={{ padding: "0.75rem 1rem", color: "#1a1510", fontWeight: 600 }}>
                       {e.description}
+                      {e.groupId && e.installments && e.installments > 1 && (
+                        <div style={{ color: "#6a30b8", fontSize: "0.7rem", fontWeight: 700 }}>📦 {e.installments}x</div>
+                      )}
                       {e.notes && <div style={{ color: "#9a8060", fontSize: "0.7rem", fontWeight: 400 }}>{e.notes}</div>}
                     </td>
                     <td style={{ padding: "0.75rem 1rem" }}>
@@ -463,7 +484,7 @@ export default function FinanceiroPage() {
                     </td>
                     <td style={{ padding: "0.75rem 1rem", color: "#5a4a2a", fontSize: "0.8rem" }}>{payLabel(e.paymentMethod)}</td>
                     <td style={{ padding: "0.75rem 1rem", color: "#c04040", fontWeight: 700, whiteSpace: "nowrap" }}>
-                      -{fmt(e.amount)}
+                      -{fmt(totalAmount)}
                     </td>
                     <td style={{ padding: "0.75rem 1rem" }}>
                       <div style={{ display: "flex", gap: "0.4rem" }}>
@@ -476,7 +497,8 @@ export default function FinanceiroPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
               <tfoot>
                 <tr style={{ backgroundColor: "#FAF6EE" }}>
