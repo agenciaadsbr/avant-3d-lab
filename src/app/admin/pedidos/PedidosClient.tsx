@@ -327,13 +327,9 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "0.875rem", marginBottom: "1.5rem" }}>
         {[
           { emoji: "🛍️", label: "Total de Pedidos", value: filtered.length, gold: false },
-          { emoji: "💰", label: "Receita", value: fmt(totalReceita), gold: true },
-          { emoji: "📦", label: "Custo de Produtos", value: fmt(totalCusto), gold: false },
-          { emoji: "💸", label: "Despesas Gerais", value: fmt(totalExpenses), gold: false, sub: "estoque, cartão, etc" },
-          { emoji: "📈", label: "Lucro Líquido", value: fmt(lucroLiquido), gold: false, lucro: true, sub: itemsComCusto < totalItems ? `${margemLucro.toFixed(1)}% margem (${itemsComCusto}/${totalItems} itens)` : `${margemLucro.toFixed(1)}% de margem` },
+          { emoji: "✅", label: "Entregues", value: filtered.filter(o => o.status === "delivered").length, gold: false },
           { emoji: "⏳", label: "Em Aberto", value: fmt(totalEmAberto), gold: false, warn: totalEmAberto > 0 },
           { emoji: "📒", label: "Caderno na Rua", value: fmt(cadernoTotal), gold: false, caderno: cadernoTotal > 0 },
-          { emoji: "✅", label: "Entregues", value: filtered.filter(o => o.status === "delivered").length, gold: false },
           { emoji: "🚫", label: "Cancelados", value: localOrders.filter(o => o.status === "cancelled").length, gold: false, cancel: true },
         ].map(s => (
           <div key={s.label}

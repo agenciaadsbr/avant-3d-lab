@@ -180,26 +180,34 @@ export default async function RelatoriosPage() {
         <p style={{ color: "#9a8060", fontSize: "0.875rem", marginTop: "0.2rem" }}>Visão analítica do negócio</p>
       </div>
 
-      {/* KPIs do mês */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
-        {[
-          { emoji: "💰", label: "Receita este mês", value: formatCurrency(receitaMes), sub: `${varReceita >= 0 ? "▲" : "▼"} ${Math.abs(varReceita).toFixed(0)}% vs mês anterior`, ok: varReceita >= 0 },
-          { emoji: "📈", label: "Lucro este mês", value: formatCurrency(lucroMes), sub: `despesas: ${formatCurrency(monthlyData[5].despesa)}`, ok: lucroMes >= 0 },
-          { emoji: "📒", label: "A receber (caderno)", value: formatCurrency(totalAReceber), sub: totalVencido > 0 ? `⚠️ ${formatCurrency(totalVencido)} vencido` : "em dia", ok: totalVencido === 0 },
-          { emoji: "👥", label: "Clientes novos", value: newClientsThisMonth, sub: `${newClientsLastMonth} mês anterior`, ok: newClientsThisMonth >= newClientsLastMonth },
-        ].map(k => (
-          <div key={k.label} style={card()}>
-            <div style={{ fontSize: "1.1rem", marginBottom: "0.25rem" }}>{k.emoji}</div>
-            <div style={{ fontSize: "1.3rem", fontWeight: 900, color: "#1a1510" }}>{k.value}</div>
-            <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#9a8060", marginTop: "0.2rem" }}>{k.label}</div>
-            <div style={{ fontSize: "0.68rem", color: k.ok ? "#1a8a2a" : "#c04040", marginTop: "0.15rem" }}>{k.sub}</div>
-          </div>
-        ))}
+      {/* SEÇÃO: FATURAMENTO */}
+      <div style={{ marginBottom: "2rem" }}>
+        <h2 style={{ fontSize: "0.95rem", fontWeight: 900, color: "#b8891a", marginBottom: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>💰 Faturamento</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+          {[
+            { emoji: "💵", label: "Receita este mês", value: formatCurrency(receitaMes), sub: `${varReceita >= 0 ? "▲" : "▼"} ${Math.abs(varReceita).toFixed(0)}% vs mês anterior`, ok: varReceita >= 0, color: "#b8891a" },
+            { emoji: "📦", label: "Custo de Produtos", value: formatCurrency(monthlyData[5].receita > 0 ? monthlyData[5].receita * 0.5 : 0), sub: "aproximado (50% da receita)", color: "#5a4a2a" },
+            { emoji: "💸", label: "Despesas Gerais", value: formatCurrency(monthlyData[5].despesa), sub: "estoque, cartão, frete, etc", color: "#c04040" },
+            { emoji: "📈", label: "Lucro Líquido", value: formatCurrency(lucroMes), sub: lucroMes >= 0 ? `${((lucroMes / receitaMes) * 100).toFixed(1)}% de margem` : "investimento", ok: lucroMes >= 0, color: lucroMes >= 0 ? "#1a8a2a" : "#c04040" },
+          ].map(k => (
+            <div key={k.label} style={card({ borderLeft: `4px solid ${(k as any).color || "#b8891a"}` })}>
+              <div style={{ fontSize: "1.1rem", marginBottom: "0.25rem" }}>{k.emoji}</div>
+              <div style={{ fontSize: "1.35rem", fontWeight: 900, color: (k as any).color || "#1a1510" }}>{k.value}</div>
+              <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#9a8060", marginTop: "0.2rem" }}>{k.label}</div>
+              <div style={{ fontSize: "0.68rem", color: (k as any).ok !== undefined ? ((k as any).ok ? "#1a8a2a" : "#c04040") : "#9a8060", marginTop: "0.15rem" }}>{k.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* SEÇÃO: ANÁLISE MENSAL */}
+      <div style={{ marginBottom: "2rem" }}>
+        <h2 style={{ fontSize: "0.95rem", fontWeight: 900, color: "#b8891a", marginBottom: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>📈 Análise Mensal</h2>
       </div>
 
       {/* Gráfico receita vs despesa */}
       <div style={{ ...card(), marginBottom: "1.5rem" }}>
-        <h2 style={{ fontWeight: 800, fontSize: "0.95rem", color: "#1a1510", marginBottom: "1.5rem" }}>📈 Receita × Despesa (6 meses)</h2>
+        <h3 style={{ fontWeight: 800, fontSize: "0.9rem", color: "#1a1510", marginBottom: "1.5rem" }}>Receita × Despesa (últimos 6 meses)</h3>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-end", height: 140 }}>
           {monthlyData.map((m, i) => (
             <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.25rem" }}>
@@ -224,11 +232,16 @@ export default async function RelatoriosPage() {
         </div>
       </div>
 
+      {/* SEÇÃO: PROJEÇÕES E RECEBIMENTOS */}
+      <div style={{ marginBottom: "2rem" }}>
+        <h2 style={{ fontSize: "0.95rem", fontWeight: 900, color: "#b8891a", marginBottom: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>📋 Projeções e Recebimentos</h2>
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
 
         {/* Projeção de caixa */}
         <div style={card()}>
-          <h2 style={{ fontWeight: 800, fontSize: "0.95rem", color: "#1a1510", marginBottom: "1.25rem" }}>💵 Projeção de Caixa</h2>
+          <h3 style={{ fontWeight: 800, fontSize: "0.9rem", color: "#1a1510", marginBottom: "1.25rem" }}>💰 Caderno (A Receber)</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
             <div style={{ backgroundColor: "#e8f8e8", borderRadius: "0.75rem", padding: "0.875rem 1rem" }}>
               <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#1a6a2a", marginBottom: "0.2rem" }}>✅ A RECEBER (CADERNO)</p>
@@ -253,9 +266,9 @@ export default async function RelatoriosPage() {
           </div>
         </div>
 
-        {/* Ranking de clientes */}
+        {/* Top Clientes */}
         <div style={card()}>
-          <h2 style={{ fontWeight: 800, fontSize: "0.95rem", color: "#1a1510", marginBottom: "1.25rem" }}>🏆 Top Clientes</h2>
+          <h3 style={{ fontWeight: 800, fontSize: "0.9rem", color: "#1a1510", marginBottom: "1.25rem" }}>🏆 Clientes com Maior Gasto</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {topClientsList.slice(0, 8).map((c, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
@@ -271,11 +284,16 @@ export default async function RelatoriosPage() {
         </div>
       </div>
 
+      {/* SEÇÃO: OPERACIONAL */}
+      <div style={{ marginBottom: "2rem" }}>
+        <h2 style={{ fontSize: "0.95rem", fontWeight: 900, color: "#b8891a", marginBottom: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>📦 Operacional</h2>
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
 
         {/* Estoque */}
         <div style={card()}>
-          <h2 style={{ fontWeight: 800, fontSize: "0.95rem", color: "#1a1510", marginBottom: "1.25rem" }}>📦 Saúde do Estoque</h2>
+          <h3 style={{ fontWeight: 800, fontSize: "0.9rem", color: "#1a1510", marginBottom: "1.25rem" }}>Saúde do Estoque</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1rem" }}>
             {[
               { label: "Valor de venda", value: formatCurrency(valorEstoque), color: "#1a8a2a" },
@@ -304,7 +322,7 @@ export default async function RelatoriosPage() {
 
         {/* Home Try-On */}
         <div style={card()}>
-          <h2 style={{ fontWeight: 800, fontSize: "0.95rem", color: "#1a1510", marginBottom: "1.25rem" }}>👗 Home Try-On</h2>
+          <h3 style={{ fontWeight: 800, fontSize: "0.9rem", color: "#1a1510", marginBottom: "1.25rem" }}>👗 Home Try-On</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
             <div style={{ backgroundColor: "#fce8ff", borderRadius: "0.75rem", padding: "0.875rem 1rem" }}>
               <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#5a0a7a", marginBottom: "0.2rem" }}>EM ANDAMENTO</p>
