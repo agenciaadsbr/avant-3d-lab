@@ -73,7 +73,10 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
     });
     if (res.ok) {
       // Recarrega a página para atualizar Projeção de Caixa e Fluxo do Mês
-      window.location.reload();
+      setTimeout(() => {
+        console.log("Recarregando página...");
+        window.location.href = window.location.href;
+      }, 1000);
     } else {
       alert("❌ Erro ao consolidar");
     }
