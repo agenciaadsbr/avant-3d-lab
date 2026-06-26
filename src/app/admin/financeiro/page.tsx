@@ -98,8 +98,11 @@ export default function FinanceiroPage() {
   const loadExpenses = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
-    if (from) params.set("from", from);
-    if (to) params.set("to", to);
+    // Garante que from <= to (se estiverem ao contrário, inverte)
+    const dateFrom = from && to && from > to ? to : from;
+    const dateTo = from && to && from > to ? from : to;
+    if (dateFrom) params.set("from", dateFrom);
+    if (dateTo) params.set("to", dateTo);
     if (filterSupplier) params.set("supplierId", filterSupplier);
     if (filterCategory) params.set("category", filterCategory);
     const res = await fetch(`/api/admin/despesas?${params}`);
@@ -461,7 +464,9 @@ export default function FinanceiroPage() {
               </thead>
               <tbody>
                 {groupedExpenses.map(e => {
-                  const totalAmount = e.groupId
+                  // Se é parcelado, mostra apenas a parcela deste período filtrado
+                  // Não soma todas as parcelas do grupo
+                  const displayAmount = e.groupId
                     ? expenses.filter(x => x.groupId === e.groupId).reduce((s, x) => s + x.amount, 0)
                     : e.amount;
                   return (
@@ -486,7 +491,7 @@ export default function FinanceiroPage() {
                     </td>
                     <td style={{ padding: "0.75rem 1rem", color: "#5a4a2a", fontSize: "0.8rem" }}>{payLabel(e.paymentMethod)}</td>
                     <td style={{ padding: "0.75rem 1rem", color: "#c04040", fontWeight: 700, whiteSpace: "nowrap" }}>
-                      -{fmt(totalAmount)}
+                      -{fmt(displayAmount)}
                     </td>
                     <td style={{ padding: "0.75rem 1rem" }}>
                       <div style={{ display: "flex", gap: "0.4rem" }}>
