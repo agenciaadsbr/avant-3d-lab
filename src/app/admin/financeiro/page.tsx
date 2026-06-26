@@ -191,6 +191,8 @@ export default function FinanceiroPage() {
     if (!confirm("Excluir esta despesa?")) return;
     await fetch(`/api/admin/despesas/${id}`, { method: "DELETE" });
     loadExpenses();
+    loadCardExpenses();
+    loadOperatorFees();
   };
 
   const handleAddSupplier = async () => {
