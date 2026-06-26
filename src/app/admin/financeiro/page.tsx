@@ -113,11 +113,8 @@ export default function FinanceiroPage() {
     if (res.ok) {
       const data = await res.json();
       setCardExpenses(data.expenses);
-      // Total usando valor por parcela
-      const t = data.expenses.reduce((s: number, e: Expense) => {
-        const p = e.installments && e.installments > 1 ? e.installments : 1;
-        return s + e.amount / p;
-      }, 0);
+      // Total: e.amount já é o valor correto da parcela, não divide
+      const t = data.expenses.reduce((s: number, e: Expense) => s + e.amount, 0);
       setCardTotal(t);
     }
   }, [cardFrom, cardTo]);
