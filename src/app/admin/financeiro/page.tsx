@@ -152,9 +152,12 @@ export default function FinanceiroPage() {
 
   const openEdit = (e: Expense) => {
     setEditId(e.id);
+    // Se é parcelado (tem groupId), mostra o valor total (amount * installments)
+    const isGrouped = e.groupId && e.installments && e.installments > 1;
+    const displayAmount = isGrouped ? e.amount * e.installments : e.amount;
     setForm({
-      date: e.date.split("T")[0], description: e.description,
-      amount: String(e.amount), category: e.category,
+      date: e.date.split("T")[0], description: e.description.replace(/\s*\(\d+\/\d+\)$/, ""), // Remove "(1/3)" do fim
+      amount: String(displayAmount), category: e.category,
       paymentMethod: e.paymentMethod, supplierId: e.supplier?.id || "", notes: e.notes || "",
       installments: String(e.installments || 1),
       dueDate: e.dueDate ? e.dueDate.substring(0, 7) : "", // YYYY-MM
@@ -590,6 +593,12 @@ export default function FinanceiroPage() {
               <h2 style={{ color: "#1a1510", fontWeight: 900, fontSize: "1.1rem" }}>{editId ? "Editar Despesa" : "Nova Despesa"}</h2>
               <button onClick={() => setShowForm(false)} style={{ background: "none", border: "none", fontSize: "1.25rem", cursor: "pointer", color: "#9a8060" }}>✕</button>
             </div>
+
+            {editId && parseInt(form.installments) > 1 && (
+              <div style={{ backgroundColor: "#f0e8ff", border: "1px solid rgba(106,48,184,0.2)", borderRadius: "0.625rem", padding: "0.75rem 1rem", marginBottom: "1rem", color: "#6a30b8", fontSize: "0.8rem" }}>
+                📦 Você está editando um lançamento parcelado. Ao salvar, todas as {form.installments} parcelas serão recalculadas.
+              </div>
+            )}
 
             {error && <div style={{ backgroundColor: "#fee8e8", border: "1px solid rgba(192,64,64,0.3)", borderRadius: "0.625rem", padding: "0.75rem 1rem", marginBottom: "1rem", color: "#c04040", fontSize: "0.8rem" }}>{error}</div>}
 
