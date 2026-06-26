@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAdmin } from "@/store/admin";
+import { useMobileView } from "@/hooks/useMediaQuery";
 import ProdutosSemCusto from "../ProdutosSemCusto";
 
 type OrderItem = { id: string; quantity: number; price: number; size?: string; costPrice?: number | null; product: { id: string; name: string; costPrice?: number | null } };
@@ -57,6 +58,7 @@ type Customer = { id: string; name: string | null; email: string };
 
 export default function PedidosClient({ orders, customers = [] }: { orders: Order[]; customers?: Customer[] }) {
   const { hideProfit } = useAdmin();
+  const isMobile = useMobileView();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [payFilter, setPayFilter] = useState("");
@@ -414,8 +416,8 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
             <thead>
               <tr style={{ backgroundColor: "#FAF6EE" }}>
-                {["Pedido", "Cliente", "Produtos", "Total", "Entrega", "Pagamento", "Forma", "Data", "Ações"].map(h => (
-                  <th key={h} style={{ textAlign: "left", padding: "0.875rem 1rem", color: "#9a8060", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.1)", whiteSpace: "nowrap" }}>{h}</th>
+                {["Pedido", "Cliente", ...(isMobile ? [] : ["Produtos"]), "Total", ...(isMobile ? [] : ["Entrega", "Pagamento", "Forma", "Data", "Ações"])].map(h => (
+                  <th key={h} style={{ textAlign: "left", padding: isMobile ? "0.625rem 0.75rem" : "0.875rem 1rem", color: "#9a8060", fontWeight: 700, fontSize: isMobile ? "0.7rem" : "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.1)", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -441,20 +443,20 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                       <td style={{ padding: "0.875rem 1rem", fontFamily: "monospace", fontSize: "0.72rem", color: "#9a8060" }}>
                         {isExpanded ? "▼" : "▶"} #{order.id.slice(-8).toUpperCase()}
                       </td>
-                      <td style={{ padding: "0.875rem 1rem" }}>
-                        <div style={{ color: "#1a1510", fontWeight: 600, fontSize: "0.875rem" }}>{order.user.name}</div>
-                        <div style={{ color: "#9a8060", fontSize: "0.7rem" }}>{order.user.email}</div>
+                      <td style={{ padding: isMobile ? "0.625rem 0.75rem" : "0.875rem 1rem" }}>
+                        <div style={{ color: "#1a1510", fontWeight: 600, fontSize: isMobile ? "0.8rem" : "0.875rem" }}>{order.user.name}</div>
+                        {!isMobile && <div style={{ color: "#9a8060", fontSize: "0.7rem" }}>{order.user.email}</div>}
                       </td>
-                      <td style={{ padding: "0.875rem 1rem", color: "#5a4a2a", fontSize: "0.8rem" }}>
+                      {!isMobile && <td style={{ padding: "0.875rem 1rem", color: "#5a4a2a", fontSize: "0.8rem" }}>
                         {produtoNome}{maisItens && <span style={{ color: "#b8891a", fontWeight: 700 }}>{maisItens}</span>}
-                      </td>
-                      <td style={{ padding: "0.875rem 1rem", color: "#1a1510", fontWeight: 700, whiteSpace: "nowrap" }}>{fmt(order.total)}</td>
-                      <td style={{ padding: "0.875rem 1rem" }}>
+                      </td>}
+                      <td style={{ padding: isMobile ? "0.625rem 0.75rem" : "0.875rem 1rem", color: "#1a1510", fontWeight: 700, whiteSpace: "nowrap" }}>{fmt(order.total)}</td>
+                      <td style={{ padding: isMobile ? "0.625rem 0.75rem" : "0.875rem 1rem" }}>
                         <span style={{ backgroundColor: sc.bg, color: sc.color, fontSize: "0.7rem", fontWeight: 700, padding: "0.25rem 0.625rem", borderRadius: "999px", whiteSpace: "nowrap" }}>
                           {STATUS_LABEL[order.status] || order.status}
                         </span>
                       </td>
-                      <td style={{ padding: "0.875rem 1rem" }}>
+                      {!isMobile && <td style={{ padding: "0.875rem 1rem" }}>
                         <span style={{ backgroundColor: pc.bg, color: pc.color, fontSize: "0.7rem", fontWeight: 700, padding: "0.25rem 0.625rem", borderRadius: "999px", whiteSpace: "nowrap" }}>
                           {PAY_LABEL[order.paymentStatus] || order.paymentStatus}
                         </span>
@@ -462,15 +464,15 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                           <div style={{ color: "#9a8060", fontSize: "0.65rem", marginTop: "0.2rem" }}>Pago: {fmt(order.amountPaid)}</div>
                         )}
                       </td>
-                      <td style={{ padding: "0.875rem 1rem" }}>
+                      {!isMobile && <td style={{ padding: "0.875rem 1rem" }}>
                         <span style={{ backgroundColor: mc.bg, color: mc.color, fontSize: "0.7rem", fontWeight: 700, padding: "0.25rem 0.625rem", borderRadius: "999px", whiteSpace: "nowrap" }}>
                           {METHOD_LABEL[order.paymentMethod] || order.paymentMethod}
                         </span>
-                      </td>
-                      <td style={{ padding: "0.875rem 1rem", color: "#9a8060", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+                      </td>}
+                      {!isMobile && <td style={{ padding: "0.875rem 1rem", color: "#9a8060", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
                         {new Date(order.createdAt).toLocaleDateString("pt-BR")}
-                      </td>
-                      <td style={{ padding: "0.875rem 1rem" }} onClick={e => e.stopPropagation()}>
+                      </td>}
+                      {!isMobile && <td style={{ padding: "0.875rem 1rem" }} onClick={e => e.stopPropagation()}>
                         <select
                           value={order.status}
                           disabled={updatingId === order.id}
@@ -482,7 +484,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                     </tr>
                     {isExpanded && (
                       <tr key={order.id + "-detail"} style={{ backgroundColor: "#FDFAF4", borderBottom: "1px solid rgba(140,100,20,0.06)" }}>
-                        <td colSpan={9} style={{ padding: "0 1rem 1rem 1rem" }}>
+                        <td colSpan={isMobile ? 4 : 9} style={{ padding: isMobile ? "0.75rem 0.75rem" : "0 1rem 1rem 1rem" }}>
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                             {/* Itens */}
                             <div style={{ backgroundColor: "#fff", borderRadius: "0.75rem", padding: "1rem", border: "1px solid rgba(140,100,20,0.08)" }}>
