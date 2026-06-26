@@ -463,7 +463,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                         {order.paymentStatus === "partial" && (
                           <div style={{ color: "#9a8060", fontSize: "0.65rem", marginTop: "0.2rem" }}>Pago: {fmt(order.amountPaid)}</div>
                         )}
-                      </td>
+                      </td>}
                       {!isMobile && <td style={{ padding: "0.875rem 1rem" }}>
                         <span style={{ backgroundColor: mc.bg, color: mc.color, fontSize: "0.7rem", fontWeight: 700, padding: "0.25rem 0.625rem", borderRadius: "999px", whiteSpace: "nowrap" }}>
                           {METHOD_LABEL[order.paymentMethod] || order.paymentMethod}
