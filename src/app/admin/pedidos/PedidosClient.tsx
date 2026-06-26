@@ -63,6 +63,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const [methodFilter, setMethodFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [totalExpenses, setTotalExpenses] = useState(0);
   const searchParams = useSearchParams();
   const [expanded, setExpanded] = useState<string | null>(searchParams.get("expand"));
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -75,6 +76,21 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
       setTimeout(() => document.getElementById(`order-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
     }
   }, []);
+
+  // Busca despesas do período para calcular lucro correto
+  useEffect(() => {
+    const loadExpenses = async () => {
+      const params = new URLSearchParams();
+      if (dateFrom) params.set("from", dateFrom);
+      if (dateTo) params.set("to", dateTo);
+      const res = await fetch(`/api/admin/despesas?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setTotalExpenses(data.total || 0);
+      }
+    };
+    loadExpenses();
+  }, [dateFrom, dateTo]);
   const [editingPayment, setEditingPayment] = useState<string | null>(null);
   const [editAmountPaid, setEditAmountPaid] = useState("");
   const [editPaymentStatus, setEditPaymentStatus] = useState("");
@@ -126,8 +142,9 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
       const c = item.costPrice ?? item.product.costPrice;
       return si + (c != null ? item.price * item.quantity : 0);
     }, 0), 0);
-  const lucroLiquido = totalReceita - totalCusto;
-  const margemLucro = receitaComCusto > 0 ? ((receitaComCusto - totalCusto) / receitaComCusto) * 100 : 0;
+  // Lucro = Receita - Custo do Produto - Despesas Gerais (estoque, marketing, frete, cartão, etc)
+  const lucroLiquido = totalReceita - totalCusto - totalExpenses;
+  const margemLucro = receitaComCusto > 0 ? ((receitaComCusto - totalCusto - totalExpenses) / receitaComCusto) * 100 : 0;
   const totalEmAberto = filtered.filter(o => o.paymentStatus !== "paid").reduce((s, o) => s + (o.total - o.amountPaid), 0);
   const cadernoTotal = localOrders.filter(o => o.paymentMethod === "caderno" && o.paymentStatus !== "paid")
     .reduce((s, o) => s + (o.total - o.amountPaid), 0);
@@ -311,6 +328,8 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
         {[
           { emoji: "🛍️", label: "Total de Pedidos", value: filtered.length, gold: false },
           { emoji: "💰", label: "Receita", value: fmt(totalReceita), gold: true },
+          { emoji: "📦", label: "Custo de Produtos", value: fmt(totalCusto), gold: false },
+          { emoji: "💸", label: "Despesas Gerais", value: fmt(totalExpenses), gold: false, sub: "estoque, cartão, etc" },
           { emoji: "📈", label: "Lucro Líquido", value: fmt(lucroLiquido), gold: false, lucro: true, sub: itemsComCusto < totalItems ? `${margemLucro.toFixed(1)}% margem (${itemsComCusto}/${totalItems} itens)` : `${margemLucro.toFixed(1)}% de margem` },
           { emoji: "⏳", label: "Em Aberto", value: fmt(totalEmAberto), gold: false, warn: totalEmAberto > 0 },
           { emoji: "📒", label: "Caderno na Rua", value: fmt(cadernoTotal), gold: false, caderno: cadernoTotal > 0 },
