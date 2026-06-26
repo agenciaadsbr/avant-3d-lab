@@ -517,9 +517,14 @@ export default function FinanceiroPage() {
                           -{fmt(e.amount)}
                         </td>
                         <td style={{ padding: "0.75rem 1rem" }}>
-                          <button onClick={() => handleDelete(e.id)} style={{ backgroundColor: "#fee8e8", border: "1px solid rgba(192,64,64,0.2)", color: "#c04040", fontWeight: 700, fontSize: "0.7rem", padding: "0.3rem 0.625rem", borderRadius: "0.5rem", cursor: "pointer" }}>
-                            Excluir
-                          </button>
+                          <div style={{ display: "flex", gap: "0.4rem" }}>
+                            <button onClick={() => openEdit(e)} style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#b8891a", fontWeight: 700, fontSize: "0.7rem", padding: "0.3rem 0.625rem", borderRadius: "0.5rem", cursor: "pointer" }}>
+                              Editar
+                            </button>
+                            <button onClick={() => handleDelete(e.id)} style={{ backgroundColor: "#fee8e8", border: "1px solid rgba(192,64,64,0.2)", color: "#c04040", fontWeight: 700, fontSize: "0.7rem", padding: "0.3rem 0.625rem", borderRadius: "0.5rem", cursor: "pointer" }}>
+                              Excluir
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
