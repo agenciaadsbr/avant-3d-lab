@@ -143,7 +143,8 @@ export default function FinanceiroPage() {
 
   const openNew = () => {
     setEditId(null);
-    setForm({ date: today(), description: "", amount: "", category: "outros", paymentMethod: "pix", supplierId: "", notes: "", installments: "1", dueDate: "" });
+    const defaultPayment = tab === "cartao" ? "cartao_credito" : "pix";
+    setForm({ date: today(), description: "", amount: "", category: "outros", paymentMethod: defaultPayment, supplierId: "", notes: "", installments: "1", dueDate: "" });
     setError("");
     setShowForm(true);
   };
