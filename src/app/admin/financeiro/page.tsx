@@ -63,6 +63,7 @@ export default function FinanceiroPage() {
   const [cardTotal, setCardTotal] = useState(0);
   const [feeTotal, setFeeTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [invoicePaid, setInvoicePaid] = useState<Record<string, boolean>>({});
 
   // Filtros despesas
   const [from, setFrom] = useState(firstOfMonth());
@@ -305,9 +306,27 @@ export default function FinanceiroPage() {
                 </button>
               ))}
             </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginLeft: "auto" }}>
+              {invoicePaid[cardMonth] ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem 1rem", backgroundColor: "#e8f8e8", borderRadius: "0.625rem", border: "1px solid rgba(26,138,42,0.2)" }}>
+                  <span style={{ fontSize: "1.2rem" }}>✓</span>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#1a8a2a" }}>Fatura Paga</span>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem 1rem", backgroundColor: "#fff8e1", borderRadius: "0.625rem", border: "1px solid rgba(184,137,26,0.3)" }}>
+                  <span style={{ fontSize: "1.2rem" }}>⏳</span>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#856404" }}>Pendente</span>
+                </div>
+              )}
+              <button onClick={() => setInvoicePaid(p => ({ ...p, [cardMonth]: !p[cardMonth] }))}
+                style={{ backgroundColor: invoicePaid[cardMonth] ? "#fee8e8" : "#b8891a", color: invoicePaid[cardMonth] ? "#c04040" : "#fff", border: "none", fontWeight: 700, fontSize: "0.8rem", padding: "0.5rem 1rem", borderRadius: "0.625rem", cursor: "pointer" }}>
+                {invoicePaid[cardMonth] ? "Marcar como Pendente" : "Marcar como Paga"}
+              </button>
+            </div>
           </div>
 
-          <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
+          <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden", marginTop: "1.5rem" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
               <thead>
                 <tr style={{ backgroundColor: "#f0e8ff" }}>
