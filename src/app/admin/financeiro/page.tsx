@@ -599,14 +599,27 @@ export default function FinanceiroPage() {
                       </select>
                     </div>
                     <div>
-                      <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", display: "block", marginBottom: "0.4rem" }}>Mês {parseInt(form.installments) > 1 ? "da 1ª parcela" : "da fatura"}</label>
-                      <input type="month" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} style={inp()} />
+                      <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", display: "block", marginBottom: "0.4rem" }}>
+                        Mês {parseInt(form.installments) > 1 ? "da 1ª parcela" : "da fatura"}
+                        {parseInt(form.installments) > 1 && <span style={{ color: "#c04040" }}> *</span>}
+                      </label>
+                      <input type="month" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} style={{ ...inp(), borderColor: parseInt(form.installments) > 1 && !form.dueDate ? "#c04040" : undefined }} required={parseInt(form.installments) > 1} />
                     </div>
                   </div>
                   {parseInt(form.installments) > 1 && form.amount && (
-                    <p style={{ fontSize: "0.75rem", color: "#6a30b8" }}>
-                      → {form.installments}x de {fmt(parseFloat(form.amount.replace(",",".")) / parseInt(form.installments))} — vencimento dia 10 de cada mês{form.dueDate ? `, começando em ${new Date(form.dueDate + "-10").toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}` : ""}
-                    </p>
+                    <div style={{ padding: "0.75rem", backgroundColor: "#f0e8ff", borderRadius: "0.625rem", borderLeft: "3px solid #6a30b8" }}>
+                      <p style={{ fontSize: "0.75rem", color: "#6a30b8", margin: "0 0 0.3rem", fontWeight: 700 }}>
+                        💳 {form.installments}x de {fmt(parseFloat(form.amount.replace(",",".")) / parseInt(form.installments))}
+                      </p>
+                      <p style={{ fontSize: "0.7rem", color: "#6a30b8", margin: 0 }}>
+                        Vencimento dia 10 de cada mês{form.dueDate ? `, começando em ${new Date(form.dueDate + "-10").toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}` : " — preencha o mês acima"}
+                      </p>
+                      {form.dueDate && (
+                        <p style={{ fontSize: "0.7rem", color: "#6a30b8", margin: "0.3rem 0 0", fontStyle: "italic" }}>
+                          ✓ Parcelas aparecerão na aba Cartão em seus respectivos meses
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
