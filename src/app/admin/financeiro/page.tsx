@@ -153,8 +153,9 @@ export default function FinanceiroPage() {
   const openEdit = (e: Expense) => {
     setEditId(e.id);
     // Se é parcelado (tem groupId), mostra o valor total (amount * installments)
-    const isGrouped = e.groupId && e.installments && e.installments > 1;
-    const displayAmount = isGrouped ? e.amount * e.installments : e.amount;
+    const installments = e.installments || 1;
+    const isGrouped = e.groupId && installments > 1;
+    const displayAmount = isGrouped ? e.amount * installments : e.amount;
     setForm({
       date: e.date.split("T")[0], description: e.description.replace(/\s*\(\d+\/\d+\)$/, ""), // Remove "(1/3)" do fim
       amount: String(displayAmount), category: e.category,
