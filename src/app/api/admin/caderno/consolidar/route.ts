@@ -22,27 +22,23 @@ export async function POST(req: Request) {
       paymentStatus: { not: "paid" },
       status: { not: "cancelled" },
     },
-    select: { id: true, total: true },
+    select: { id: true, total: true, amountPaid: true },
   });
 
   if (pedidos.length === 0)
     return NextResponse.json({ error: "Nenhum pedido encontrado" }, { status: 404 });
 
-  const totalDevido = pedidos.reduce((s, p) => s + p.total, 0);
+  // Calcula o total de SALDO PENDENTE (não o total integral)
+  const totalDevido = pedidos.reduce((s, p) => s + (p.total - p.amountPaid), 0);
   const valorParcela = totalDevido / numParcelas;
 
   for (let i = 0; i < pedidos.length; i++) {
-    const pedido = pedidos[i];
     const parcelaIndex = i % numParcelas;
     const d = new Date();
     d.setMonth(d.getMonth() + parcelaIndex + 1);
 
-    const valor = parcelaIndex === numParcelas - 1 
-      ? totalDevido - valorParcela * (numParcelas - 1)
-      : valorParcela;
-
     await prisma.order.update({
-      where: { id: pedido.id },
+      where: { id: pedidos[i].id },
       data: {
         dueDate: d,
         installmentCount: numParcelas,
@@ -50,5 +46,5 @@ export async function POST(req: Request) {
     });
   }
 
-  return NextResponse.json({ ok: true, consolidados: pedidos.length });
+  return NextResponse.json({ ok: true, consolidados: pedidos.length, totalDevido });
 }

@@ -21,9 +21,18 @@ export async function GET(req: Request) {
       paymentStatus: { not: "paid" },
       status: { not: "cancelled" },
     },
-    select: { id: true, total: true, dueDate: true },
+    select: { id: true, total: true, amountPaid: true, dueDate: true },
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json({ pedidos });
+  // Calcula o saldo pendente de cada pedido
+  const pedidosComSaldo = pedidos.map(p => ({
+    id: p.id,
+    total: p.total,
+    amountPaid: p.amountPaid,
+    saldoPendente: p.total - p.amountPaid,
+    dueDate: p.dueDate,
+  }));
+
+  return NextResponse.json({ pedidos: pedidosComSaldo });
 }

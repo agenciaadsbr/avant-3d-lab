@@ -11,6 +11,8 @@ type ClientData = {
 type Pedido = {
   id: string;
   total: number;
+  amountPaid: number;
+  saldoPendente: number;
   dueDate: string | null;
 };
 
@@ -42,7 +44,7 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
     loadClientPedidos(clientId);
   };
 
-  const totalDevido = pedidos.reduce((s, p) => s + p.total, 0);
+  const totalDevido = pedidos.reduce((s, p) => s + p.saldoPendente, 0);
   const numParcelas = parseInt(parcelas) || 1;
   const valorParcela = totalDevido / numParcelas;
 
@@ -95,13 +97,16 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 {pedidos.map(p => (
-                  <div key={p.id} style={{ display: "flex", justifyContent: "space-between", padding: "0.75rem", backgroundColor: "#FAF6EE", borderRadius: "0.5rem" }}>
-                    <span style={{ color: "#5a4a2a", fontWeight: 600 }}>Pedido {p.id.slice(0, 8)}</span>
-                    <span style={{ color: "#b8891a", fontWeight: 700 }}>{fmt(p.total)}</span>
+                  <div key={p.id} style={{ display: "flex", justifyContent: "space-between", padding: "0.75rem", backgroundColor: "#FAF6EE", borderRadius: "0.5rem", alignItems: "center" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ color: "#5a4a2a", fontWeight: 600 }}>Pedido {p.id.slice(0, 8)}</div>
+                      <div style={{ color: "#9a8060", fontSize: "0.75rem", marginTop: "0.2rem" }}>Total: {fmt(p.total)} | Pago: {fmt(p.amountPaid)}</div>
+                    </div>
+                    <span style={{ color: "#b8891a", fontWeight: 700, minWidth: "100px", textAlign: "right" }}>Saldo: {fmt(p.saldoPendente)}</span>
                   </div>
                 ))}
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "1rem", backgroundColor: "#b8891a", borderRadius: "0.5rem", color: "#fff", fontWeight: 900, fontSize: "1.1rem" }}>
-                  <span>Total</span>
+                  <span>Total em Aberto</span>
                   <span>{fmt(totalDevido)}</span>
                 </div>
               </div>
