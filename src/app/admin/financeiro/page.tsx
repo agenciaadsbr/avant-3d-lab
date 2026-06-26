@@ -210,18 +210,17 @@ export default function FinanceiroPage() {
   const catLabel = (v: string) => CATEGORIES.find(c => c.value === v)?.label || v;
   const payLabel = (v: string) => PAYMENTS.find(p => p.value === v)?.label || v;
 
-  // Agrupa despesas parceladas e ordena por data
+  // Ordena por data PRIMEIRO, depois agrupa despesas parceladas
   const groupedExpenses = (() => {
+    const sorted = [...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const seen = new Set<string>();
-    return expenses
-      .filter(e => {
-        if (e.groupId) {
-          if (seen.has(e.groupId)) return false;
-          seen.add(e.groupId);
-        }
-        return true;
-      })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return sorted.filter(e => {
+      if (e.groupId) {
+        if (seen.has(e.groupId)) return false;
+        seen.add(e.groupId);
+      }
+      return true;
+    });
   })();
 
   // Totais por categoria no período
