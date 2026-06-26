@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useMobileView } from "@/hooks/useMediaQuery";
+import { ResponsiveModal } from "@/components/ResponsiveModal";
 
 interface Month {
   month: string;
@@ -139,41 +140,34 @@ export default function ProjecaoCaixa() {
       )}
 
       {/* Modal de Detalhes */}
-      {selectedMonth && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ backgroundColor: "#fff", borderRadius: "1rem", padding: "2rem", maxWidth: "500px", width: "90%", maxHeight: "70vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-              <h3 style={{ color: "#1a1510", fontWeight: 900, fontSize: "1.2rem", margin: 0 }}>
-                {months.find(m => m.month === selectedMonth)?.label}
-              </h3>
-              <button onClick={() => setSelectedMonth(null)} style={{ background: "none", border: "none", fontSize: "1.5rem", cursor: "pointer", color: "#9a8060" }}>×</button>
-            </div>
-
-            {loadingModal ? (
-              <p style={{ color: "#9a8060", textAlign: "center" }}>Carregando...</p>
-            ) : pedidosModal.length === 0 ? (
-              <p style={{ color: "#9a8060", textAlign: "center" }}>Nenhum pedido neste mês</p>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {pedidosModal.map(p => (
-                  <div key={p.id} style={{ backgroundColor: "#FAF6EE", padding: "1rem", borderRadius: "0.75rem", borderLeft: "4px solid #b8891a" }}>
-                    <div style={{ fontWeight: 700, color: "#1a1510", marginBottom: "0.3rem" }}>{p.clientName}</div>
-                    <div style={{ fontSize: "0.85rem", color: "#9a8060", marginBottom: "0.5rem" }}>Pedido: {p.id.slice(0, 8)}</div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", fontWeight: 600 }}>
-                      <span style={{ color: "#5a4a2a" }}>Total: {fmt(p.total)}</span>
-                      <span style={{ color: "#5a4a2a" }}>Pago: {fmt(p.amountPaid)}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", fontWeight: 700 }}>
-                      <span style={{ color: "#1a1510" }}>Saldo:</span>
-                      <span style={{ color: "#b8891a" }}>{fmt(p.total - p.amountPaid)}</span>
-                    </div>
-                  </div>
-                ))}
+      <ResponsiveModal
+        isOpen={selectedMonth !== null}
+        onClose={() => setSelectedMonth(null)}
+        title={months.find(m => m.month === selectedMonth)?.label || "Detalhes"}
+      >
+        {loadingModal ? (
+          <p style={{ color: "#9a8060", textAlign: "center" }}>Carregando...</p>
+        ) : pedidosModal.length === 0 ? (
+          <p style={{ color: "#9a8060", textAlign: "center" }}>Nenhum pedido neste mês</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {pedidosModal.map(p => (
+              <div key={p.id} style={{ backgroundColor: "#FAF6EE", padding: "1rem", borderRadius: "0.75rem", borderLeft: "4px solid #b8891a" }}>
+                <div style={{ fontWeight: 700, color: "#1a1510", marginBottom: "0.3rem" }}>{p.clientName}</div>
+                <div style={{ fontSize: "0.85rem", color: "#9a8060", marginBottom: "0.5rem" }}>Pedido: {p.id.slice(0, 8)}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", fontWeight: 600 }}>
+                  <span style={{ color: "#5a4a2a" }}>Total: {fmt(p.total)}</span>
+                  <span style={{ color: "#5a4a2a" }}>Pago: {fmt(p.amountPaid)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", fontWeight: 700 }}>
+                  <span style={{ color: "#1a1510" }}>Saldo:</span>
+                  <span style={{ color: "#b8891a" }}>{fmt(p.total - p.amountPaid)}</span>
+                </div>
               </div>
-            )}
+            ))}
           </div>
-        </div>
-      )}
+        )}
+      </ResponsiveModal>
     </div>
   );
 }
