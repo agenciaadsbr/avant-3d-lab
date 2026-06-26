@@ -20,6 +20,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const body = await req.json();
   const { date, description, amount, category, paymentMethod, supplierId, notes, dueDate, installments } = body;
 
+  // Busca groupId antigo para deletar parcelas antigas
+  const oldExpense = await prisma.expense.findUnique({ where: { id }, select: { groupId: true } });
+  if (oldExpense?.groupId) {
+    await prisma.expense.deleteMany({ where: { groupId: oldExpense.groupId } });
+  }
+
   const isCard = paymentMethod === "cartao_credito";
   const totalInst = isCard && installments > 1 ? parseInt(installments) : 1;
   // dueDate vem como "YYYY-MM" → dia 10
@@ -37,7 +43,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         date: new Date(date), description, amount: parseFloat(amount),
         category, paymentMethod, supplierId: supplierId || null,
         notes: notes || null, dueDate: firstDue,
-        installments: 1, installmentNumber: 1,
+        installments: 1, installmentNumber: 1, groupId: null,
       },
       include: { supplier: { select: { id: true, name: true } } },
     });
