@@ -544,12 +544,12 @@ export default function FinanceiroPage() {
             </button>
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <div style={{ overflowX: isMobile ? "visible" : "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
               <thead>
                 <tr style={{ backgroundColor: "#FDFAF4" }}>
-                  {["Data", "Descrição", "Categoria", "Fornecedor", "Pagamento", "Valor", ""].map(h => (
-                    <th key={h} style={{ textAlign: "left", padding: "0.75rem 1rem", color: "#9a8060", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.08)", whiteSpace: "nowrap" }}>{h}</th>
+                  {[...(isMobile ? [] : ["Data"]), "Descrição", ...(isMobile ? [] : ["Categoria", "Fornecedor", "Pagamento"]), "Valor", ""].map(h => (
+                    <th key={h} style={{ textAlign: "left", padding: isMobile ? "0.6rem 0.75rem" : "0.75rem 1rem", color: "#9a8060", fontWeight: 700, fontSize: isMobile ? "0.7rem" : "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.08)", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -562,26 +562,26 @@ export default function FinanceiroPage() {
                     : e.amount;
                   return (
                   <tr key={e.id} style={{ borderBottom: "1px solid rgba(140,100,20,0.05)" }}>
-                    <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+                    {!isMobile && <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
                       {new Date(e.date).toLocaleDateString("pt-BR")}
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem", color: "#1a1510", fontWeight: 600 }}>
+                    </td>}
+                    <td style={{ padding: isMobile ? "0.6rem 0.75rem" : "0.75rem 1rem", color: "#1a1510", fontWeight: 600, fontSize: isMobile ? "0.85rem" : "1rem" }}>
                       {e.description}
                       {e.groupId && e.installments && e.installments > 1 && (
                         <div style={{ color: "#6a30b8", fontSize: "0.7rem", fontWeight: 700 }}>📦 {e.installments}x</div>
                       )}
                       {e.notes && <div style={{ color: "#9a8060", fontSize: "0.7rem", fontWeight: 400 }}>{e.notes}</div>}
                     </td>
-                    <td style={{ padding: "0.75rem 1rem" }}>
+                    {!isMobile && <td style={{ padding: "0.75rem 1rem" }}>
                       <span style={{ fontSize: "0.7rem", backgroundColor: "#f0e8d0", color: "#7a5a10", padding: "0.2rem 0.5rem", borderRadius: 999, whiteSpace: "nowrap" }}>
                         {catLabel(e.category)}
                       </span>
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem", color: "#5a4a2a", fontSize: "0.8rem" }}>
+                    </td>}
+                    {!isMobile && <td style={{ padding: "0.75rem 1rem", color: "#5a4a2a", fontSize: "0.8rem" }}>
                       {e.supplier?.name || "—"}
-                    </td>
-                    <td style={{ padding: "0.75rem 1rem", color: "#5a4a2a", fontSize: "0.8rem" }}>{payLabel(e.paymentMethod)}</td>
-                    <td style={{ padding: "0.75rem 1rem", color: "#c04040", fontWeight: 700, whiteSpace: "nowrap" }}>
+                    </td>}
+                    {!isMobile && <td style={{ padding: "0.75rem 1rem", color: "#5a4a2a", fontSize: "0.8rem" }}>{payLabel(e.paymentMethod)}</td>}
+                    <td style={{ padding: isMobile ? "0.6rem 0.75rem" : "0.75rem 1rem", color: "#c04040", fontWeight: 700, whiteSpace: "nowrap", fontSize: isMobile ? "0.85rem" : "1rem" }}>
                       -{fmt(displayAmount)}
                     </td>
                     <td style={{ padding: "0.75rem 1rem" }}>
@@ -625,27 +625,27 @@ export default function FinanceiroPage() {
                 <p style={{ color: "#b8a080", marginBottom: "1rem" }}>Nenhuma taxa de operadora registrada.</p>
               </div>
             ) : (
-              <div style={{ overflowX: "auto" }}>
+              <div style={{ overflowX: isMobile ? "visible" : "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
                   <thead>
                     <tr style={{ backgroundColor: "#FDFAF4" }}>
-                      {["Data", "Descrição", "Método", "Valor", ""].map(h => (
-                        <th key={h} style={{ textAlign: "left", padding: "0.75rem 1rem", color: "#9a8060", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.08)", whiteSpace: "nowrap" }}>{h}</th>
+                      {[...(isMobile ? [] : ["Data"]), "Descrição", ...(isMobile ? [] : ["Método"]), "Valor", ""].map(h => (
+                        <th key={h} style={{ textAlign: "left", padding: isMobile ? "0.6rem 0.75rem" : "0.75rem 1rem", color: "#9a8060", fontWeight: 700, fontSize: isMobile ? "0.7rem" : "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.08)", whiteSpace: "nowrap" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {operatorFees.map(e => (
                       <tr key={e.id} style={{ borderBottom: "1px solid rgba(140,100,20,0.05)" }}>
-                        <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+                        {!isMobile && <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
                           {new Date(e.date).toLocaleDateString("pt-BR")}
-                        </td>
-                        <td style={{ padding: "0.75rem 1rem", color: "#1a1510", fontWeight: 600 }}>
+                        </td>}
+                        <td style={{ padding: isMobile ? "0.6rem 0.75rem" : "0.75rem 1rem", color: "#1a1510", fontWeight: 600, fontSize: isMobile ? "0.85rem" : "1rem" }}>
                           {e.description}
                           {e.notes && <div style={{ color: "#9a8060", fontSize: "0.7rem", fontWeight: 400 }}>{e.notes}</div>}
                         </td>
-                        <td style={{ padding: "0.75rem 1rem", color: "#5a4a2a", fontSize: "0.8rem" }}>{payLabel(e.paymentMethod)}</td>
-                        <td style={{ padding: "0.75rem 1rem", color: "#c04040", fontWeight: 700, whiteSpace: "nowrap" }}>
+                        {!isMobile && <td style={{ padding: "0.75rem 1rem", color: "#5a4a2a", fontSize: "0.8rem" }}>{payLabel(e.paymentMethod)}</td>}
+                        <td style={{ padding: isMobile ? "0.6rem 0.75rem" : "0.75rem 1rem", color: "#c04040", fontWeight: 700, whiteSpace: "nowrap", fontSize: isMobile ? "0.85rem" : "1rem" }}>
                           -{fmt(e.amount)}
                         </td>
                         <td style={{ padding: "0.75rem 1rem" }}>
@@ -663,10 +663,10 @@ export default function FinanceiroPage() {
                   </tbody>
                   <tfoot>
                     <tr style={{ backgroundColor: "#FAF6EE" }}>
-                      <td colSpan={3} style={{ padding: "0.75rem 1rem", fontWeight: 700, color: "#1a1510", textAlign: "right" }}>
+                      <td colSpan={isMobile ? 1 : 2} style={{ padding: isMobile ? "0.6rem 0.75rem" : "0.75rem 1rem", fontWeight: 700, color: "#1a1510", textAlign: "right", fontSize: isMobile ? "0.85rem" : "1rem" }}>
                         TOTAL:
                       </td>
-                      <td style={{ padding: "0.75rem 1rem", fontWeight: 900, color: "#c04040" }}>
+                      <td style={{ padding: isMobile ? "0.6rem 0.75rem" : "0.75rem 1rem", fontWeight: 900, color: "#c04040", fontSize: isMobile ? "0.85rem" : "1rem" }}>
                         -{fmt(feeTotal)}
                       </td>
                       <td />
