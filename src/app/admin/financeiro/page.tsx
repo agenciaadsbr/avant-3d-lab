@@ -1,6 +1,7 @@
 "use client";
 export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback } from "react";
+import { useMobileView } from "@/hooks/useMediaQuery";
 import ProjecaoCaixa from "../ProjecaoCaixa";
 
 const CATEGORIES = [
@@ -55,6 +56,7 @@ type Expense = {
 };
 
 export default function FinanceiroPage() {
+  const isMobile = useMobileView();
   const [tab, setTab] = useState<"resumo" | "despesas" | "cartao" | "taxa_operadora">("resumo");
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [cardExpenses, setCardExpenses] = useState<Expense[]>([]);
@@ -440,29 +442,29 @@ export default function FinanceiroPage() {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
               <thead>
                 <tr style={{ backgroundColor: "#f0e8ff" }}>
-                  {["Compra", "Vencimento", "Descrição", "Parcela", "Valor", ""].map(h => (
-                    <th key={h} style={{ textAlign: "left", padding: "0.75rem 1rem", color: "#6a30b8", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid rgba(106,48,184,0.1)" }}>{h}</th>
+                  {[...(isMobile ? [] : ["Compra"]), "Vencimento", "Descrição", ...(isMobile ? [] : ["Parcela"]), "Valor", ""].map(h => (
+                    <th key={h} style={{ textAlign: "left", padding: isMobile ? "0.6rem 0.75rem" : "0.75rem 1rem", color: "#6a30b8", fontWeight: 700, fontSize: isMobile ? "0.7rem" : "0.75rem", borderBottom: "1px solid rgba(106,48,184,0.1)" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {cardExpenses.length === 0 ? (
-                  <tr><td colSpan={5} style={{ textAlign: "center", padding: "2rem", color: "#b8a080" }}>Nenhuma despesa no cartão neste período.</td></tr>
+                  <tr><td colSpan={isMobile ? 3 : 6} style={{ textAlign: "center", padding: "2rem", color: "#b8a080" }}>Nenhuma despesa no cartão neste período.</td></tr>
                 ) : cardExpenses.map(e => {
                   const isOverdue = e.dueDate && new Date(e.dueDate) < new Date();
                   const parcelas = e.installments && e.installments > 1 ? e.installments : 1;
                   return (
                     <tr key={e.id} style={{ borderBottom: "1px solid rgba(106,48,184,0.06)", backgroundColor: isOverdue ? "#fff0f0" : "transparent" }}>
-                      <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem" }}>{new Date(e.date).toLocaleDateString("pt-BR")}</td>
-                      <td style={{ padding: "0.75rem 1rem", fontWeight: 700, color: isOverdue ? "#c04040" : "#6a30b8", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+                      {!isMobile && <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem" }}>{new Date(e.date).toLocaleDateString("pt-BR")}</td>}
+                      <td style={{ padding: isMobile ? "0.6rem 0.75rem" : "0.75rem 1rem", fontWeight: 700, color: isOverdue ? "#c04040" : "#6a30b8", fontSize: isMobile ? "0.75rem" : "0.8rem", whiteSpace: "nowrap" }}>
                         {e.dueDate ? new Date(e.dueDate).toLocaleDateString("pt-BR") : "—"}
                         {isOverdue && " ⚠️"}
                       </td>
-                      <td style={{ padding: "0.75rem 1rem", color: "#1a1510", fontWeight: 600 }}>{e.description}</td>
-                      <td style={{ padding: "0.75rem 1rem", color: "#6a30b8", fontSize: "0.78rem" }}>
+                      <td style={{ padding: isMobile ? "0.6rem 0.75rem" : "0.75rem 1rem", color: "#1a1510", fontWeight: 600, fontSize: isMobile ? "0.8rem" : "1rem" }}>{e.description}</td>
+                      {!isMobile && <td style={{ padding: "0.75rem 1rem", color: "#6a30b8", fontSize: "0.78rem" }}>
                         {parcelas > 1 ? `${e.installmentNumber || 1}/${parcelas}` : "À vista"}
-                      </td>
-                      <td style={{ padding: "0.75rem 1rem", color: "#c04040", fontWeight: 700 }}>-{fmt(e.amount)}</td>
+                      </td>}
+                      <td style={{ padding: isMobile ? "0.6rem 0.75rem" : "0.75rem 1rem", color: "#c04040", fontWeight: 700, fontSize: isMobile ? "0.85rem" : "1rem" }}>-{fmt(e.amount)}</td>
                       <td style={{ padding: "0.75rem 1rem" }}>
                         <div style={{ display: "flex", gap: "0.4rem" }}>
                           <button onClick={() => openEdit(e)} style={{ backgroundColor: "#f0e8ff", border: "1px solid rgba(106,48,184,0.2)", color: "#6a30b8", fontWeight: 700, fontSize: "0.7rem", padding: "0.3rem 0.625rem", borderRadius: "0.5rem", cursor: "pointer" }}>
