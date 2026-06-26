@@ -65,6 +65,10 @@ export default function FinanceiroPage() {
   const [feeTotal, setFeeTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [invoicePaid, setInvoicePaid] = useState<Record<string, boolean>>({});
+  const [fluxoMonth, setFluxoMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });;
 
   // Filtros despesas
   const [from, setFrom] = useState(firstOfMonth());
@@ -301,6 +305,72 @@ export default function FinanceiroPage() {
               <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.75rem", fontWeight: 700, marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Taxa de Operadora</div>
               <div style={{ color: "#fff", fontSize: "2.5rem", fontWeight: 900, lineHeight: 1, marginBottom: "0.5rem" }}>{fmt(feeTotal)}</div>
               <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.8rem" }}>{operatorFees.length} lançamentos</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FLUXO DO MÊS */}
+      {tab === "resumo" && (
+        <div style={{ marginBottom: "2rem" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+            <h2 style={{ fontSize: "1.1rem", fontWeight: 900, color: "#1a1510" }}>💰 Fluxo do Mês</h2>
+            <input
+              type="month"
+              value={fluxoMonth}
+              onChange={e => setFluxoMonth(e.target.value)}
+              style={{ padding: "0.5rem 0.75rem", borderRadius: "0.5rem", border: "1px solid rgba(140,100,20,0.2)", fontWeight: 600, cursor: "pointer" }}
+            />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem" }}>
+            {/* Entradas */}
+            <div style={{ backgroundColor: "#e8f8e8", borderRadius: "1rem", padding: "1.5rem", border: "1px solid rgba(26,138,42,0.2)" }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#1a8a2a", marginBottom: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>📥 Entradas</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1rem", paddingBottom: "1rem", borderBottom: "1px solid rgba(26,138,42,0.15)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
+                  <span style={{ color: "#5a4a2a" }}>Receita</span>
+                  <span style={{ fontWeight: 700, color: "#1a8a2a" }}>R$ 0</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
+                  <span style={{ color: "#5a4a2a" }}>Recebimentos (Caderno)</span>
+                  <span style={{ fontWeight: 700, color: "#1a8a2a" }}>R$ 0</span>
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1rem", fontWeight: 900 }}>
+                <span style={{ color: "#1a8a2a" }}>Total Entradas</span>
+                <span style={{ color: "#1a8a2a" }}>R$ 0</span>
+              </div>
+            </div>
+
+            {/* Saídas */}
+            <div style={{ backgroundColor: "#fee8e8", borderRadius: "1rem", padding: "1.5rem", border: "1px solid rgba(192,64,64,0.2)" }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#c04040", marginBottom: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>📤 Saídas</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1rem", paddingBottom: "1rem", borderBottom: "1px solid rgba(192,64,64,0.15)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
+                  <span style={{ color: "#5a4a2a" }}>Custos de Produtos</span>
+                  <span style={{ fontWeight: 700, color: "#c04040" }}>R$ 0</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
+                  <span style={{ color: "#5a4a2a" }}>Despesas Gerais</span>
+                  <span style={{ fontWeight: 700, color: "#c04040" }}>R$ 0</span>
+                </div>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1rem", fontWeight: 900 }}>
+                <span style={{ color: "#c04040" }}>Total Saídas</span>
+                <span style={{ color: "#c04040" }}>R$ 0</span>
+              </div>
+            </div>
+
+            {/* Saldo */}
+            <div style={{ backgroundColor: "#f0e8ff", borderRadius: "1rem", padding: "1.5rem", border: "1px solid rgba(106,48,184,0.2)" }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#6a30b8", marginBottom: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>📊 Saldo</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", minHeight: "80px", justifyContent: "center" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.3rem", fontWeight: 900 }}>
+                  <span style={{ color: "#6a30b8" }}>Lucro Líquido</span>
+                  <span style={{ color: "#6a30b8" }}>R$ 0</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
