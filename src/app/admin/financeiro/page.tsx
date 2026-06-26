@@ -68,7 +68,8 @@ export default function FinanceiroPage() {
   const [fluxoMonth, setFluxoMonth] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-  });;
+  });
+  const [fluxoData, setFluxoData] = useState({ receita: 0, recebimentos: 0, custos: 0, despesas: 0 });;
 
   // Filtros despesas
   const [from, setFrom] = useState(firstOfMonth());
@@ -145,6 +146,22 @@ export default function FinanceiroPage() {
   useEffect(() => { loadCardExpenses(); }, [loadCardExpenses]);
   useEffect(() => { loadOperatorFees(); }, [loadOperatorFees]);
   useEffect(() => { loadSuppliers(); }, []);
+
+  // Carregar dados do Fluxo do Mês
+  useEffect(() => {
+    const loadFluxo = async () => {
+      const [y, m] = fluxoMonth.split("-").map(Number);
+      const firstDay = new Date(y, m - 1, 1);
+      const lastDay = new Date(y, m, 0, 23, 59, 59);
+
+      const res = await fetch(`/api/admin/fluxo?from=${firstDay.toISOString().split("T")[0]}&to=${lastDay.toISOString().split("T")[0]}`);
+      if (res.ok) {
+        const data = await res.json();
+        setFluxoData(data);
+      }
+    };
+    loadFluxo();
+  }, [fluxoMonth]);
 
   const openNew = () => {
     setEditId(null);
@@ -330,16 +347,16 @@ export default function FinanceiroPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1rem", paddingBottom: "1rem", borderBottom: "1px solid rgba(26,138,42,0.15)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
                   <span style={{ color: "#5a4a2a" }}>Receita</span>
-                  <span style={{ fontWeight: 700, color: "#1a8a2a" }}>R$ 0</span>
+                  <span style={{ fontWeight: 700, color: "#1a8a2a" }}>{fmt(fluxoData.receita)}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
                   <span style={{ color: "#5a4a2a" }}>Recebimentos (Caderno)</span>
-                  <span style={{ fontWeight: 700, color: "#1a8a2a" }}>R$ 0</span>
+                  <span style={{ fontWeight: 700, color: "#1a8a2a" }}>{fmt(fluxoData.recebimentos)}</span>
                 </div>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1rem", fontWeight: 900 }}>
                 <span style={{ color: "#1a8a2a" }}>Total Entradas</span>
-                <span style={{ color: "#1a8a2a" }}>R$ 0</span>
+                <span style={{ color: "#1a8a2a" }}>{fmt(fluxoData.receita + fluxoData.recebimentos)}</span>
               </div>
             </div>
 
@@ -349,16 +366,16 @@ export default function FinanceiroPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1rem", paddingBottom: "1rem", borderBottom: "1px solid rgba(192,64,64,0.15)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
                   <span style={{ color: "#5a4a2a" }}>Custos de Produtos</span>
-                  <span style={{ fontWeight: 700, color: "#c04040" }}>R$ 0</span>
+                  <span style={{ fontWeight: 700, color: "#c04040" }}>{fmt(fluxoData.custos)}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
                   <span style={{ color: "#5a4a2a" }}>Despesas Gerais</span>
-                  <span style={{ fontWeight: 700, color: "#c04040" }}>R$ 0</span>
+                  <span style={{ fontWeight: 700, color: "#c04040" }}>{fmt(fluxoData.despesas)}</span>
                 </div>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1rem", fontWeight: 900 }}>
                 <span style={{ color: "#c04040" }}>Total Saídas</span>
-                <span style={{ color: "#c04040" }}>R$ 0</span>
+                <span style={{ color: "#c04040" }}>{fmt(fluxoData.custos + fluxoData.despesas)}</span>
               </div>
             </div>
 
@@ -368,7 +385,9 @@ export default function FinanceiroPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", minHeight: "80px", justifyContent: "center" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.3rem", fontWeight: 900 }}>
                   <span style={{ color: "#6a30b8" }}>Lucro Líquido</span>
-                  <span style={{ color: "#6a30b8" }}>R$ 0</span>
+                  <span style={{ color: (fluxoData.receita + fluxoData.recebimentos - fluxoData.custos - fluxoData.despesas) >= 0 ? "#1a8a2a" : "#c04040", fontWeight: 900 }}>
+                    {fmt(fluxoData.receita + fluxoData.recebimentos - fluxoData.custos - fluxoData.despesas)}
+                  </span>
                 </div>
               </div>
             </div>
