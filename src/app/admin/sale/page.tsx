@@ -12,8 +12,8 @@ export default async function SaleManagerPage() {
   const today = new Date();
   const sixtyDaysAgo = new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000);
 
-  let upcomingSaleProducts = [];
-  let activeSaleProducts = [];
+  let upcomingSaleProducts: any[] = [];
+  let activeSaleProducts: any[] = [];
 
   try {
     const [upcoming, active] = await Promise.all([
