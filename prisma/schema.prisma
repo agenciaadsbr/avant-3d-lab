@@ -101,7 +101,8 @@ model Product {
   supplierCode String?
   featuredHero Boolean  @default(false)
   featured     Boolean  @default(false)
-  salePrice    Float?
+  saleDiscount Float?
+  onSale       Boolean  @default(false)
   active       Boolean  @default(true)
   categoryId  String
   createdAt   DateTime @default(now())

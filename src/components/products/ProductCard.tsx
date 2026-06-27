@@ -9,6 +9,7 @@ type Product = {
   id: string; name: string; slug: string; price: number;
   compareAt: number | null; images: string; sizes: string;
   colors: string; stock: number; createdAt: string | Date;
+  onSale?: boolean; saleDiscount?: number | null;
   category: { name: string };
 };
 
@@ -19,7 +20,12 @@ export default function ProductCard({ product }: { product: Product }) {
   const discount = product.compareAt ? Math.round((1 - product.price / product.compareAt) * 100) : null;
   const createdDate = typeof product.createdAt === "string" ? new Date(product.createdAt) : product.createdAt;
   const isNew = (Date.now() - createdDate.getTime()) < 1000 * 60 * 60 * 24 * 30;
-  const saleInfo = getSaleInfo({ price: product.price, createdAt: createdDate });
+  const saleInfo = getSaleInfo({
+    price: product.price,
+    createdAt: createdDate,
+    onSale: product.onSale,
+    saleDiscount: product.saleDiscount,
+  });
   const finalPrice = saleInfo ? saleInfo.salePrice : product.price;
   const outOfStock = product.stock === 0;
 

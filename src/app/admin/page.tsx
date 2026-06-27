@@ -200,6 +200,15 @@ export default async function AdminPage() {
           </Link>
         )}
 
+        {/* SALE Manager */}
+        <Link href="/admin/sale" style={{ textDecoration: "none" }}>
+          <div style={{ backgroundColor: "#fff", border: "2px solid rgba(231,76,60,0.25)", borderRadius: "1rem", padding: "0.875rem 1.25rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <span style={{ fontSize: "1.25rem" }}>🔥</span>
+            <span style={{ fontWeight: 700, color: "#e74c3c", fontSize: "0.875rem" }}>Gerenciar SALE e descontos de peças antigas</span>
+            <span style={{ marginLeft: "auto", color: "#b8a080", fontSize: "0.8rem" }}>Ver SALE →</span>
+          </div>
+        </Link>
+
         {/* Home Try-On no prazo */}
         {tryOnNoPrazo.length > 0 && (
           <div style={{ backgroundColor: "#fff", border: "1px solid rgba(138,26,184,0.15)", borderRadius: "1rem", overflow: "hidden" }}>
