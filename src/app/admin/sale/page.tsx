@@ -12,24 +12,33 @@ export default async function SaleManagerPage() {
   const today = new Date();
   const sixtyDaysAgo = new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000);
 
-  const [upcomingSaleProducts, activeSaleProducts] = await Promise.all([
-    prisma.product.findMany({
-      where: {
-        active: true,
-        createdAt: { lte: sixtyDaysAgo },
-      },
-      include: { category: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.product.findMany({
-      where: {
-        active: true,
-        onSale: true,
-      },
-      include: { category: true },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+  let upcomingSaleProducts = [];
+  let activeSaleProducts = [];
+
+  try {
+    const [upcoming, active] = await Promise.all([
+      prisma.product.findMany({
+        where: {
+          active: true,
+          createdAt: { lte: sixtyDaysAgo },
+        },
+        include: { category: true },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.product.findMany({
+        where: {
+          active: true,
+          onSale: true,
+        },
+        include: { category: true },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+    upcomingSaleProducts = upcoming;
+    activeSaleProducts = active;
+  } catch (err) {
+    console.error("Erro ao carregar produtos:", err);
+  }
 
   return (
     <div style={{ backgroundColor: "#FAF6EE", minHeight: "100vh", padding: "2rem 1.5rem" }}>
