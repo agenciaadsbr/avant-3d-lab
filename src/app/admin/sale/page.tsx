@@ -11,13 +11,12 @@ export default async function SaleManagerPage() {
 
   const today = new Date();
   const sixtyDaysAgo = new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000);
-  const hundredTwentyDaysAgo = new Date(today.getTime() - 120 * 24 * 60 * 60 * 1000);
 
   const [upcomingSaleProducts, activeSaleProducts] = await Promise.all([
     prisma.product.findMany({
       where: {
         active: true,
-        createdAt: { gte: sixtyDaysAgo, lte: today },
+        createdAt: { lte: sixtyDaysAgo },
       },
       include: { category: true },
       orderBy: { createdAt: "desc" },
