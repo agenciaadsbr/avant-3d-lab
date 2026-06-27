@@ -480,7 +480,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                           style={{ ...inp, fontSize: "0.72rem", padding: "0.3rem 0.5rem", cursor: "pointer" }}>
                           {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                         </select>
-                      </td>
+                      </td>}
                     </tr>
                     {isExpanded && (
                       <tr key={order.id + "-detail"} style={{ backgroundColor: "#FDFAF4", borderBottom: "1px solid rgba(140,100,20,0.06)" }}>
