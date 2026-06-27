@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface Produto {
   id: string;
@@ -92,8 +93,4 @@ export default function ProdutosSemCusto() {
       </div>
     </div>
   );
-}
-
-function Link({ href, children, ...props }: any) {
-  return <a href={href} {...props}>{children}</a>;
 }

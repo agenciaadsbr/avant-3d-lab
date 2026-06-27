@@ -103,7 +103,14 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
     if (!confirm(`Excluir "${name || "cliente"}"?`)) return;
     const res = await fetch(`/api/admin/clientes/${id}`, { method: "DELETE" });
     if (res.ok) router.refresh();
-    else { const d = await res.json(); alert(d.error || "Erro ao excluir."); }
+    else {
+      try {
+        const d = await res.json();
+        alert(d.error || "Erro ao excluir.");
+      } catch {
+        alert("Erro ao excluir cliente.");
+      }
+    }
   };
 
   const handleMerge = async (keepId: string, removeId: string) => {
@@ -114,7 +121,14 @@ export default function ClientesClient({ clientes }: { clientes: Cliente[] }) {
     });
     setMerging(false);
     if (res.ok) { setMergingId(null); setMergeSearch(""); router.refresh(); }
-    else { const d = await res.json(); alert(d.error || "Erro ao unificar."); }
+    else {
+      try {
+        const d = await res.json();
+        alert(d.error || "Erro ao unificar.");
+      } catch {
+        alert("Erro ao unificar clientes.");
+      }
+    }
   };
 
   return (
