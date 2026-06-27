@@ -8,7 +8,7 @@ interface Product {
   price: number;
   saleDiscount: number | null;
   onSale: boolean;
-  createdAt: string;
+  createdAt: string | Date;
   stock: number;
   category: { name: string };
 }
@@ -26,12 +26,13 @@ export default function SaleManagerClient({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("pt-BR");
+  const formatDate = (date: string | Date) => {
+    const d = typeof date === "string" ? new Date(date) : date;
+    return d.toLocaleDateString("pt-BR");
   };
 
-  const daysUntilSale = (createdAt: string) => {
-    const created = new Date(createdAt);
+  const daysUntilSale = (createdAt: string | Date) => {
+    const created = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
     const today = new Date();
     const days = Math.floor((today.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
     return Math.max(0, 60 - days);
