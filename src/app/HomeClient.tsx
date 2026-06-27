@@ -7,17 +7,17 @@ import ProductCard from "@/components/products/ProductCard";
 
 interface HomeClientProps {
   newArrivals: any[];
+  heroProducts: any[];
   featuredProducts: any[];
   categories: any[];
-  displayProducts: any[];
   categoryIcons: Record<string, string>;
 }
 
 export default function HomeClient({
   newArrivals,
+  heroProducts,
   featuredProducts,
   categories,
-  displayProducts,
   categoryIcons,
 }: HomeClientProps) {
   const isMobile = useMobileView();
@@ -57,7 +57,7 @@ export default function HomeClient({
           {/* Grid de preview de produtos - esconde em mobile */}
           {!isMobile && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.875rem" }}>
-              {newArrivals.slice(0, 4).map((p, i) => {
+              {heroProducts.map((p, i) => {
                 const imgs = JSON.parse(p.images || "[]");
                 return (
                   <Link key={p.id} href={`/produtos/${p.slug}`} style={{ textDecoration: "none", display: "block", borderRadius: "1rem", overflow: "hidden", aspectRatio: i === 0 ? "1/1.4" : "1/1", backgroundColor: "#2a2010", border: "1px solid rgba(184,137,26,0.15)", position: "relative" }}>
@@ -106,7 +106,7 @@ export default function HomeClient({
             As peças mais procuradas da coleção
           </p>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? "1rem" : "1.25rem" }}>
-            {displayProducts.map(product => (
+            {featuredProducts.map(product => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

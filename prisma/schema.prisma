@@ -99,6 +99,7 @@ model Product {
   stock        Int      @default(0)
   sku          String?  @unique
   supplierCode String?
+  featuredHero Boolean  @default(false)
   featured     Boolean  @default(false)
   active       Boolean  @default(true)
   categoryId  String
