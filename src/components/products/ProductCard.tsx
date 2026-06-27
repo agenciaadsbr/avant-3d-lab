@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { formatCurrency, parseJson } from "@/lib/utils";
+import { getSaleInfo } from "@/lib/saleHelper";
 import { useCart } from "@/store/cart";
 
 type Product = {
   id: string; name: string; slug: string; price: number;
   compareAt: number | null; images: string; sizes: string;
-  colors: string; stock: number; createdAt?: string;
+  colors: string; stock: number; createdAt: string | Date;
   category: { name: string };
 };
 
@@ -16,7 +17,10 @@ export default function ProductCard({ product }: { product: Product }) {
   const images = parseJson<string[]>(product.images, []);
   const sizes  = parseJson<string[]>(product.sizes, []);
   const discount = product.compareAt ? Math.round((1 - product.price / product.compareAt) * 100) : null;
-  const isNew = product.createdAt ? (Date.now() - new Date(product.createdAt).getTime()) < 1000 * 60 * 60 * 24 * 30 : false;
+  const createdDate = typeof product.createdAt === "string" ? new Date(product.createdAt) : product.createdAt;
+  const isNew = (Date.now() - createdDate.getTime()) < 1000 * 60 * 60 * 24 * 30;
+  const saleInfo = getSaleInfo({ price: product.price, createdAt: createdDate });
+  const finalPrice = saleInfo ? saleInfo.salePrice : product.price;
   const outOfStock = product.stock === 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -43,10 +47,13 @@ export default function ProductCard({ product }: { product: Product }) {
           )}
 
           <div style={{ position: "absolute", top: 8, left: 8, display: "flex", flexDirection: "column", gap: "4px" }}>
-            {isNew && !outOfStock && (
+            {isNew && !outOfStock && !saleInfo && (
               <span style={{ backgroundColor: "#b8891a", color: "#fff", fontSize: "0.65rem", fontWeight: 900, padding: "3px 10px", borderRadius: "999px" }}>Novo</span>
             )}
-            {discount && !outOfStock && (
+            {saleInfo && !outOfStock && (
+              <span style={{ backgroundColor: "#e74c3c", color: "#fff", fontSize: "0.65rem", fontWeight: 900, padding: "3px 10px", borderRadius: "999px" }}>SALE -20%</span>
+            )}
+            {discount && !saleInfo && !outOfStock && (
               <span style={{ backgroundColor: "#1a1510", color: "#b8891a", fontSize: "0.65rem", fontWeight: 900, padding: "3px 10px", borderRadius: "999px" }}>-{discount}%</span>
             )}
             {outOfStock && (
@@ -73,10 +80,12 @@ export default function ProductCard({ product }: { product: Product }) {
             </div>
           )}
 
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.75rem" }}>
-            <span style={{ fontSize: "1.1rem", fontWeight: 900, color: "#b8891a" }}>{formatCurrency(product.price)}</span>
-            {product.compareAt && (
-              <span style={{ fontSize: "0.78rem", color: "#b8a080", textDecoration: "line-through" }}>{formatCurrency(product.compareAt)}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.75rem", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "1.1rem", fontWeight: 900, color: saleInfo ? "#e74c3c" : "#b8891a" }}>{formatCurrency(finalPrice)}</span>
+            {(product.compareAt || saleInfo) && (
+              <span style={{ fontSize: "0.78rem", color: "#b8a080", textDecoration: "line-through" }}>
+                {formatCurrency(product.compareAt || product.price)}
+              </span>
             )}
           </div>
 

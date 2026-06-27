@@ -9,6 +9,7 @@ interface HomeClientProps {
   newArrivals: any[];
   heroProducts: any[];
   featuredProducts: any[];
+  saleProducts: any[];
   categories: any[];
   categoryIcons: Record<string, string>;
 }
@@ -17,6 +18,7 @@ export default function HomeClient({
   newArrivals,
   heroProducts,
   featuredProducts,
+  saleProducts,
   categories,
   categoryIcons,
 }: HomeClientProps) {
@@ -95,6 +97,25 @@ export default function HomeClient({
           </div>
         </div>
       </section>
+
+      {/* SALE */}
+      {saleProducts.length > 0 && (
+        <section style={{ padding: isMobile ? "2rem 1rem" : "5rem 1.5rem", backgroundColor: "#FAF6EE", borderTop: "2px solid rgba(231,76,60,0.2)" }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+            <h2 style={{ fontSize: isMobile ? "1.5rem" : "2.2rem", fontWeight: 900, color: "#e74c3c", marginBottom: "1rem", textAlign: "center" }}>
+              🔥 SALE - 20% OFF
+            </h2>
+            <p style={{ textAlign: "center", color: "#9a8060", marginBottom: "2.5rem", fontSize: isMobile ? "0.85rem" : "1rem" }}>
+              Produtos que estão há tempo no estoque com desconto especial
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? "1rem" : "1.25rem" }}>
+              {saleProducts.map(product => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Destaques */}
       <section style={{ padding: isMobile ? "2rem 1rem" : "5rem 1.5rem", backgroundColor: "#fff" }}>
