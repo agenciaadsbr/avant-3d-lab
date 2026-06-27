@@ -148,6 +148,10 @@ export const buttonStyles = {
       backgroundColor: "#f0e8d0",
       borderColor: "#b8891a",
     },
+    active: {
+      backgroundColor: "#e8d8b8",
+      borderColor: "#b8891a",
+    },
     disabled: {
       cursor: "not-allowed",
       opacity: 0.6,
