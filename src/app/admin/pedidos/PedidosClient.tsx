@@ -311,7 +311,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const inp = { padding: "0.55rem 0.875rem", border: "1px solid rgba(140,100,20,0.25)", borderRadius: "0.625rem", fontSize: "0.8rem", backgroundColor: "#FAF6EE", outline: "none" };
 
   return (
-    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "2rem 1.5rem", backgroundColor: "#FAF6EE", minHeight: "100vh" }}>
+    <div style={{ maxWidth: 1280, margin: "0 auto", padding: isMobile ? "1rem" : "2rem 1.5rem", backgroundColor: "#FAF6EE", minHeight: "100vh" }}>
 
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>

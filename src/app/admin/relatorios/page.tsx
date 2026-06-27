@@ -172,7 +172,7 @@ export default async function RelatoriosPage() {
   });
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 1.25rem", backgroundColor: "#FAF6EE", minHeight: "100vh" }}>
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 1.25rem", backgroundColor: "#FAF6EE", minHeight: "100vh", overflow: "hidden" }}>
 
       {/* Header */}
       <div style={{ marginBottom: "2rem" }}>
