@@ -57,13 +57,19 @@ export default function SaleManagerClient({
     }
 
     try {
+      console.log("Buscando:", query);
       const res = await fetch(`/api/admin/products/search?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      console.log("Resposta:", data);
       if (res.ok) {
-        const data = await res.json();
         setSearchResults(data.products || []);
+      } else {
+        console.error("Erro na API:", data.error);
+        setSearchResults([]);
       }
     } catch (err) {
       console.error("Erro ao buscar:", err);
+      setSearchResults([]);
     }
   };
 
@@ -386,32 +392,40 @@ export default function SaleManagerClient({
           </div>
 
           {/* Resultados da busca */}
-          {searchResults.length > 0 && !selectedProduct && (
+          {searchQuery.length >= 2 && (
             <div style={{ marginBottom: "1rem" }}>
-              <p style={{ fontSize: "0.75rem", color: "#9a8060", marginBottom: "0.5rem" }}>
-                {searchResults.length} resultado{searchResults.length > 1 ? "s" : ""}
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {searchResults.slice(0, 5).map((product) => (
-                  <button
-                    key={product.id}
-                    onClick={() => setSelectedProduct(product)}
-                    style={{
-                      padding: "0.75rem",
-                      backgroundColor: "#FAF6EE",
-                      border: "1px solid rgba(140,100,20,0.2)",
-                      borderRadius: "0.625rem",
-                      cursor: "pointer",
-                      fontSize: "0.85rem",
-                      fontWeight: 600,
-                      color: "#1a1510",
-                      textAlign: "left",
-                    }}
-                  >
-                    {product.name} - R$ {product.price.toFixed(2)}
-                  </button>
-                ))}
-              </div>
+              {searchResults.length > 0 ? (
+                <>
+                  <p style={{ fontSize: "0.75rem", color: "#9a8060", marginBottom: "0.5rem" }}>
+                    ✅ {searchResults.length} resultado{searchResults.length > 1 ? "s" : ""}
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    {searchResults.slice(0, 5).map((product) => (
+                      <button
+                        key={product.id}
+                        onClick={() => setSelectedProduct(product)}
+                        style={{
+                          padding: "0.75rem",
+                          backgroundColor: "#FAF6EE",
+                          border: "1px solid rgba(140,100,20,0.2)",
+                          borderRadius: "0.625rem",
+                          cursor: "pointer",
+                          fontSize: "0.85rem",
+                          fontWeight: 600,
+                          color: "#1a1510",
+                          textAlign: "left",
+                        }}
+                      >
+                        {product.name} - R$ {product.price.toFixed(2)}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p style={{ fontSize: "0.8rem", color: "#c04040", padding: "0.75rem", backgroundColor: "#fee8e8", borderRadius: "0.625rem" }}>
+                  ❌ Nenhuma peça encontrada com "{searchQuery}"
+                </p>
+              )}
             </div>
           )}
 
