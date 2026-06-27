@@ -25,6 +25,10 @@ export default function SaleManagerClient({
   const [activeTab, setActiveTab] = useState<"upcoming" | "active">("upcoming");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [customDiscount, setCustomDiscount] = useState(20);
 
   const formatDate = (date: string | Date) => {
     const d = typeof date === "string" ? new Date(date) : date;
@@ -43,6 +47,52 @@ export default function SaleManagerClient({
       style: "currency",
       currency: "BRL",
     });
+  };
+
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/products/search?q=${encodeURIComponent(query)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(data.products || []);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar:", err);
+    }
+  };
+
+  const handleQuickAuthorize = async (product: Product) => {
+    setLoading(true);
+    setMessage("");
+    try {
+      const res = await fetch(`/api/admin/products/${product.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          onSale: true,
+          saleDiscount: customDiscount,
+        }),
+      });
+      if (res.ok) {
+        setMessage(`✅ "${product.name}" autorizado ao SALE com ${customDiscount}% de desconto!`);
+        setSelectedProduct(null);
+        setSearchQuery("");
+        setSearchResults([]);
+        setCustomDiscount(20);
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        setMessage("❌ Erro ao autorizar");
+      }
+    } catch (err) {
+      setMessage("❌ Erro ao autorizar");
+    }
+    setLoading(false);
   };
 
   const handleToggleSale = async (productId: string, currentOnSale: boolean) => {
@@ -299,6 +349,154 @@ export default function SaleManagerClient({
           🔥 Em SALE Agora ({activeSaleProducts.length})
         </button>
       </div>
+
+      {/* Formulário de busca rápida - apenas na aba "Em SALE Agora" */}
+      {activeTab === "active" && (
+        <div
+          style={{
+            backgroundColor: "#fff",
+            border: "2px solid rgba(231,76,60,0.2)",
+            borderRadius: "0.875rem",
+            padding: "1.5rem",
+            marginBottom: "2rem",
+          }}
+        >
+          <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "#1a1510", marginBottom: "1rem" }}>
+            🔥 Adicionar Peça ao SALE Manualmente
+          </h3>
+
+          {/* Busca */}
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", marginBottom: "0.5rem" }}>
+              Buscar Peça por Nome
+            </label>
+            <input
+              type="text"
+              placeholder="Digite o nome da peça..."
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                border: "1px solid rgba(140,100,20,0.2)",
+                borderRadius: "0.625rem",
+                fontSize: "0.875rem",
+              }}
+            />
+          </div>
+
+          {/* Resultados da busca */}
+          {searchResults.length > 0 && !selectedProduct && (
+            <div style={{ marginBottom: "1rem" }}>
+              <p style={{ fontSize: "0.75rem", color: "#9a8060", marginBottom: "0.5rem" }}>
+                {searchResults.length} resultado{searchResults.length > 1 ? "s" : ""}
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {searchResults.slice(0, 5).map((product) => (
+                  <button
+                    key={product.id}
+                    onClick={() => setSelectedProduct(product)}
+                    style={{
+                      padding: "0.75rem",
+                      backgroundColor: "#FAF6EE",
+                      border: "1px solid rgba(140,100,20,0.2)",
+                      borderRadius: "0.625rem",
+                      cursor: "pointer",
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                      color: "#1a1510",
+                      textAlign: "left",
+                    }}
+                  >
+                    {product.name} - R$ {product.price.toFixed(2)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Produto selecionado */}
+          {selectedProduct && (
+            <div style={{ backgroundColor: "#FAF6EE", padding: "1rem", borderRadius: "0.625rem", marginBottom: "1rem" }}>
+              <div style={{ marginBottom: "1rem" }}>
+                <p style={{ fontWeight: 700, color: "#1a1510", marginBottom: "0.2rem" }}>
+                  ✅ Selecionado: {selectedProduct.name}
+                </p>
+                <p style={{ fontSize: "0.8rem", color: "#9a8060" }}>
+                  Preço: R$ {selectedProduct.price.toFixed(2)}
+                </p>
+              </div>
+
+              {/* Desconto customizado */}
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", marginBottom: "0.5rem" }}>
+                  Desconto (%)
+                </label>
+                <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={customDiscount}
+                    onChange={(e) => setCustomDiscount(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
+                    style={{
+                      width: "80px",
+                      padding: "0.5rem",
+                      border: "1px solid rgba(140,100,20,0.2)",
+                      borderRadius: "0.4rem",
+                      fontSize: "0.9rem",
+                      fontWeight: 700,
+                    }}
+                  />
+                  <span style={{ fontWeight: 700, color: "#e74c3c" }}>%</span>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#e74c3c", marginLeft: "auto" }}>
+                    {calculateSalePrice(selectedProduct.price, customDiscount)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Botões */}
+              <div style={{ display: "flex", gap: "0.75rem" }}>
+                <button
+                  onClick={() => handleQuickAuthorize(selectedProduct)}
+                  disabled={loading}
+                  style={{
+                    flex: 1,
+                    padding: "0.75rem",
+                    backgroundColor: loading ? "#e0b030" : "#e74c3c",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "0.625rem",
+                    fontWeight: 700,
+                    cursor: loading ? "not-allowed" : "pointer",
+                    opacity: loading ? 0.7 : 1,
+                  }}
+                >
+                  {loading ? "Autorizando..." : "✅ Autorizar ao SALE"}
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedProduct(null);
+                    setSearchQuery("");
+                    setSearchResults([]);
+                  }}
+                  style={{
+                    padding: "0.75rem 1.5rem",
+                    backgroundColor: "#fff",
+                    border: "1px solid rgba(140,100,20,0.2)",
+                    borderRadius: "0.625rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    color: "#9a8060",
+                  }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Produtos */}
       {activeTab === "upcoming"
