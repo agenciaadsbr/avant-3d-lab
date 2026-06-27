@@ -24,7 +24,7 @@ export default function ProdutosClient({
 }: ProdutosClientProps) {
   const isMobile = useMobileView();
 
-  // Responsivo: 1 coluna mobile, 2 tablet, 3 laptop, 4 desktop
+  // Responsivo: 1 coluna mobile, 2 desktop
   const gridCols = isMobile ? 1 : 2;
 
   return (
@@ -94,7 +94,7 @@ export default function ProdutosClient({
             <Link href="/produtos" style={{ color: "#b8891a", fontWeight: 700, textDecoration: "none" }}>Ver toda a coleção →</Link>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${gridCols}, 1fr)`, gap: isMobile ? "1rem" : "1.25rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: gridCols === 1 ? "1fr" : "repeat(2, 1fr)", gap: isMobile ? "1rem" : "1.25rem" }}>
             {products.map((product: any) => (
               <ProductCard key={product.id} product={product} />
             ))}
