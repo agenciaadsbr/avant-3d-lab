@@ -1,6 +1,7 @@
 "use client";
 import { usePathname } from "next/navigation";
 import { useAdmin } from "@/store/admin";
+import { useMobileView } from "@/hooks/useMediaQuery";
 
 const links = [
   { href: "/admin",             label: "Início",      emoji: "🏠" },
@@ -32,6 +33,7 @@ const Stars = () => (
 export default function AdminNav() {
   const pathname = usePathname();
   const { hideProfit, toggleHideProfit } = useAdmin();
+  const isMobile = useMobileView();
   const isActive = (href: string) =>
     href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 
@@ -46,39 +48,43 @@ export default function AdminNav() {
         overflow: "hidden",
       }}>
         <Stars />
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 1.5rem" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: isMobile ? "0 1rem" : "0 1.5rem" }}>
           {/* Logo + título + toggle */}
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "1rem 0 0.75rem", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "0.5rem" : "1rem", padding: isMobile ? "0.75rem 0" : "1rem 0 0.75rem", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "0.5rem" : "1rem", minWidth: 0 }}>
             <img src="/logo.png" alt="Access Fit"
-              style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", boxShadow: "0 2px 12px rgba(184,137,26,0.3)", flexShrink: 0 }} />
-              <div>
+              style={{ width: isMobile ? 40 : 56, height: isMobile ? 40 : 56, borderRadius: "50%", objectFit: "cover", boxShadow: "0 2px 12px rgba(184,137,26,0.3)", flexShrink: 0 }} />
+              {!isMobile && <div>
                 <div style={{ fontSize: "1.35rem", fontWeight: 900, color: "#1a1510", letterSpacing: "-0.03em", lineHeight: 1 }}>Access Fit</div>
                 <div style={{ fontSize: "0.65rem", color: "#b8891a", fontWeight: 700, letterSpacing: "0.1em", marginTop: "0.2rem" }}>PAINEL ADMINISTRATIVO</div>
-              </div>
+              </div>}
             </div>
-            <button onClick={toggleHideProfit} className="hide-mobile" title={hideProfit ? "Modo apresentação: ON" : "Modo apresentação: OFF"}
+            {!isMobile && <button onClick={toggleHideProfit} title={hideProfit ? "Modo apresentação: ON" : "Modo apresentação: OFF"}
               style={{ alignItems: "center", gap: "0.5rem", padding: "0.5rem 1rem", backgroundColor: hideProfit ? "#b8891a" : "#f5f5f5", color: hideProfit ? "#fff" : "#7a6040", border: "1px solid rgba(184,137,26,0.2)", borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, display: "flex" }}>
               {hideProfit ? "👁️ ON" : "👁️ OFF"}
-            </button>
+            </button>}
           </div>
 
           {/* Links de navegação */}
-          <nav style={{ display: "flex", gap: "0.25rem", paddingBottom: "0.25rem", overflowX: "auto" }}>
+          <nav style={{ display: "flex", gap: isMobile ? "0.1rem" : "0.25rem", paddingBottom: "0.25rem", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
             {links.map(l => (
-              <a key={l.href} href={l.href} style={{
-                display: "flex", alignItems: "center", gap: "0.4rem",
-                padding: "0.55rem 1.1rem",
+              <a key={l.href} href={l.href} title={l.label} style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem",
+                padding: isMobile ? "0.5rem" : "0.55rem 1.1rem",
                 borderRadius: "0.625rem 0.625rem 0 0",
                 textDecoration: "none",
-                fontSize: "0.875rem", fontWeight: 700,
+                fontSize: isMobile ? "0.7rem" : "0.875rem",
+                fontWeight: 700,
                 color: isActive(l.href) ? "#b8891a" : "#7a6040",
                 backgroundColor: isActive(l.href) ? "rgba(184,137,26,0.08)" : "transparent",
                 borderBottom: isActive(l.href) ? "3px solid #b8891a" : "3px solid transparent",
-                whiteSpace: "nowrap", transition: "all 0.15s",
+                whiteSpace: isMobile ? "nowrap" : "normal",
+                transition: "all 0.15s",
+                flexShrink: 0,
+                minWidth: isMobile ? "44px" : "auto",
               }}>
                 <span style={{ fontSize: "1rem" }}>{l.emoji}</span>
-                {l.label}
+                {!isMobile && l.label}
               </a>
             ))}
           </nav>
