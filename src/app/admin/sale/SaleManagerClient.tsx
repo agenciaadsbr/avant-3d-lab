@@ -60,11 +60,11 @@ export default function SaleManagerClient({
       console.log("Buscando:", query);
       const res = await fetch(`/api/admin/products/search?q=${encodeURIComponent(query)}`);
       const data = await res.json();
-      console.log("Resposta:", data);
+      console.log("Status:", res.status, "Resposta:", data);
       if (res.ok) {
         setSearchResults(data.products || []);
       } else {
-        console.error("Erro na API:", data.error);
+        console.error("Erro na API (Status", res.status + "):", data.error, data.details);
         setSearchResults([]);
       }
     } catch (err) {
