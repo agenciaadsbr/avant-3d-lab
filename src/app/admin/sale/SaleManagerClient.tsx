@@ -79,7 +79,7 @@ export default function SaleManagerClient({
     try {
       console.log("Autorizando:", product.id, { onSale: true, saleDiscount: customDiscount });
 
-      const res = await fetch(`/api/admin/products/${product.id}`, {
+      const res = await fetch(`/api/admin/produtos/${product.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -113,7 +113,7 @@ export default function SaleManagerClient({
     setLoading(true);
     setMessage("");
     try {
-      const res = await fetch(`/api/admin/products/${productId}`, {
+      const res = await fetch(`/api/admin/produtos/${productId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ onSale: !currentOnSale }),
@@ -137,7 +137,7 @@ export default function SaleManagerClient({
     setLoading(true);
     setMessage("");
     try {
-      const res = await fetch(`/api/admin/products/${productId}`, {
+      const res = await fetch(`/api/admin/produtos/${productId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ saleDiscount: discount || null }),
