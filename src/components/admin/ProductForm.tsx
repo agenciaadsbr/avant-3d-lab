@@ -11,6 +11,7 @@ type Product = {
   sizes: string; colors: string; stock: number;
   featuredHero: boolean; featured: boolean; isKit: boolean; active: boolean; categoryId: string;
 };
+type KitItemForm = { productId: string; quantity: number; name?: string; price?: number };
 
 const field: React.CSSProperties = {
   width: "100%", padding: "0.7rem 0.875rem",
@@ -28,13 +29,26 @@ const card: React.CSSProperties = {
   boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
 };
 
-export default function ProductForm({ categories, product }: { categories: Category[]; product?: Product }) {
+interface ProductFormProps {
+  categories: Category[];
+  product?: Product;
+  allProducts?: Array<{ id: string; name: string; price: number }>;
+  kitItems?: Array<{ product: { id: string; name: string; price: number }; quantity: number }>;
+}
+
+export default function ProductForm({ categories, product, allProducts = [], kitItems: initialKitItems = [] }: ProductFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [uploadingImg, setUploadingImg] = useState(false);
   const imgInputRef = useRef<HTMLInputElement>(null);
+
+  const [kitItems, setKitItems] = useState<KitItemForm[]>(
+    initialKitItems.map(item => ({ productId: item.product.id, quantity: item.quantity, name: item.product.name, price: item.product.price }))
+  );
+  const [newKitProductId, setNewKitProductId] = useState("");
+  const [newKitQuantity, setNewKitQuantity] = useState(1);
 
   const [form, setForm] = useState({
     name: product?.name || "",
@@ -85,6 +99,27 @@ export default function ProductForm({ categories, product }: { categories: Categ
     }
   };
 
+  const handleAddKitItem = () => {
+    if (!newKitProductId) {
+      setError("Selecione um produto para adicionar ao kit");
+      return;
+    }
+    const selected = allProducts.find(p => p.id === newKitProductId);
+    if (!selected) return;
+    if (kitItems.some(k => k.productId === newKitProductId)) {
+      setError("Este produto já está no kit");
+      return;
+    }
+    setKitItems([...kitItems, { productId: newKitProductId, quantity: newKitQuantity, name: selected.name, price: selected.price }]);
+    setNewKitProductId("");
+    setNewKitQuantity(1);
+    setError("");
+  };
+
+  const handleRemoveKitItem = (productId: string) => {
+    setKitItems(kitItems.filter(k => k.productId !== productId));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -99,6 +134,7 @@ export default function ProductForm({ categories, product }: { categories: Categ
       images: JSON.stringify(form.images.split("\n").map((s: string) => s.trim()).filter(Boolean)),
       sizes: JSON.stringify(form.sizes.split(",").map((s: string) => s.trim()).filter(Boolean)),
       colors: JSON.stringify(form.colors.split(",").map((s: string) => s.trim()).filter(Boolean)),
+      ...(form.isKit && { kitItems: kitItems.map(k => ({ productId: k.productId, quantity: k.quantity })) }),
     };
 
     const res = await fetch(
@@ -248,6 +284,62 @@ export default function ProductForm({ categories, product }: { categories: Categ
           ))}
         </div>
       </div>
+
+      {/* Composição do Kit */}
+      {form.isKit && (
+        <div style={card}>
+          <h2 style={{ color: "#1a1510", fontWeight: 800, fontSize: "0.95rem", marginBottom: "1rem" }}>📦 Composição do Kit</h2>
+
+          {/* Itens do kit */}
+          {kitItems.length > 0 && (
+            <div style={{ marginBottom: "1.5rem" }}>
+              <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#5a4a2a", marginBottom: "0.75rem", textTransform: "uppercase" }}>
+                Itens ({kitItems.length})
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {kitItems.map((item) => (
+                  <div key={item.productId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.75rem", backgroundColor: "#FAF6EE", borderRadius: "0.5rem", border: "1px solid rgba(140,100,20,0.1)" }}>
+                    <div>
+                      <p style={{ fontWeight: 600, color: "#1a1510", fontSize: "0.9rem" }}>
+                        {item.name} <span style={{ color: "#9a8060" }}>x{item.quantity}</span>
+                      </p>
+                      <p style={{ fontSize: "0.8rem", color: "#9a8060" }}>R$ {item.price?.toFixed(2)}</p>
+                    </div>
+                    <button type="button" onClick={() => handleRemoveKitItem(item.productId)} style={{ padding: "0.5rem 1rem", backgroundColor: "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.2)", borderRadius: "0.4rem", cursor: "pointer", fontWeight: 600, fontSize: "0.8rem" }}>
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Adicionar produto */}
+          <div style={{ borderTop: kitItems.length > 0 ? "1px solid rgba(140,100,20,0.1)" : "none", paddingTop: kitItems.length > 0 ? "1.5rem" : "0" }}>
+            <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#5a4a2a", marginBottom: "0.75rem", textTransform: "uppercase" }}>Adicionar Produto</h3>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end" }}>
+              <div style={{ flex: 1, minWidth: "200px" }}>
+                <label style={label}>Produto</label>
+                <select value={newKitProductId} onChange={e => setNewKitProductId(e.target.value)} style={field} onFocus={focus} onBlur={blur}>
+                  <option value="">Selecione um produto...</option>
+                  {allProducts.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} (R$ {p.price.toFixed(2)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ width: "70px" }}>
+                <label style={label}>Qtd</label>
+                <input type="number" min="1" max="10" value={newKitQuantity} onChange={e => setNewKitQuantity(Math.max(1, parseInt(e.target.value) || 1))} style={field} onFocus={focus} onBlur={blur} />
+              </div>
+              <button type="button" onClick={handleAddKitItem} style={{ padding: "0.75rem 1.5rem", backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.5rem", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem" }}>
+                ✅ Adicionar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Botões */}
       <div style={{ display: "flex", gap: "0.875rem", flexWrap: "wrap", alignItems: "center" }}>

@@ -11,11 +11,28 @@ export async function PUT(
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const { id } = await params;
-  const data = await req.json();
+  try {
+    const { id } = await params;
+    const { kitItems, ...data } = await req.json();
 
-  const product = await prisma.product.update({ where: { id }, data });
-  return NextResponse.json(product);
+    const product = await prisma.product.update({ where: { id }, data });
+
+    if (data.isKit) {
+      await prisma.kitItem.deleteMany({ where: { kitId: id } });
+      if (kitItems && kitItems.length > 0) {
+        await prisma.kitItem.createMany({
+          data: kitItems.map((item: any) => ({ kitId: id, productId: item.productId, quantity: item.quantity })),
+        });
+      }
+    } else {
+      await prisma.kitItem.deleteMany({ where: { kitId: id } });
+    }
+
+    return NextResponse.json(product);
+  } catch (err: any) {
+    console.error("Erro ao atualizar produto:", err);
+    return NextResponse.json({ error: err.message || "Erro ao atualizar produto" }, { status: 500 });
+  }
 }
 
 export async function DELETE(

@@ -28,12 +28,24 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const session = await auth();
   if (!session || (session.user as any)?.role !== "admin") {
-    return NextResponse.json({ error: "NÃ£o autorizado" }, { status: 401 });
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
-  const data = await req.json();
+  try {
+    const { kitItems, ...data } = await req.json();
 
-  const product = await prisma.product.create({ data });
-  return NextResponse.json(product, { status: 201 });
+    const product = await prisma.product.create({ data });
+
+    if (data.isKit && kitItems && kitItems.length > 0) {
+      await prisma.kitItem.createMany({
+        data: kitItems.map((item: any) => ({ kitId: product.id, productId: item.productId, quantity: item.quantity })),
+      });
+    }
+
+    return NextResponse.json(product, { status: 201 });
+  } catch (err: any) {
+    console.error("Erro ao criar produto:", err);
+    return NextResponse.json({ error: err.message || "Erro ao criar produto" }, { status: 500 });
+  }
 }
 
