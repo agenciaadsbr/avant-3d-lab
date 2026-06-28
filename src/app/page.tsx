@@ -22,7 +22,13 @@ export default async function HomePage() {
       take: 20,
     }),
     prisma.product.findMany({
-      where: { active: true, createdAt: { lte: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) } },
+      where: {
+        active: true,
+        OR: [
+          { createdAt: { lte: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) } },
+          { onSale: true },
+        ],
+      },
       include: { category: true },
       orderBy: { createdAt: "asc" },
       take: 8,
