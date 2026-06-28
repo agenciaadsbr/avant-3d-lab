@@ -272,7 +272,7 @@ export default async function AdminPage() {
                 return (
                   <tr key={order.id} style={{ borderBottom: "1px solid rgba(140,100,20,0.05)" }}>
                     <td style={{ padding: "0.75rem 1.25rem", fontWeight: 600, color: "#1a1510" }}>{order.user?.name || "—"}</td>
-                    <td style={{ padding: "0.75rem 0.5rem", color: "#5a4a2a", fontSize: "0.8rem" }}>{order.items.reduce((s, i) => s + i.quantity, 0)} item(s)</td>
+                    <td style={{ padding: "0.75rem 0.5rem", color: "#5a4a2a", fontSize: "0.8rem" }}>{order.items.reduce((s, i) => s + i.quantity, 0)} peça{order.items.reduce((s, i) => s + i.quantity, 0) > 1 ? "s" : ""}</td>
                     <td style={{ padding: "0.75rem 0.5rem", fontWeight: 700, color: "#1a1510", whiteSpace: "nowrap" }}>{formatCurrency(order.total)}</td>
                     <td style={{ padding: "0.75rem 0.5rem" }}>
                       <span style={{ backgroundColor: sc.bg, color: sc.color, fontSize: "0.68rem", fontWeight: 700, padding: "0.2rem 0.5rem", borderRadius: 999 }}>
