@@ -77,6 +77,8 @@ export default function SaleManagerClient({
     setLoading(true);
     setMessage("");
     try {
+      console.log("Autorizando:", product.id, { onSale: true, saleDiscount: customDiscount });
+
       const res = await fetch(`/api/admin/products/${product.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -85,6 +87,10 @@ export default function SaleManagerClient({
           saleDiscount: customDiscount,
         }),
       });
+
+      const data = await res.json();
+      console.log("Resposta PUT:", res.status, data);
+
       if (res.ok) {
         setMessage(`✅ "${product.name}" autorizado ao SALE com ${customDiscount}% de desconto!`);
         setSelectedProduct(null);
@@ -93,10 +99,12 @@ export default function SaleManagerClient({
         setCustomDiscount(20);
         setTimeout(() => window.location.reload(), 1500);
       } else {
-        setMessage("❌ Erro ao autorizar");
+        console.error("Erro na API:", data);
+        setMessage(`❌ Erro ao autorizar: ${data.error || "Erro desconhecido"}`);
       }
     } catch (err) {
-      setMessage("❌ Erro ao autorizar");
+      console.error("Erro na requisição:", err);
+      setMessage(`❌ Erro ao autorizar: ${(err as any).message}`);
     }
     setLoading(false);
   };
