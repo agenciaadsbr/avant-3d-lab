@@ -99,23 +99,30 @@ export default function HomeClient({
       </section>
 
       {/* SALE */}
-      {saleProducts.length > 0 && (
-        <section style={{ padding: isMobile ? "2rem 1rem" : "5rem 1.5rem", backgroundColor: "#FAF6EE", borderTop: "2px solid rgba(231,76,60,0.2)" }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-            <h2 style={{ fontSize: isMobile ? "1.5rem" : "2.2rem", fontWeight: 900, color: "#e74c3c", marginBottom: "1rem", textAlign: "center" }}>
-              🔥 SALE - 20% OFF
-            </h2>
-            <p style={{ textAlign: "center", color: "#9a8060", marginBottom: "2.5rem", fontSize: isMobile ? "0.85rem" : "1rem" }}>
-              Produtos que estão há tempo no estoque com desconto especial
-            </p>
+      <section style={{ padding: isMobile ? "2rem 1rem" : "5rem 1.5rem", backgroundColor: "#FAF6EE", borderTop: "2px solid rgba(231,76,60,0.2)" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <h2 style={{ fontSize: isMobile ? "1.5rem" : "2.2rem", fontWeight: 900, color: "#e74c3c", marginBottom: "1rem", textAlign: "center" }}>
+            🔥 SALE - DESCONTOS EXCLUSIVOS
+          </h2>
+          <p style={{ textAlign: "center", color: "#9a8060", marginBottom: "2.5rem", fontSize: isMobile ? "0.85rem" : "1rem" }}>
+            {saleProducts.length > 0
+              ? "Produtos com desconto especial - aproveita!"
+              : "Fique atento para nossas promoções exclusivas"}
+          </p>
+          {saleProducts.length > 0 ? (
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: isMobile ? "1rem" : "1.25rem" }}>
               {saleProducts.map(product => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
-          </div>
-        </section>
-      )}
+          ) : (
+            <div style={{ textAlign: "center", padding: "3rem 1rem", backgroundColor: "#fff", borderRadius: "1rem", border: "1px solid rgba(231,76,60,0.2)" }}>
+              <span style={{ fontSize: "3rem", display: "block", marginBottom: "1rem" }}>🎉</span>
+              <p style={{ color: "#9a8060", fontSize: "1rem", fontWeight: 600 }}>Volte em breve para aproveitar ofertas especiais!</p>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Destaques */}
       <section style={{ padding: isMobile ? "2rem 1rem" : "5rem 1.5rem", backgroundColor: "#fff" }}>
