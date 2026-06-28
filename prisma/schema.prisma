@@ -103,6 +103,7 @@ model Product {
   featured     Boolean  @default(false)
   saleDiscount Float?
   onSale       Boolean  @default(false)
+  isKit        Boolean  @default(false)
   active       Boolean  @default(true)
   categoryId  String
   createdAt   DateTime @default(now())
@@ -110,6 +111,20 @@ model Product {
 
   category   Category    @relation(fields: [categoryId], references: [id])
   orderItems OrderItem[]
+  kitItems   KitItem[]   @relation("kit")
+  usedInKits KitItem[]   @relation("item")
+}
+
+model KitItem {
+  id        String  @id @default(cuid())
+  kitId     String
+  productId String
+  quantity  Int     @default(1)
+
+  kit     Product @relation("kit", fields: [kitId], references: [id], onDelete: Cascade)
+  product Product @relation("item", fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([kitId, productId])
 }
 
 model Coupon {
