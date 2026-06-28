@@ -209,6 +209,15 @@ export default async function AdminPage() {
           </div>
         </Link>
 
+        {/* Categorias */}
+        <Link href="/admin/categorias" style={{ textDecoration: "none" }}>
+          <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.15)", borderRadius: "1rem", padding: "0.875rem 1.25rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <span style={{ fontSize: "1.25rem" }}>📂</span>
+            <span style={{ fontWeight: 700, color: "#5a4a2a", fontSize: "0.875rem" }}>Gerenciar Categorias/Coleções</span>
+            <span style={{ marginLeft: "auto", color: "#b8a080", fontSize: "0.8rem" }}>Ver categorias →</span>
+          </div>
+        </Link>
+
         {/* Home Try-On no prazo */}
         {tryOnNoPrazo.length > 0 && (
           <div style={{ backgroundColor: "#fff", border: "1px solid rgba(138,26,184,0.15)", borderRadius: "1rem", overflow: "hidden" }}>
