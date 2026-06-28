@@ -9,7 +9,7 @@ type Product = {
   id: string; name: string; slug: string; description: string | null;
   price: number; costPrice: number | null; compareAt: number | null; images: string;
   sizes: string; colors: string; stock: number;
-  featuredHero: boolean; featured: boolean; active: boolean; categoryId: string;
+  featuredHero: boolean; featured: boolean; isKit: boolean; active: boolean; categoryId: string;
 };
 
 const field: React.CSSProperties = {
@@ -49,6 +49,7 @@ export default function ProductForm({ categories, product }: { categories: Categ
     stock: product?.stock?.toString() || "0",
     featuredHero: product?.featuredHero || false,
     featured: product?.featured || false,
+    isKit: product?.isKit || false,
     active: product?.active ?? true,
     categoryId: product?.categoryId || categories[0]?.id || "",
   });
@@ -235,10 +236,11 @@ export default function ProductForm({ categories, product }: { categories: Categ
           {[
             { key: "featuredHero", label: "Destaque no Hero (primeiros 4 da home)", emoji: "🎯" },
             { key: "featured", label: "Destaque na seção Destaques", emoji: "⭐" },
+            { key: "isKit", label: "É um Kit/Combo (pode ter várias peças)", emoji: "📦" },
             { key: "active", label: "Produto ativo (visível na loja)", emoji: "👁️" },
           ].map(({ key, label: lbl, emoji }) => (
             <label key={key} style={{ display: "flex", alignItems: "center", gap: "0.6rem", cursor: "pointer" }}>
-              <input type="checkbox" checked={form[key as "featuredHero" | "featured" | "active"]}
+              <input type="checkbox" checked={form[key as "featuredHero" | "featured" | "isKit" | "active"]}
                 onChange={e => setForm({ ...form, [key]: e.target.checked })}
                 style={{ width: "1.1rem", height: "1.1rem", accentColor: "#b8891a" }} />
               <span style={{ color: "#3a2a10", fontSize: "0.875rem", fontWeight: 600 }}>{emoji} {lbl}</span>
