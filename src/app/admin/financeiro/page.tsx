@@ -46,8 +46,13 @@ export default function FinanceiroPage() {
   const [caixaDespesas, setCaixaDespesas] = useState(0);
   const [caixaAportes, setCaixaAportes] = useState<Aporte[]>([]);
   const [caixaAportesTotal, setCaixaAportesTotal] = useState(0);
-  const [caixaSaldoTotal, setCaixaSaldoTotal] = useState(0); // saldo acumulado
+  const [caixaSaldoTotal, setCaixaSaldoTotal] = useState(0);
   const [loadingCaixa, setLoadingCaixa] = useState(true);
+  const [corte, setCorte] = useState(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("caixa_corte") || "2026-06-01";
+    return "2026-06-01";
+  });
+  const [editandoCorte, setEditandoCorte] = useState(false);
   const [showAporteForm, setShowAporteForm] = useState(false);
   const [aporteForm, setAporteForm] = useState({ amount: "", date: today(), description: "" });
   const [savingAporte, setSavingAporte] = useState(false);
@@ -58,14 +63,14 @@ export default function FinanceiroPage() {
       fetch(`/api/admin/caixa?from=${caixaFrom}&to=${caixaTo}`),
       fetch(`/api/admin/despesas?from=${caixaFrom}&to=${caixaTo}`),
       fetch(`/api/admin/aportes?from=${caixaFrom}&to=${caixaTo}`),
-      fetch("/api/admin/caixa/saldo"),
+      fetch(`/api/admin/caixa/saldo?from=${corte}`),
     ]);
     if (recRes.ok) { const d = await recRes.json(); setCaixaReceitas(d.total || 0); }
     if (despRes.ok) { const d = await despRes.json(); setCaixaDespesas(d.total || 0); }
     if (aporteRes.ok) { const d = await aporteRes.json(); setCaixaAportes(d.aportes); setCaixaAportesTotal(d.total); }
     if (totalRes.ok) { const d = await totalRes.json(); setCaixaSaldoTotal(d.saldo); }
     setLoadingCaixa(false);
-  }, [caixaFrom, caixaTo]);
+  }, [caixaFrom, caixaTo, corte]);
 
   useEffect(() => { loadCaixa(); }, [loadCaixa]);
 
@@ -211,9 +216,27 @@ export default function FinanceiroPage() {
           {/* Saldo acumulado total */}
           <div style={{ background: "linear-gradient(135deg, #1a1510, #2a2010)", borderRadius: "1.25rem", padding: "1.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
             <div>
-              <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.1em", marginBottom: "0.4rem" }}>SALDO ACUMULADO EM CONTA</p>
+              <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.1em", marginBottom: "0.4rem" }}>SALDO EM CONTA</p>
               <p style={{ color: caixaSaldoTotal >= 0 ? "#b8891a" : "#c04040", fontSize: "2.25rem", fontWeight: 900, lineHeight: 1 }}>{fmt(caixaSaldoTotal)}</p>
-              <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.75rem", marginTop: "0.4rem" }}>Receitas recebidas + aportes − despesas (total histórico)</p>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.5rem" }}>
+                {editandoCorte ? (
+                  <>
+                    <input type="date" value={corte} onChange={e => setCorte(e.target.value)}
+                      style={{ backgroundColor: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "0.4rem", color: "#fff", padding: "0.2rem 0.5rem", fontSize: "0.75rem" }} />
+                    <button onClick={() => { localStorage.setItem("caixa_corte", corte); setEditandoCorte(false); loadCaixa(); }}
+                      style={{ backgroundColor: "#b8891a", border: "none", borderRadius: "0.4rem", color: "#fff", padding: "0.2rem 0.625rem", fontSize: "0.72rem", fontWeight: 700, cursor: "pointer" }}>
+                      Aplicar
+                    </button>
+                    <button onClick={() => setEditandoCorte(false)}
+                      style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", cursor: "pointer" }}>✕</button>
+                  </>
+                ) : (
+                  <button onClick={() => setEditandoCorte(true)}
+                    style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", cursor: "pointer", textDecoration: "underline" }}>
+                    A partir de {new Date(corte + "T00:00:00").toLocaleDateString("pt-BR")} · alterar
+                  </button>
+                )}
+              </div>
             </div>
             <button onClick={() => setShowAporteForm(v => !v)}
               style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.875rem", padding: "0.75rem 1.5rem", fontWeight: 800, fontSize: "0.9rem", cursor: "pointer" }}>
