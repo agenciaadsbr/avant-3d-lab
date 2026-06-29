@@ -312,36 +312,38 @@ export default function NovoPedidoPage() {
                   </div>
                   {/* Seleção de Componente (se for Conjunto) */}
                   {item.productId && selectedProducts[i] && (
-                    <div style={{ backgroundColor: "#fff8e8", padding: "0.75rem", borderRadius: "0.625rem", marginBottom: "0.5rem", fontSize: "0.8rem", color: "#5a4a2a" }}>
-                      Produto: {selectedProducts[i]?.name} | isConjunto: {String(selectedProducts[i]?.isConjunto)} | Vender sep: {String(selectedProducts[i]?.sellComponentsSeparately)} | Items: {selectedProducts[i]?.conjuntoItems?.length || 0}
-                    </div>
-                  )}
-                  {selectedProducts[i]?.isConjunto && selectedProducts[i]?.sellComponentsSeparately && selectedProducts[i]?.conjuntoItems && selectedProducts[i]?.conjuntoItems.length > 0 && (
-                    <select style={inp} value={selectedComponents[i] || ""}
-                      onChange={e => {
-                        const componentId = e.target.value;
-                        const product = selectedProducts[i];
-                        setSelectedComponents(p => p.map((_, idx) => idx === i ? componentId : _));
+                    <>
+                      <div style={{ backgroundColor: "#fff8e8", padding: "0.75rem", borderRadius: "0.625rem", marginBottom: "0.5rem", fontSize: "0.8rem", color: "#5a4a2a" }}>
+                        Produto: {selectedProducts[i]?.name} | isConjunto: {String(selectedProducts[i]?.isConjunto)} | Vender sep: {String(selectedProducts[i]?.sellComponentsSeparately)} | Items: {selectedProducts[i]?.conjuntoItems?.length || 0}
+                      </div>
+                      {selectedProducts[i]?.isConjunto && selectedProducts[i]?.sellComponentsSeparately && selectedProducts[i]?.conjuntoItems && selectedProducts[i]?.conjuntoItems.length > 0 && (
+                        <select style={inp} value={selectedComponents[i] || ""}
+                          onChange={e => {
+                            const componentId = e.target.value;
+                            const product = selectedProducts[i];
+                            setSelectedComponents(p => p.map((_, idx) => idx === i ? componentId : _));
 
-                        if (componentId && product) {
-                          if (componentId === "completo") {
-                            updateItem(i, "price", product.price);
-                            updateItem(i, "componentName", undefined);
-                          } else {
-                            const component = product.conjuntoItems?.find(c => c.id === componentId);
-                            if (component) {
-                              updateItem(i, "price", component.price);
-                              updateItem(i, "componentName", component.name);
+                            if (componentId && product) {
+                              if (componentId === "completo") {
+                                updateItem(i, "price", product.price);
+                                updateItem(i, "componentName", undefined);
+                              } else {
+                                const component = product.conjuntoItems?.find(c => c.id === componentId);
+                                if (component) {
+                                  updateItem(i, "price", component.price);
+                                  updateItem(i, "componentName", component.name);
+                                }
+                              }
                             }
-                          }
-                        }
-                      }}>
-                      <option value="">Selecione o componente</option>
-                      <option value="completo">Conjunto Completo - R$ {selectedProducts[i]?.price?.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</option>
-                      {selectedProducts[i]?.conjuntoItems?.map(comp => (
-                        <option key={comp.id} value={comp.id}>{comp.name} - R$ {comp.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</option>
-                      ))}
-                    </select>
+                          }}>
+                          <option value="">Selecione o componente</option>
+                          <option value="completo">Conjunto Completo - R$ {selectedProducts[i]?.price?.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</option>
+                          {selectedProducts[i]?.conjuntoItems?.map(comp => (
+                            <option key={comp.id} value={comp.id}>{comp.name} - R$ {comp.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</option>
+                          ))}
+                        </select>
+                      )}
+                    </>
                   )}
 
                   {/* Tamanho, preço e quantidade */}
