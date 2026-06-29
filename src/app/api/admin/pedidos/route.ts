@@ -121,12 +121,6 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json(
-      await prisma.order.findUnique({
-        where: { id: order.id },
-      },
-      include: { user: true, items: true },
-    });
     return NextResponse.json(order);
   } catch (e: any) {
     console.error("Erro ao criar pedido:", e);
