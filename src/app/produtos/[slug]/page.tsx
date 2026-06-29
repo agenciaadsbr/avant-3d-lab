@@ -61,7 +61,11 @@ export default function ProductPage() {
   const images = parseJson<string[]>(product.images, []);
   const sizes = parseJson<string[]>(product.sizes, []);
   const discount = product.compareAt ? Math.round((1 - product.price / product.compareAt) * 100) : null;
-  const outOfStock = product.stock === 0;
+  // Para conjuntos com componentes separados: esgotado só se o conjunto E todos os componentes estiverem sem estoque
+  const hasAvailableComponents = product.isConjunto && product.sellComponentsSeparately
+    ? product.conjuntoItems.some(c => (c.stock ?? 0) > 0)
+    : false;
+  const outOfStock = product.stock === 0 && !hasAvailableComponents;
 
   // Calcular economia do conjunto
   const calculateComponentsTotal = () => {
@@ -73,11 +77,18 @@ export default function ProductPage() {
   const bundleSavingsPercent = bundleSavings > 0 ? Math.round((bundleSavings / componentsTotalPrice) * 100) : 0;
 
   const handleAddToCart = () => {
-    if (outOfStock) return;
     if (product.isConjunto && product.sellComponentsSeparately && !selectedComponent) {
       alert("Selecione qual opção deseja comprar");
       return;
     }
+    // Bloqueia se selecionou conjunto completo sem estoque
+    if (selectedComponent === "completo" && product.stock === 0) return;
+    // Bloqueia se selecionou componente sem estoque
+    if (selectedComponent && selectedComponent !== "completo") {
+      const comp = product.conjuntoItems.find(c => c.id === selectedComponent);
+      if (comp && (comp.stock ?? 0) === 0) return;
+    }
+    if (outOfStock) return;
 
     let itemName = product.name;
     let itemPrice = product.price;
@@ -242,32 +253,53 @@ export default function ProductPage() {
                   )}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer", padding: "0.75rem", backgroundColor: selectedComponent === "completo" ? "rgba(184,137,26,0.08)" : "#FAF6EE", borderRadius: "0.625rem", border: `2px solid ${selectedComponent === "completo" ? "#b8891a" : "rgba(140,100,20,0.1)"}` }}>
-                    <input type="radio" name="component" value="completo" checked={selectedComponent === "completo"} onChange={() => setSelectedComponent("completo")} style={{ width: "1.1rem", height: "1.1rem", accentColor: "#b8891a", cursor: "pointer" }} />
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.9rem" }}>Conjunto Completo</p>
-                      <p style={{ fontSize: "0.8rem", color: "#9a8060" }}>Todas as peças juntas</p>
-                    </div>
-                    <span style={{ fontSize: "1rem", fontWeight: 900, color: "#b8891a" }}>{formatCurrency(product.price)}</span>
-                  </label>
-                  {product.conjuntoItems.map(comp => (
-                    <label key={comp.id} style={{ display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer", padding: "0.75rem", backgroundColor: selectedComponent === comp.id ? "rgba(184,137,26,0.08)" : "#FAF6EE", borderRadius: "0.625rem", border: `2px solid ${selectedComponent === comp.id ? "#b8891a" : "rgba(140,100,20,0.1)"}` }}>
-                      <input type="radio" name="component" value={comp.id} checked={selectedComponent === comp.id} onChange={() => setSelectedComponent(comp.id)} style={{ width: "1.1rem", height: "1.1rem", accentColor: "#b8891a", cursor: "pointer" }} />
-                      <div style={{ flex: 1 }}>
-                        <p style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.9rem" }}>{comp.name}</p>
-                      </div>
-                      <span style={{ fontSize: "1rem", fontWeight: 900, color: "#b8891a" }}>{formatCurrency(comp.price)}</span>
-                    </label>
-                  ))}
+                  {/* Conjunto Completo */}
+                  {(() => {
+                    const compSoldOut = product.stock === 0;
+                    return (
+                      <label style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem", backgroundColor: compSoldOut ? "#f5f5f5" : selectedComponent === "completo" ? "rgba(184,137,26,0.08)" : "#FAF6EE", borderRadius: "0.625rem", border: `2px solid ${compSoldOut ? "rgba(140,100,20,0.08)" : selectedComponent === "completo" ? "#b8891a" : "rgba(140,100,20,0.1)"}`, cursor: compSoldOut ? "not-allowed" : "pointer", opacity: compSoldOut ? 0.55 : 1 }}>
+                        <input type="radio" name="component" value="completo" checked={selectedComponent === "completo"} onChange={() => !compSoldOut && setSelectedComponent("completo")} disabled={compSoldOut} style={{ width: "1.1rem", height: "1.1rem", accentColor: "#b8891a", cursor: compSoldOut ? "not-allowed" : "pointer" }} />
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontWeight: 700, color: compSoldOut ? "#9a8060" : "#1a1510", fontSize: "0.9rem", textDecoration: compSoldOut ? "line-through" : "none" }}>Conjunto Completo</p>
+                          <p style={{ fontSize: "0.8rem", color: "#9a8060" }}>{compSoldOut ? "Esgotado" : "Todas as peças juntas"}</p>
+                        </div>
+                        <span style={{ fontSize: "1rem", fontWeight: 900, color: compSoldOut ? "#9a8060" : "#b8891a" }}>{formatCurrency(product.price)}</span>
+                      </label>
+                    );
+                  })()}
+                  {/* Componentes individuais */}
+                  {product.conjuntoItems.map(comp => {
+                    const compStock = comp.stock ?? 0;
+                    const compSoldOut = compStock === 0;
+                    return (
+                      <label key={comp.id} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem", backgroundColor: compSoldOut ? "#f5f5f5" : selectedComponent === comp.id ? "rgba(184,137,26,0.08)" : "#FAF6EE", borderRadius: "0.625rem", border: `2px solid ${compSoldOut ? "rgba(140,100,20,0.08)" : selectedComponent === comp.id ? "#b8891a" : "rgba(140,100,20,0.1)"}`, cursor: compSoldOut ? "not-allowed" : "pointer", opacity: compSoldOut ? 0.55 : 1 }}>
+                        <input type="radio" name="component" value={comp.id} checked={selectedComponent === comp.id} onChange={() => !compSoldOut && setSelectedComponent(comp.id)} disabled={compSoldOut} style={{ width: "1.1rem", height: "1.1rem", accentColor: "#b8891a", cursor: compSoldOut ? "not-allowed" : "pointer" }} />
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontWeight: 700, color: compSoldOut ? "#9a8060" : "#1a1510", fontSize: "0.9rem", textDecoration: compSoldOut ? "line-through" : "none" }}>{comp.name}</p>
+                          {compSoldOut && <p style={{ fontSize: "0.75rem", color: "#c04040" }}>Esgotado</p>}
+                        </div>
+                        <span style={{ fontSize: "1rem", fontWeight: 900, color: compSoldOut ? "#9a8060" : "#b8891a" }}>{formatCurrency(comp.price)}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
             {/* Botão */}
-            <button onClick={handleAddToCart} disabled={outOfStock}
-              style={{ width: "100%", marginTop: "2rem", padding: "1rem 1.5rem", backgroundColor: added ? "#2a6a2a" : outOfStock ? "#e8e0d0" : "#1a1510", color: added ? "#fff" : outOfStock ? "#9a8060" : "#FAF6EE", fontWeight: 900, fontSize: "1rem", border: "none", borderRadius: "0.875rem", cursor: outOfStock ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", transition: "background-color 0.3s", letterSpacing: "0.03em", boxShadow: outOfStock ? "none" : "0 4px 14px rgba(26,21,16,0.25)" }}>
-              {added ? "✓ Adicionado ao carrinho!" : outOfStock ? "Esgotado" : "🛍️ Adicionar ao Carrinho"}
-            </button>
+            {(() => {
+              const selectedComp = selectedComponent && selectedComponent !== "completo"
+                ? product.conjuntoItems.find(c => c.id === selectedComponent) : null;
+              const selectedCompSoldOut = selectedComponent === "completo" ? product.stock === 0
+                : selectedComp ? (selectedComp.stock ?? 0) === 0 : false;
+              const btnDisabled = outOfStock || selectedCompSoldOut;
+              return (
+                <button onClick={handleAddToCart} disabled={btnDisabled}
+                  style={{ width: "100%", marginTop: "2rem", padding: "1rem 1.5rem", backgroundColor: added ? "#2a6a2a" : btnDisabled ? "#e8e0d0" : "#1a1510", color: added ? "#fff" : btnDisabled ? "#9a8060" : "#FAF6EE", fontWeight: 900, fontSize: "1rem", border: "none", borderRadius: "0.875rem", cursor: btnDisabled ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", transition: "background-color 0.3s", letterSpacing: "0.03em", boxShadow: btnDisabled ? "none" : "0 4px 14px rgba(26,21,16,0.25)" }}>
+                  {added ? "✓ Adicionado ao carrinho!" : btnDisabled ? "Esgotado" : "🛍️ Adicionar ao Carrinho"}
+                </button>
+              );
+            })()}
 
             {/* Me avise quando voltar */}
             {outOfStock && (
