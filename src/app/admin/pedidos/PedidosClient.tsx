@@ -632,16 +632,16 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                     ).join("\n");
                                     const metodo: Record<string,string> = { pix:"Pix", cartao:"Cartão", dinheiro:"Dinheiro", caderno:"Caderno", link:"Link de Pagamento" };
                                     const msg = [
-                                      `Olá ${order.user.name?.split(" ")[0]}! 👋`,
+                                      `Olá ${order.user.name?.split(" ")[0]}!`,
                                       ``,
                                       `Segue o resumo do seu pedido na *Access Fit*:`,
                                       ``,
                                       itens,
                                       ``,
-                                      `💰 *Total: ${fmt(order.total)}*`,
-                                      `📋 Pagamento: ${metodo[order.paymentMethod] || order.paymentMethod}`,
+                                      `*Total: ${fmt(order.total)}*`,
+                                      `Pagamento: ${metodo[order.paymentMethod] || order.paymentMethod}`,
                                       ``,
-                                      `Responda *SIM* para confirmar ou nos chame se tiver dúvidas! 😊`,
+                                      `Responda *SIM* para confirmar ou nos chame se tiver duvidas!`,
                                     ].join("\n");
                                     const phone = order.user.phone!.replace(/\D/g, "");
                                     const ddi = phone.startsWith("55") ? phone : `55${phone}`;
