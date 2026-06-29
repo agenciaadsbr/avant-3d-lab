@@ -14,7 +14,6 @@ export async function GET(req: Request) {
   const products = await prisma.product.findMany({
     where: {
       active: true,
-      stock: { gt: 0 },
       ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
     },
     include: { conjuntoItems: true },
