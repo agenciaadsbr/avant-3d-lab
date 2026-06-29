@@ -315,14 +315,15 @@ export default function NovoPedidoPage() {
                     <select style={inp} value={selectedComponents[i] || ""}
                       onChange={e => {
                         const componentId = e.target.value;
+                        const product = selectedProducts[i];
                         setSelectedComponents(p => p.map((_, idx) => idx === i ? componentId : _));
 
-                        if (componentId) {
+                        if (componentId && product) {
                           if (componentId === "completo") {
-                            updateItem(i, "price", selectedProducts[i].price);
+                            updateItem(i, "price", product.price);
                             updateItem(i, "componentName", undefined);
                           } else {
-                            const component = selectedProducts[i].conjuntoItems?.find(c => c.id === componentId);
+                            const component = product.conjuntoItems?.find(c => c.id === componentId);
                             if (component) {
                               updateItem(i, "price", component.price);
                               updateItem(i, "componentName", component.name);
@@ -331,8 +332,8 @@ export default function NovoPedidoPage() {
                         }
                       }}>
                       <option value="">Selecione o componente</option>
-                      <option value="completo">Conjunto Completo - R$ {selectedProducts[i].price?.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</option>
-                      {selectedProducts[i].conjuntoItems?.map(comp => (
+                      <option value="completo">Conjunto Completo - R$ {selectedProducts[i]?.price?.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</option>
+                      {selectedProducts[i]?.conjuntoItems?.map(comp => (
                         <option key={comp.id} value={comp.id}>{comp.name} - R$ {comp.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</option>
                       ))}
                     </select>
