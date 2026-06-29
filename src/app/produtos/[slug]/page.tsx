@@ -6,7 +6,7 @@ import { useCart } from "@/store/cart";
 import { formatCurrency, parseJson } from "@/lib/utils";
 import Link from "next/link";
 
-type ConjuntoItem = { id: string; name: string; price: number; quantity: number };
+type ConjuntoItem = { id: string; name: string; price: number; quantity: number; stock?: number | null };
 
 type Product = {
   id: string; name: string; slug: string; description: string | null;
