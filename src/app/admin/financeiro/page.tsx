@@ -47,6 +47,7 @@ export default function FinanceiroPage() {
   const [caixaAportes, setCaixaAportes] = useState<Aporte[]>([]);
   const [caixaAportesTotal, setCaixaAportesTotal] = useState(0);
   const [caixaSaldoTotal, setCaixaSaldoTotal] = useState(0);
+  const [caixaData, setCaixaData] = useState<any>(null);
   const [loadingCaixa, setLoadingCaixa] = useState(true);
   const [corte, setCorte] = useState(() => {
     if (typeof window !== "undefined") return localStorage.getItem("caixa_corte") || "2026-06-01";
@@ -68,7 +69,7 @@ export default function FinanceiroPage() {
     if (recRes.ok) { const d = await recRes.json(); setCaixaReceitas(d.total || 0); }
     if (despRes.ok) { const d = await despRes.json(); setCaixaDespesas(d.total || 0); }
     if (aporteRes.ok) { const d = await aporteRes.json(); setCaixaAportes(d.aportes); setCaixaAportesTotal(d.total); }
-    if (totalRes.ok) { const d = await totalRes.json(); setCaixaSaldoTotal(d.saldo); }
+    if (totalRes.ok) { const d = await totalRes.json(); setCaixaSaldoTotal(d.caixa); setCaixaData(d); }
     setLoadingCaixa(false);
   }, [caixaFrom, caixaTo, corte]);
 
@@ -215,40 +216,72 @@ export default function FinanceiroPage() {
       {tab === "caixa" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 
-          {/* Saldo acumulado total */}
-          <div style={{ background: "linear-gradient(135deg, #1a1510, #2a2010)", borderRadius: "1.25rem", padding: "1.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-            <div>
-              <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.1em", marginBottom: "0.4rem" }}>SALDO EM CONTA</p>
-              <p style={{ color: caixaSaldoTotal >= 0 ? "#b8891a" : "#c04040", fontSize: "2.25rem", fontWeight: 900, lineHeight: 1 }}>{fmt(caixaSaldoTotal)}</p>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.5rem" }}>
-                {editandoCorte ? (
-                  <>
-                    <input type="date" value={corte} onChange={e => setCorte(e.target.value)}
-                      style={{ backgroundColor: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "0.4rem", color: "#fff", padding: "0.2rem 0.5rem", fontSize: "0.75rem" }} />
-                    <button onClick={() => { localStorage.setItem("caixa_corte", corte); setEditandoCorte(false); loadCaixa(); }}
-                      style={{ backgroundColor: "#b8891a", border: "none", borderRadius: "0.4rem", color: "#fff", padding: "0.2rem 0.625rem", fontSize: "0.72rem", fontWeight: 700, cursor: "pointer" }}>
-                      Aplicar
+          {/* Patrimônio completo */}
+          <div style={{ background: "linear-gradient(135deg, #1a1510, #2a2010)", borderRadius: "1.25rem", padding: "1.75rem 2rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
+              <div>
+                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em", marginBottom: "0.3rem" }}>PATRIMÔNIO TOTAL DA EMPRESA</p>
+                <p style={{ color: (caixaData?.patrimonio || 0) >= 0 ? "#b8891a" : "#c04040", fontSize: "2.5rem", fontWeight: 900, lineHeight: 1 }}>
+                  {fmt(caixaData?.patrimonio || 0)}
+                </p>
+                <div style={{ marginTop: "0.5rem" }}>
+                  {editandoCorte ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <input type="date" value={corte} onChange={e => setCorte(e.target.value)}
+                        style={{ backgroundColor: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "0.4rem", color: "#fff", padding: "0.2rem 0.5rem", fontSize: "0.75rem" }} />
+                      <button onClick={() => { localStorage.setItem("caixa_corte", corte); setEditandoCorte(false); loadCaixa(); }}
+                        style={{ backgroundColor: "#b8891a", border: "none", borderRadius: "0.4rem", color: "#fff", padding: "0.2rem 0.625rem", fontSize: "0.72rem", fontWeight: 700, cursor: "pointer" }}>Aplicar</button>
+                      <button onClick={() => setEditandoCorte(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", cursor: "pointer" }}>✕</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setEditandoCorte(true)}
+                      style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: "0.72rem", cursor: "pointer", textDecoration: "underline" }}>
+                      A partir de {new Date(corte + "T00:00:00").toLocaleDateString("pt-BR")} · alterar
                     </button>
-                    <button onClick={() => setEditandoCorte(false)}
-                      style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", cursor: "pointer" }}>✕</button>
-                  </>
-                ) : (
-                  <button onClick={() => setEditandoCorte(true)}
-                    style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: "0.72rem", cursor: "pointer", textDecoration: "underline" }}>
-                    A partir de {new Date(corte + "T00:00:00").toLocaleDateString("pt-BR")} · alterar
-                  </button>
-                )}
+                  )}
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <button onClick={() => setShowAporteForm(showAporteForm === "aporte" ? null : "aporte")}
+                  style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.75rem", padding: "0.6rem 1.25rem", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer" }}>
+                  💉 Injetar valor
+                </button>
+                <button onClick={() => setShowAporteForm(showAporteForm === "retirada" ? null : "retirada")}
+                  style={{ backgroundColor: "rgba(192,64,64,0.15)", color: "#ffa0a0", border: "1px solid rgba(192,64,64,0.3)", borderRadius: "0.75rem", padding: "0.6rem 1.25rem", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer" }}>
+                  💸 Retirada
+                </button>
               </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <button onClick={() => setShowAporteForm(showAporteForm === "aporte" ? null : "aporte")}
-                style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.75rem", padding: "0.6rem 1.25rem", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer" }}>
-                💉 Injetar valor
-              </button>
-              <button onClick={() => setShowAporteForm(showAporteForm === "retirada" ? null : "retirada")}
-                style={{ backgroundColor: "rgba(192,64,64,0.15)", color: "#ffa0a0", border: "1px solid rgba(192,64,64,0.3)", borderRadius: "0.75rem", padding: "0.6rem 1.25rem", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer" }}>
-                💸 Retirada
-              </button>
+
+            {/* Decomposição do patrimônio */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem" }}>
+              {[
+                {
+                  emoji: "💵", label: "Caixa disponível",
+                  value: caixaData?.caixa || 0,
+                  sub: "Receitas + aportes − despesas operacionais",
+                  color: (caixaData?.caixa || 0) >= 0 ? "#4aff7a" : "#ff6b6b",
+                },
+                {
+                  emoji: "📦", label: "Estoque (ao custo)",
+                  value: caixaData?.estoqueValor || 0,
+                  sub: "Dinheiro convertido em mercadoria",
+                  color: "#ffd166",
+                },
+                {
+                  emoji: "📒", label: "A receber",
+                  value: caixaData?.aReceber || 0,
+                  sub: "Caderno em aberto",
+                  color: "#74b9ff",
+                },
+              ].map(k => (
+                <div key={k.label} style={{ backgroundColor: "rgba(255,255,255,0.06)", borderRadius: "0.875rem", padding: "1rem" }}>
+                  <p style={{ fontSize: "1.2rem", marginBottom: "0.25rem" }}>{k.emoji}</p>
+                  <p style={{ fontSize: "1.25rem", fontWeight: 900, color: k.color }}>{fmt(k.value)}</p>
+                  <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "rgba(255,255,255,0.6)", marginTop: "0.2rem" }}>{k.label}</p>
+                  <p style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.35)", marginTop: "0.1rem" }}>{k.sub}</p>
+                </div>
+              ))}
             </div>
           </div>
 
