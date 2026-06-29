@@ -311,7 +311,11 @@ export default function NovoPedidoPage() {
                     )}
                   </div>
                   {/* Seleção de Componente (se for Conjunto) */}
-                  {console.log(`Item ${i}:`, { product: selectedProducts[i], isConjunto: selectedProducts[i]?.isConjunto, hasSellComponents: selectedProducts[i]?.sellComponentsSeparately, hasItems: selectedProducts[i]?.conjuntoItems?.length })}
+                  {item.productId && selectedProducts[i] && (
+                    <div style={{ backgroundColor: "#fff8e8", padding: "0.75rem", borderRadius: "0.625rem", marginBottom: "0.5rem", fontSize: "0.8rem", color: "#5a4a2a" }}>
+                      Produto: {selectedProducts[i]?.name} | isConjunto: {String(selectedProducts[i]?.isConjunto)} | Vender sep: {String(selectedProducts[i]?.sellComponentsSeparately)} | Items: {selectedProducts[i]?.conjuntoItems?.length || 0}
+                    </div>
+                  )}
                   {selectedProducts[i]?.isConjunto && selectedProducts[i]?.sellComponentsSeparately && selectedProducts[i]?.conjuntoItems && selectedProducts[i]?.conjuntoItems.length > 0 && (
                     <select style={inp} value={selectedComponents[i] || ""}
                       onChange={e => {
