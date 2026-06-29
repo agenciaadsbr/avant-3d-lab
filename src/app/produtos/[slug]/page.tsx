@@ -59,6 +59,15 @@ export default function ProductPage() {
   const discount = product.compareAt ? Math.round((1 - product.price / product.compareAt) * 100) : null;
   const outOfStock = product.stock === 0;
 
+  // Calcular economia do conjunto
+  const calculateComponentsTotal = () => {
+    if (!product.isConjunto || product.conjuntoItems.length === 0) return 0;
+    return product.conjuntoItems.reduce((sum, c) => sum + c.price, 0);
+  };
+  const componentsTotalPrice = calculateComponentsTotal();
+  const bundleSavings = product.isConjunto && componentsTotalPrice > 0 ? componentsTotalPrice - product.price : 0;
+  const bundleSavingsPercent = bundleSavings > 0 ? Math.round((bundleSavings / componentsTotalPrice) * 100) : 0;
+
   const handleAddToCart = () => {
     if (outOfStock) return;
     if (product.isConjunto && product.sellComponentsSeparately && !selectedComponent) {
@@ -220,7 +229,14 @@ export default function ProductPage() {
             {/* Seleção de Componentes */}
             {product.isConjunto && product.sellComponentsSeparately && (
               <div style={{ marginTop: "1.75rem", padding: "1.25rem", backgroundColor: "#fff", borderRadius: "0.875rem", border: "1px solid rgba(184,137,26,0.2)" }}>
-                <h3 style={{ fontSize: "0.72rem", fontWeight: 800, color: "#b8891a", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "1rem" }}>💰 Escolha o que comprar</h3>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+                  <h3 style={{ fontSize: "0.72rem", fontWeight: 800, color: "#b8891a", letterSpacing: "0.1em", textTransform: "uppercase" }}>💰 Escolha o que comprar</h3>
+                  {bundleSavings > 0 && (
+                    <div style={{ backgroundColor: "rgba(46,125,50,0.12)", color: "#2e7d32", padding: "0.4rem 0.8rem", borderRadius: "999px", fontSize: "0.75rem", fontWeight: 700 }}>
+                      💚 Economize {formatCurrency(bundleSavings)} ({bundleSavingsPercent}%)
+                    </div>
+                  )}
+                </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                   <label style={{ display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer", padding: "0.75rem", backgroundColor: selectedComponent === "completo" ? "rgba(184,137,26,0.08)" : "#FAF6EE", borderRadius: "0.625rem", border: `2px solid ${selectedComponent === "completo" ? "#b8891a" : "rgba(140,100,20,0.1)"}` }}>
                     <input type="radio" name="component" value="completo" checked={selectedComponent === "completo"} onChange={() => setSelectedComponent("completo")} style={{ width: "1.1rem", height: "1.1rem", accentColor: "#b8891a", cursor: "pointer" }} />

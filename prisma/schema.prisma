@@ -121,6 +121,7 @@ model ConjuntoItem {
   name       String
   price      Float
   quantity   Int     @default(1)
+  stock      Int     @default(0)
 
   conjunto Product @relation(fields: [conjuntoId], references: [id], onDelete: Cascade)
 }
@@ -230,6 +231,7 @@ model OrderItem {
   price     Float
   size      String?
   color     String?
+  componentName String? // Se é um componente do conjunto, salva o nome
 
   costPrice Float?
 
