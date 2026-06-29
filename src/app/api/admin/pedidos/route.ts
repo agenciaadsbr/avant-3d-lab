@@ -106,8 +106,8 @@ export async function POST(req: Request) {
             componentName: i.componentName || null,
           })),
         },
-      }
-    );
+      },
+    });
 
     // Decrementar estoque dos componentes se foi vendido um componente de um Conjunto
     for (const item of items) {
