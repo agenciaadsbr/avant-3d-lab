@@ -9,7 +9,7 @@ type Product = {
   id: string; name: string; slug: string; description: string | null;
   price: number; costPrice: number | null; compareAt: number | null; images: string;
   sizes: string; colors: string; stock: number;
-  featuredHero: boolean; featured: boolean; isConjunto: boolean; active: boolean; categoryId: string;
+  featuredHero: boolean; featured: boolean; isConjunto: boolean; sellComponentsSeparately: boolean; active: boolean; categoryId: string;
 };
 type ConjuntoItemForm = { name: string; price: number; quantity: number };
 
@@ -63,6 +63,7 @@ export default function ProductForm({ categories, product, kitItems: initialKitI
     featuredHero: product?.featuredHero || false,
     featured: product?.featured || false,
     isConjunto: product?.isConjunto || false,
+    sellComponentsSeparately: product?.sellComponentsSeparately || false,
     active: product?.active ?? true,
     categoryId: product?.categoryId || categories[0]?.id || "",
   });
@@ -280,6 +281,14 @@ export default function ProductForm({ categories, product, kitItems: initialKitI
               <span style={{ color: "#3a2a10", fontSize: "0.875rem", fontWeight: 600 }}>{emoji} {lbl}</span>
             </label>
           ))}
+          {form.isConjunto && (
+            <label style={{ display: "flex", alignItems: "center", gap: "0.6rem", cursor: "pointer" }}>
+              <input type="checkbox" checked={form.sellComponentsSeparately}
+                onChange={e => setForm({ ...form, sellComponentsSeparately: e.target.checked })}
+                style={{ width: "1.1rem", height: "1.1rem", accentColor: "#b8891a" }} />
+              <span style={{ color: "#3a2a10", fontSize: "0.875rem", fontWeight: 600 }}>💰 Vender componentes separados</span>
+            </label>
+          )}
         </div>
       </div>
 
