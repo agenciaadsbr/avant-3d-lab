@@ -259,7 +259,7 @@ export default function FinanceiroPage() {
                 {
                   emoji: "💵", label: "Caixa disponível",
                   value: caixaData?.caixa || 0,
-                  sub: "Receitas + aportes − despesas operacionais",
+                  sub: "Receitas + aportes − todas as despesas",
                   color: (caixaData?.caixa || 0) >= 0 ? "#4aff7a" : "#ff6b6b",
                 },
                 {
