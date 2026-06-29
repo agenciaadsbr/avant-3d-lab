@@ -21,7 +21,7 @@ export async function GET(req: Request) {
       paymentStatus: { not: "paid" },
       status: { not: "cancelled" },
     },
-    select: { id: true, total: true, amountPaid: true, dueDate: true },
+    select: { id: true, total: true, amountPaid: true, dueDate: true, items: { select: { quantity: true, price: true, size: true, componentName: true, product: { select: { name: true } } } } },
     orderBy: { createdAt: "desc" },
   });
 
@@ -32,6 +32,7 @@ export async function GET(req: Request) {
     amountPaid: p.amountPaid,
     saldoPendente: p.total - p.amountPaid,
     dueDate: p.dueDate,
+    items: (p as any).items || [],
   }));
 
   return NextResponse.json({ pedidos: pedidosComSaldo });

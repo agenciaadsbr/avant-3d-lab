@@ -19,7 +19,7 @@ export default async function CadernoPage() {
   const clientIds = clientsWithDebts.map(c => c.userId);
   const clients = await prisma.user.findMany({
     where: { id: { in: clientIds } },
-    select: { id: true, name: true, email: true },
+    select: { id: true, name: true, email: true, phone: true },
   });
 
   const clientMap = Object.fromEntries(clients.map(c => [c.id, c]));
