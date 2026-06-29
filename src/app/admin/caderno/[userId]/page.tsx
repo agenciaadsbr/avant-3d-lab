@@ -16,7 +16,7 @@ export default async function CadernoDetalhePage({ params }: { params: Promise<{
     prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, phone: true } }),
     prisma.order.findMany({
       where: { userId, status: { not: "cancelled" } },
-      include: { items: true },
+      include: { items: { include: { product: { select: { name: true } } } } },
       orderBy: { createdAt: "desc" },
     }),
   ]);

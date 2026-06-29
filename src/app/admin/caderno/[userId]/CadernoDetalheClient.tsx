@@ -3,7 +3,7 @@ import { useState } from "react";
 import { formatCurrency } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
-type Item = { id: string; quantity: number; price: number; size: string | null };
+type Item = { id: string; quantity: number; price: number; size: string | null; componentName?: string | null; product?: { name: string } | null };
 type Order = {
   id: string; total: number; amountPaid: number; paymentStatus: string;
   createdAt: string; notes: string | null; items: Item[];
@@ -25,7 +25,13 @@ export default function CadernoDetalheClient({ user, orders }: { user: User; ord
   const enviarResumoWhatsApp = () => {
     if (!user.phone) return alert("Cliente sem telefone cadastrado.");
     const linhas = pendentes.flatMap(o =>
-      o.items.map(i => `👗 ${i.size || "Item"} × ${i.quantity} — ${formatCurrency(i.price * i.quantity)}`)
+      o.items.map(i => {
+        const nome = i.product?.name
+          ? (i.componentName ? `${i.product.name} - ${i.componentName}` : i.product.name)
+          : (i.size || "Item");
+        const tamanho = !i.componentName && i.size && i.size !== nome ? ` (${i.size})` : "";
+        return `👗 ${nome}${tamanho} × ${i.quantity} — ${formatCurrency(i.price * i.quantity)}`;
+      })
     ).join("\n");
     const msg = [
       `Olá ${user.name?.split(" ")[0]}! 👋`,
