@@ -74,19 +74,19 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
         const nome = i.product?.name
           ? (i.componentName ? `${i.product.name} - ${i.componentName}` : i.product.name)
           : (i.size || "Item");
-        return `👗 ${nome} × ${i.quantity} — ${fmt(i.price * i.quantity)}`;
+        return `- ${nome} x${i.quantity}  ${fmt(i.price * i.quantity)}`;
       })
     ).join("\n");
     const msg = [
-      `Olá ${selectedClient?.client.name?.split(" ")[0]}! 👋`,
+      `Ola ${selectedClient?.client.name?.split(" ")[0]}!`,
       ``,
-      `Segue o resumo das suas peças na *Access Fit*:`,
+      `Segue o resumo das suas pecas na *Access Fit*:`,
       ``,
       linhas || `Total: ${fmt(totalDevido)}`,
       ``,
-      `💰 *Total em aberto: ${fmt(totalDevido)}*`,
+      `*Total em aberto: ${fmt(totalDevido)}*`,
       ``,
-      `Qualquer dúvida estamos à disposição! 😊`,
+      `Qualquer duvida estamos a disposicao!`,
     ].join("\n");
     const ddi = phone.replace(/\D/g, "").startsWith("55") ? phone.replace(/\D/g, "") : `55${phone.replace(/\D/g, "")}`;
     window.open(`https://wa.me/${ddi}?text=${encodeURIComponent(msg)}`, "_blank");
