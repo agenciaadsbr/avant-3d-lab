@@ -30,19 +30,19 @@ export default function CadernoDetalheClient({ user, orders }: { user: User; ord
           ? (i.componentName ? `${i.product.name} - ${i.componentName}` : i.product.name)
           : (i.size || "Item");
         const tamanho = !i.componentName && i.size && i.size !== nome ? ` (${i.size})` : "";
-        return `👗 ${nome}${tamanho} × ${i.quantity} — ${formatCurrency(i.price * i.quantity)}`;
+        return `- ${nome}${tamanho} x${i.quantity}  ${formatCurrency(i.price * i.quantity)}`;
       })
     ).join("\n");
     const msg = [
-      `Olá ${user.name?.split(" ")[0]}! 👋`,
+      `Olá ${user.name?.split(" ")[0]}!`,
       ``,
       `Segue o resumo das suas peças na *Access Fit*:`,
       ``,
       linhas,
       ``,
-      `💰 *Total: ${formatCurrency(saldo)}*`,
+      `*Total: ${formatCurrency(saldo)}*`,
       ``,
-      `Qualquer dúvida estamos à disposição! 😊`,
+      `Qualquer dúvida estamos à disposição!`,
     ].join("\n");
     const phone = user.phone.replace(/\D/g, "");
     const ddi = phone.startsWith("55") ? phone : `55${phone}`;
