@@ -26,9 +26,12 @@ export default function CadernoDetalheClient({ user, orders }: { user: User; ord
     if (!user.phone) return alert("Cliente sem telefone cadastrado.");
     const linhas = pendentes.flatMap(o =>
       o.items.map(i => {
-        const nome = i.product?.name
-          ? (i.componentName ? `${i.product.name} - ${i.componentName}` : i.product.name)
-          : (i.size || "Item");
+        const isVM = i.product?.name === "Venda Manual";
+        const nome = isVM
+          ? (i.size || "Item")
+          : i.product?.name
+            ? (i.componentName ? `${i.product.name} - ${i.componentName}` : i.product.name)
+            : (i.size || "Item");
         const tamanho = !i.componentName && i.size && i.size !== nome ? ` (${i.size})` : "";
         return `- ${nome}${tamanho} x${i.quantity}  ${formatCurrency(i.price * i.quantity)}`;
       })

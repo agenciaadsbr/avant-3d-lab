@@ -71,9 +71,12 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
     if (!phone) return alert("Cliente sem telefone cadastrado. Cadastre em /admin/clientes.");
     const linhas = pedidos.flatMap(p =>
       (p.items || []).map(i => {
-        const nome = i.product?.name
-          ? (i.componentName ? `${i.product.name} - ${i.componentName}` : i.product.name)
-          : (i.size || "Item");
+        const isVM = i.product?.name === "Venda Manual";
+        const nome = isVM
+          ? (i.size || "Item")
+          : i.product?.name
+            ? (i.componentName ? `${i.product.name} - ${i.componentName}` : i.product.name)
+            : (i.size || "Item");
         return `- ${nome} x${i.quantity}  ${fmt(i.price * i.quantity)}`;
       })
     ).join("\n");
