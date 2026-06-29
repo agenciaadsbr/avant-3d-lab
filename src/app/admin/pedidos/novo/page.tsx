@@ -311,7 +311,8 @@ export default function NovoPedidoPage() {
                     )}
                   </div>
                   {/* Seleção de Componente (se for Conjunto) */}
-                  {selectedProducts[i]?.isConjunto && selectedProducts[i]?.sellComponentsSeparately && selectedProducts[i]?.conjuntoItems && (
+                  {console.log(`Item ${i}:`, { product: selectedProducts[i], isConjunto: selectedProducts[i]?.isConjunto, hasSellComponents: selectedProducts[i]?.sellComponentsSeparately, hasItems: selectedProducts[i]?.conjuntoItems?.length })}
+                  {selectedProducts[i]?.isConjunto && selectedProducts[i]?.sellComponentsSeparately && selectedProducts[i]?.conjuntoItems && selectedProducts[i]?.conjuntoItems.length > 0 && (
                     <select style={inp} value={selectedComponents[i] || ""}
                       onChange={e => {
                         const componentId = e.target.value;
