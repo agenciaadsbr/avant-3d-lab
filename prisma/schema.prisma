@@ -121,7 +121,6 @@ model ConjuntoItem {
   name       String
   price      Float
   quantity   Int     @default(1)
-  stock      Int     @default(0)
 
   conjunto Product @relation(fields: [conjuntoId], references: [id], onDelete: Cascade)
 }
