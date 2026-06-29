@@ -496,7 +496,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                   <div key={item.id} style={{ padding: "0.4rem 0", borderBottom: "1px solid rgba(140,100,20,0.06)", fontSize: "0.8rem" }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
                                       <span style={{ color: "#3a2a10", flex: 1 }}>
-                                        {item.componentName ? `${item.product.name} - ${item.componentName}` : item.size ? `${item.product.name} (${item.size})` : item.product.name}
+                                        {(item as any).componentName ? `${item.product.name} - ${(item as any).componentName}` : item.size ? `${item.product.name} (${item.size})` : item.product.name}
                                       </span>
                                       <span style={{ color: "#1a1510", fontWeight: 700 }}>{fmt(item.price)}</span>
                                       <button onClick={() => removeItem(order.id, item.id)} disabled={removingItemId === item.id}
