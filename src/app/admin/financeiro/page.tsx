@@ -53,7 +53,7 @@ export default function FinanceiroPage() {
     return "2026-06-01";
   });
   const [editandoCorte, setEditandoCorte] = useState(false);
-  const [showAporteForm, setShowAporteForm] = useState(false);
+  const [showAporteForm, setShowAporteForm] = useState<"aporte"|"retirada"|null>(null);
   const [aporteForm, setAporteForm] = useState({ amount: "", date: today(), description: "" });
   const [savingAporte, setSavingAporte] = useState(false);
 
@@ -77,9 +77,11 @@ export default function FinanceiroPage() {
   const saveAporte = async () => {
     if (!aporteForm.amount || !aporteForm.date) return;
     setSavingAporte(true);
-    await fetch("/api/admin/aportes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(aporteForm) });
+    const isRetirada = showAporteForm === "retirada";
+    const amount = isRetirada ? -Math.abs(parseFloat(aporteForm.amount)) : Math.abs(parseFloat(aporteForm.amount));
+    await fetch("/api/admin/aportes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...aporteForm, amount }) });
     setSavingAporte(false);
-    setShowAporteForm(false);
+    setShowAporteForm(null);
     setAporteForm({ amount: "", date: today(), description: "" });
     loadCaixa();
   };
@@ -238,16 +240,24 @@ export default function FinanceiroPage() {
                 )}
               </div>
             </div>
-            <button onClick={() => setShowAporteForm(v => !v)}
-              style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.875rem", padding: "0.75rem 1.5rem", fontWeight: 800, fontSize: "0.9rem", cursor: "pointer" }}>
-              + Injetar valor
-            </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <button onClick={() => setShowAporteForm(showAporteForm === "aporte" ? null : "aporte")}
+                style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.75rem", padding: "0.6rem 1.25rem", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer" }}>
+                💉 Injetar valor
+              </button>
+              <button onClick={() => setShowAporteForm(showAporteForm === "retirada" ? null : "retirada")}
+                style={{ backgroundColor: "rgba(192,64,64,0.15)", color: "#ffa0a0", border: "1px solid rgba(192,64,64,0.3)", borderRadius: "0.75rem", padding: "0.6rem 1.25rem", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer" }}>
+                💸 Retirada
+              </button>
+            </div>
           </div>
 
-          {/* Formulário de aporte */}
+          {/* Formulário de aporte / retirada */}
           {showAporteForm && (
-            <div style={{ backgroundColor: "#fff", border: "2px solid rgba(184,137,26,0.3)", borderRadius: "1rem", padding: "1.25rem" }}>
-              <p style={{ fontWeight: 800, color: "#1a1510", marginBottom: "1rem" }}>💰 Injeção de capital</p>
+            <div style={{ backgroundColor: "#fff", border: `2px solid ${showAporteForm === "retirada" ? "rgba(192,64,64,0.3)" : "rgba(184,137,26,0.3)"}`, borderRadius: "1rem", padding: "1.25rem" }}>
+              <p style={{ fontWeight: 800, color: "#1a1510", marginBottom: "1rem" }}>
+                {showAporteForm === "retirada" ? "💸 Retirada de capital" : "💉 Injeção de capital"}
+              </p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: "0.75rem", marginBottom: "0.875rem" }}>
                 <div>
                   <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#9a8060", display: "block", marginBottom: "0.3rem" }}>Valor (R$) *</label>
@@ -267,7 +277,7 @@ export default function FinanceiroPage() {
                   style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.6rem 1.5rem", fontWeight: 700, cursor: "pointer" }}>
                   {savingAporte ? "Salvando..." : "Confirmar aporte"}
                 </button>
-                <button onClick={() => setShowAporteForm(false)}
+                <button onClick={() => setShowAporteForm(null)}
                   style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", borderRadius: "0.625rem", padding: "0.6rem 1rem", fontWeight: 700, cursor: "pointer" }}>
                   Cancelar
                 </button>
@@ -314,22 +324,30 @@ export default function FinanceiroPage() {
 
           {/* Histórico de aportes */}
           {caixaAportes.length > 0 && (
-            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(26,106,154,0.15)", borderRadius: "1rem", overflow: "hidden" }}>
-              <div style={{ backgroundColor: "#e8f4fd", padding: "0.875rem 1.25rem" }}>
-                <h3 style={{ fontWeight: 800, fontSize: "0.9rem", color: "#1a4a7a" }}>💉 Aportes no período</h3>
+            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
+              <div style={{ backgroundColor: "#FAF6EE", padding: "0.875rem 1.25rem" }}>
+                <h3 style={{ fontWeight: 800, fontSize: "0.9rem", color: "#1a1510" }}>💰 Movimentações de capital no período</h3>
               </div>
-              {caixaAportes.map(a => (
-                <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.75rem 1.25rem", borderBottom: "1px solid rgba(140,100,20,0.05)" }}>
-                  <div>
-                    <p style={{ fontWeight: 600, color: "#1a1510", fontSize: "0.875rem" }}>{a.description || "Aporte de capital"}</p>
-                    <p style={{ fontSize: "0.72rem", color: "#9a8060" }}>{new Date(a.date).toLocaleDateString("pt-BR")}</p>
+              {caixaAportes.map(a => {
+                const isRetirada = a.amount < 0;
+                return (
+                  <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.75rem 1.25rem", borderBottom: "1px solid rgba(140,100,20,0.05)" }}>
+                    <div>
+                      <p style={{ fontWeight: 600, color: "#1a1510", fontSize: "0.875rem" }}>
+                        {isRetirada ? "💸 " : "💉 "}
+                        {a.description || (isRetirada ? "Retirada de capital" : "Aporte de capital")}
+                      </p>
+                      <p style={{ fontSize: "0.72rem", color: "#9a8060" }}>{new Date(a.date).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <span style={{ fontWeight: 700, color: isRetirada ? "#c04040" : "#1a6a9a" }}>
+                        {isRetirada ? "-" : "+"}{fmt(Math.abs(a.amount))}
+                      </span>
+                      <button onClick={() => deleteAporte(a.id)} style={{ backgroundColor: "#fee8e8", border: "none", borderRadius: "0.4rem", padding: "0.3rem 0.5rem", color: "#c04040", cursor: "pointer", fontSize: "0.75rem" }}>🗑️</button>
+                    </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <span style={{ fontWeight: 700, color: "#1a6a9a" }}>+{fmt(a.amount)}</span>
-                    <button onClick={() => deleteAporte(a.id)} style={{ backgroundColor: "#fee8e8", border: "none", borderRadius: "0.4rem", padding: "0.3rem 0.5rem", color: "#c04040", cursor: "pointer", fontSize: "0.75rem" }}>🗑️</button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
