@@ -27,7 +27,7 @@ export default function NovoPedidoPage() {
   const [productSearch, setProductSearch] = useState<string[]>([""]);
   const [productResults, setProductResults] = useState<Product[][]>([[]]);
   const [showProductDropdown, setShowProductDropdown] = useState<boolean[]>([false]);
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<(Product | undefined)[]>([]);
   const [selectedComponents, setSelectedComponents] = useState<(string | null)[]>([null]);
   const [orderStatus, setOrderStatus] = useState("delivered");
   const [paymentMethod, setPaymentMethod] = useState("pix");
@@ -87,7 +87,7 @@ export default function NovoPedidoPage() {
     setProductSearch(p => [...p, ""]);
     setProductResults(p => [...p, []]);
     setShowProductDropdown(p => [...p, false]);
-    setSelectedProducts(p => [...p, {}]);
+    setSelectedProducts(p => [...p, undefined]);
     setSelectedComponents(p => [...p, null]);
   };
   const removeItem = (i: number) => {

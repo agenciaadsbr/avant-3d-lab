@@ -13,26 +13,92 @@ type Props = {
   topClientes: any[]; anivEste: any[]; anivProximo: any[];
   inativos: any[]; tryOnEmAndamento: number; tryOnTotal: number;
   mesAtual: string; mesProximo: string;
+  depoimentos: any[]; listaEspera: any[]; indicacoes: any[];
+  instagramMetrics: any[]; metaMes: any; receitaMes: number;
+  mesAtualNum: number; anoAtual: number; allClients: any[];
 };
 
 const TABS = [
   { key: "visao", label: "📊 Visão Geral" },
+  { key: "metas", label: "🎯 Metas" },
   { key: "campanhas", label: "📣 Campanhas" },
   { key: "top", label: "🏆 Top Clientes" },
   { key: "aniversarios", label: "🎂 Aniversários" },
   { key: "cupons", label: "🎟️ Cupons" },
   { key: "inativos", label: "😴 Inativos" },
+  { key: "indicacoes", label: "🔁 Indicações" },
+  { key: "lista", label: "📋 Lista de Espera" },
+  { key: "depoimentos", label: "⭐ Depoimentos" },
+  { key: "instagram", label: "📱 Instagram" },
   { key: "tryon", label: "👗 Home Try-On" },
 ];
 
 const CHANNELS = ["instagram","whatsapp","email","tiktok","indicação","outro"];
 
-export default function MarketingClient({ gastosMarketing, totalMarketing, campanhas: campanhasInit, cupons: cuponsInit, topClientes, anivEste, anivProximo, inativos, tryOnEmAndamento, tryOnTotal, mesAtual, mesProximo }: Props) {
+export default function MarketingClient({ gastosMarketing, totalMarketing, campanhas: campanhasInit, cupons: cuponsInit, topClientes, anivEste, anivProximo, inativos, tryOnEmAndamento, tryOnTotal, mesAtual, mesProximo, depoimentos: depInit, listaEspera: listaInit, indicacoes: indInit, instagramMetrics: instaInit, metaMes, receitaMes, mesAtualNum, anoAtual, allClients }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState("visao");
   const [campanhas, setCampanhas] = useState(campanhasInit);
   const [cupons, setCupons] = useState(cuponsInit);
+  const [depoimentos, setDepoimentos] = useState(depInit);
+  const [listaEspera, setListaEspera] = useState(listaInit);
+  const [indicacoes, setIndicacoes] = useState(indInit);
+  const [instaMetrics, setInstaMetrics] = useState(instaInit);
   const [saving, setSaving] = useState(false);
+
+  // Meta form
+  const [metaTarget, setMetaTarget] = useState(metaMes?.target ? String(metaMes.target) : "");
+  const [savingMeta, setSavingMeta] = useState(false);
+
+  const saveMeta = async () => {
+    if (!metaTarget) return;
+    setSavingMeta(true);
+    await fetch("/api/admin/metas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ month: mesAtualNum, year: anoAtual, target: metaTarget }) });
+    setSavingMeta(false);
+    router.refresh();
+  };
+
+  // Depoimento form
+  const [showDepForm, setShowDepForm] = useState(false);
+  const [depForm, setDepForm] = useState({ clientName: "", text: "", rating: "5", product: "", photo: "" });
+  const saveDepoimento = async () => {
+    if (!depForm.clientName || !depForm.text) return;
+    setSaving(true);
+    const res = await fetch("/api/admin/depoimentos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(depForm) });
+    if (res.ok) { const d = await res.json(); setDepoimentos(p => [d, ...p]); setShowDepForm(false); setDepForm({ clientName: "", text: "", rating: "5", product: "", photo: "" }); }
+    setSaving(false);
+  };
+
+  // Indicação form
+  const [showIndForm, setShowIndForm] = useState(false);
+  const [indReferrer, setIndReferrer] = useState("");
+  const [indReferred, setIndReferred] = useState("");
+  const saveIndicacao = async () => {
+    if (!indReferrer || !indReferred) return;
+    setSaving(true);
+    const res = await fetch("/api/admin/indicacoes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ referrerId: indReferrer, referredId: indReferred }) });
+    if (res.ok) { const d = await res.json(); setIndicacoes(p => [d, ...p]); setShowIndForm(false); }
+    setSaving(false);
+  };
+
+  // Instagram form
+  const [showInstaForm, setShowInstaForm] = useState(false);
+  const [instaForm, setInstaForm] = useState({ date: new Date().toISOString().split("T")[0], followers: "", posts: "", reach: "", saves: "", likes: "", notes: "" });
+  const saveInsta = async () => {
+    if (!instaForm.followers) return;
+    setSaving(true);
+    const res = await fetch("/api/admin/instagram", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(instaForm) });
+    if (res.ok) { const d = await res.json(); setInstaMetrics(p => [d, ...p]); setShowInstaForm(false); }
+    setSaving(false);
+  };
+
+  const notifyWaitlist = async (id: string, name: string, phone: string, product: string) => {
+    const msg = `Olá ${name?.split(" ")[0]}! 👗 Boa notícia! O produto "${product}" que você esperava voltou ao estoque na Access Fit! Corre conferir: https://access-fit-xi.vercel.app`;
+    const ddi = phone.replace(/\D/g,"").startsWith("55") ? phone.replace(/\D/g,"") : `55${phone.replace(/\D/g,"")}`;
+    window.open(`https://wa.me/${ddi}?text=${encodeURIComponent(msg)}`, "_blank");
+    await fetch("/api/admin/lista-espera", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    setListaEspera(p => p.map((i: any) => i.id === id ? { ...i, notified: true } : i));
+  };
 
   // Campanha form
   const [showCampForm, setShowCampForm] = useState(false);
@@ -438,6 +504,265 @@ export default function MarketingClient({ gastosMarketing, totalMarketing, campa
               </table>
             )}
           </div>
+        </div>
+      )}
+
+      {/* METAS */}
+      {tab === "metas" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1.5rem" }}>
+            <h2 style={{ fontWeight: 800, fontSize: "0.95rem", color: "#1a1510", marginBottom: "1.25rem" }}>🎯 Meta de Vendas — {mesAtual} {anoAtual}</h2>
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-end", marginBottom: "1.5rem" }}>
+              <div style={{ flex: 1 }}>
+                <label style={label}>Meta do mês (R$)</label>
+                <input type="number" style={inp} placeholder="Ex: 3000" value={metaTarget} onChange={e => setMetaTarget(e.target.value)} />
+              </div>
+              <button onClick={saveMeta} disabled={savingMeta} style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.6rem 1.25rem", fontWeight: 700, cursor: "pointer" }}>
+                {savingMeta ? "..." : "Salvar"}
+              </button>
+            </div>
+            {metaMes && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+                  <span style={{ fontSize: "0.85rem", color: "#5a4a2a" }}>Progresso: {fmt(receitaMes)} de {fmt(metaMes.target)}</span>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 900, color: receitaMes >= metaMes.target ? "#1a8a2a" : "#b8891a" }}>
+                    {Math.round((receitaMes / metaMes.target) * 100)}%
+                  </span>
+                </div>
+                <div style={{ height: 20, backgroundColor: "#f0e8d0", borderRadius: 999, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.min((receitaMes / metaMes.target) * 100, 100)}%`, backgroundColor: receitaMes >= metaMes.target ? "#1a8a2a" : "#b8891a", borderRadius: 999, transition: "width 0.5s" }} />
+                </div>
+                {receitaMes >= metaMes.target
+                  ? <p style={{ color: "#1a8a2a", fontWeight: 700, marginTop: "0.75rem", fontSize: "0.9rem" }}>🎉 Meta batida! Parabéns!</p>
+                  : <p style={{ color: "#9a8060", fontSize: "0.8rem", marginTop: "0.5rem" }}>Faltam {fmt(metaMes.target - receitaMes)} para bater a meta</p>
+                }
+              </div>
+            )}
+            {!metaMes && <p style={{ color: "#b8a080", fontSize: "0.85rem" }}>Defina uma meta para este mês acima.</p>}
+          </div>
+        </div>
+      )}
+
+      {/* INDICAÇÕES */}
+      {tab === "indicacoes" && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
+            <p style={{ color: "#9a8060", fontSize: "0.875rem" }}>{indicacoes.length} indicações registradas</p>
+            <button onClick={() => setShowIndForm(v => !v)} style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.5rem 1rem", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer" }}>
+              + Registrar indicação
+            </button>
+          </div>
+          {showIndForm && (
+            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.15)", borderRadius: "1rem", padding: "1.25rem", marginBottom: "1rem" }}>
+              <p style={{ fontWeight: 800, color: "#1a1510", marginBottom: "1rem" }}>Nova Indicação</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.875rem" }}>
+                <div>
+                  <label style={label}>Quem indicou *</label>
+                  <select style={inp} value={indReferrer} onChange={e => setIndReferrer(e.target.value)}>
+                    <option value="">Selecione...</option>
+                    {allClients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={label}>Quem foi indicado *</label>
+                  <select style={inp} value={indReferred} onChange={e => setIndReferred(e.target.value)}>
+                    <option value="">Selecione...</option>
+                    {allClients.filter(c => c.id !== indReferrer).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button onClick={saveIndicacao} disabled={saving} style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.5rem 1.25rem", fontWeight: 700, cursor: "pointer" }}>{saving ? "..." : "Registrar"}</button>
+                <button onClick={() => setShowIndForm(false)} style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", borderRadius: "0.625rem", padding: "0.5rem 0.875rem", fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
+              </div>
+            </div>
+          )}
+          {indicacoes.length === 0 ? (
+            <div style={{ backgroundColor: "#fff", borderRadius: "1rem", border: "1px solid rgba(140,100,20,0.1)", padding: "3rem", textAlign: "center", color: "#b8a080" }}>
+              <p style={{ fontSize: "2rem" }}>🔁</p>
+              <p>Nenhuma indicação registrada ainda.</p>
+            </div>
+          ) : (
+            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+                <thead><tr style={{ backgroundColor: "#FAF6EE" }}>
+                  {["Quem indicou","Indicou","Data","Recompensa"].map(h => <th key={h} style={{ textAlign: "left", padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.72rem", fontWeight: 700, borderBottom: "1px solid rgba(140,100,20,0.1)" }}>{h}</th>)}
+                </tr></thead>
+                <tbody>
+                  {indicacoes.map((ind: any) => (
+                    <tr key={ind.id} style={{ borderBottom: "1px solid rgba(140,100,20,0.05)" }}>
+                      <td style={{ padding: "0.75rem 1rem", fontWeight: 700 }}>{ind.referrer?.name}</td>
+                      <td style={{ padding: "0.75rem 1rem", color: "#5a4a2a" }}>{ind.referred?.name}</td>
+                      <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem" }}>{new Date(ind.createdAt).toLocaleDateString("pt-BR")}</td>
+                      <td style={{ padding: "0.75rem 1rem" }}>
+                        {ind.rewardGiven
+                          ? <span style={{ backgroundColor: "#e8f8e8", color: "#1a8a2a", fontSize: "0.72rem", fontWeight: 700, padding: "0.2rem 0.5rem", borderRadius: 999 }}>✅ Dada</span>
+                          : <button onClick={async () => { await fetch("/api/admin/indicacoes", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: ind.id, rewardGiven: true }) }); setIndicacoes(p => p.map((i: any) => i.id === ind.id ? { ...i, rewardGiven: true } : i)); }} style={{ backgroundColor: "#fff8e1", border: "1px solid rgba(184,137,26,0.2)", color: "#856404", fontSize: "0.72rem", fontWeight: 700, padding: "0.2rem 0.5rem", borderRadius: 999, cursor: "pointer" }}>Marcar dada</button>
+                        }
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* LISTA DE ESPERA */}
+      {tab === "lista" && (
+        <div>
+          <p style={{ color: "#9a8060", fontSize: "0.875rem", marginBottom: "1rem" }}>{listaEspera.length} clientes aguardando reposição</p>
+          {listaEspera.length === 0 ? (
+            <div style={{ backgroundColor: "#fff", borderRadius: "1rem", border: "1px solid rgba(140,100,20,0.1)", padding: "3rem", textAlign: "center", color: "#b8a080" }}>
+              <p style={{ fontSize: "2rem" }}>📋</p>
+              <p>Nenhuma cliente na lista de espera ainda.</p>
+              <p style={{ fontSize: "0.8rem", marginTop: "0.5rem" }}>O botão "Me avise" aparece nas páginas de produtos sem estoque.</p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              {listaEspera.map((item: any) => (
+                <div key={item.id} style={{ backgroundColor: item.notified ? "#f0f0f0" : "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1rem 1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", opacity: item.notified ? 0.65 : 1 }}>
+                  <div>
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                      <span style={{ fontWeight: 700, color: "#1a1510" }}>{item.name}</span>
+                      {item.product?.stock > 0 && <span style={{ backgroundColor: "#e8f8e8", color: "#1a8a2a", fontSize: "0.7rem", fontWeight: 700, padding: "0.15rem 0.5rem", borderRadius: 999 }}>Em estoque!</span>}
+                      {item.notified && <span style={{ backgroundColor: "#f0f0f0", color: "#9a8060", fontSize: "0.7rem", fontWeight: 700, padding: "0.15rem 0.5rem", borderRadius: 999 }}>Notificada</span>}
+                    </div>
+                    <p style={{ fontSize: "0.78rem", color: "#7a6030", marginTop: "0.1rem" }}>
+                      {item.product?.sku && <span style={{ fontFamily: "monospace", marginRight: 6, color: "#b8891a" }}>{item.product.sku}</span>}
+                      {item.product?.name}
+                    </p>
+                    <p style={{ fontSize: "0.72rem", color: "#9a8060" }}>{item.phone} · {new Date(item.createdAt).toLocaleDateString("pt-BR")}</p>
+                  </div>
+                  {!item.notified && item.phone && (
+                    <button onClick={() => notifyWaitlist(item.id, item.name, item.phone, item.product?.name || "")}
+                      style={{ backgroundColor: "#25D366", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.5rem 1rem", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer" }}>
+                      📲 Avisar
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* DEPOIMENTOS */}
+      {tab === "depoimentos" && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
+            <p style={{ color: "#9a8060", fontSize: "0.875rem" }}>{depoimentos.length} depoimentos cadastrados</p>
+            <button onClick={() => setShowDepForm(v => !v)} style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.5rem 1rem", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer" }}>
+              + Adicionar depoimento
+            </button>
+          </div>
+          {showDepForm && (
+            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.15)", borderRadius: "1rem", padding: "1.25rem", marginBottom: "1rem" }}>
+              <p style={{ fontWeight: 800, color: "#1a1510", marginBottom: "1rem" }}>Novo Depoimento</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                <div><label style={label}>Nome da cliente *</label><input style={inp} placeholder="Ex: Fernanda S." value={depForm.clientName} onChange={e => setDepForm(f => ({ ...f, clientName: e.target.value }))} /></div>
+                <div><label style={label}>Avaliação</label>
+                  <select style={inp} value={depForm.rating} onChange={e => setDepForm(f => ({ ...f, rating: e.target.value }))}>
+                    {[5,4,3,2,1].map(n => <option key={n} value={n}>{"⭐".repeat(n)} {n}/5</option>)}
+                  </select>
+                </div>
+                <div><label style={label}>Produto (opcional)</label><input style={inp} placeholder="Ex: Conjunto Flare Verde" value={depForm.product} onChange={e => setDepForm(f => ({ ...f, product: e.target.value }))} /></div>
+                <div><label style={label}>URL da foto (opcional)</label><input style={inp} placeholder="https://..." value={depForm.photo} onChange={e => setDepForm(f => ({ ...f, photo: e.target.value }))} /></div>
+                <div style={{ gridColumn: "1/-1" }}><label style={label}>Depoimento *</label><textarea rows={3} style={{ ...inp, resize: "vertical" }} placeholder="O que a cliente disse..." value={depForm.text} onChange={e => setDepForm(f => ({ ...f, text: e.target.value }))} /></div>
+              </div>
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.875rem" }}>
+                <button onClick={saveDepoimento} disabled={saving} style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.5rem 1.25rem", fontWeight: 700, cursor: "pointer" }}>{saving ? "..." : "Salvar"}</button>
+                <button onClick={() => setShowDepForm(false)} style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", borderRadius: "0.625rem", padding: "0.5rem 0.875rem", fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
+              </div>
+            </div>
+          )}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
+            {depoimentos.length === 0 ? (
+              <div style={{ backgroundColor: "#fff", borderRadius: "1rem", border: "1px solid rgba(140,100,20,0.1)", padding: "3rem", textAlign: "center", color: "#b8a080", gridColumn: "1/-1" }}>
+                <p style={{ fontSize: "2rem" }}>⭐</p><p>Nenhum depoimento ainda.</p>
+              </div>
+            ) : depoimentos.map((d: any) => (
+              <div key={d.id} style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1.25rem" }}>
+                <div style={{ display: "flex", gap: "0.75rem", marginBottom: "0.75rem" }}>
+                  {d.photo && <img src={d.photo} alt="" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
+                  <div>
+                    <p style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.875rem" }}>{d.clientName}</p>
+                    <p style={{ fontSize: "0.8rem" }}>{"⭐".repeat(d.rating)}</p>
+                    {d.product && <p style={{ fontSize: "0.72rem", color: "#b8891a" }}>{d.product}</p>}
+                  </div>
+                </div>
+                <p style={{ fontSize: "0.85rem", color: "#5a4a2a", lineHeight: 1.6, fontStyle: "italic" }}>"{d.text}"</p>
+                <button onClick={async () => { await fetch(`/api/admin/depoimentos/${d.id}`, { method: "DELETE" }); setDepoimentos(p => p.filter((t: any) => t.id !== d.id)); }}
+                  style={{ marginTop: "0.75rem", backgroundColor: "#fee8e8", border: "none", borderRadius: "0.4rem", padding: "0.3rem 0.625rem", color: "#c04040", fontSize: "0.72rem", cursor: "pointer" }}>
+                  Excluir
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* INSTAGRAM */}
+      {tab === "instagram" && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
+            <p style={{ color: "#9a8060", fontSize: "0.875rem" }}>Registros manuais de performance</p>
+            <button onClick={() => setShowInstaForm(v => !v)} style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.5rem 1rem", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer" }}>
+              + Registrar semana
+            </button>
+          </div>
+          {showInstaForm && (
+            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.15)", borderRadius: "1rem", padding: "1.25rem", marginBottom: "1rem" }}>
+              <p style={{ fontWeight: 800, color: "#1a1510", marginBottom: "1rem" }}>Novo registro</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem" }}>
+                <div><label style={label}>Data</label><input type="date" style={inp} value={instaForm.date} onChange={e => setInstaForm(f => ({ ...f, date: e.target.value }))} /></div>
+                <div><label style={label}>Seguidores *</label><input type="number" style={inp} placeholder="0" value={instaForm.followers} onChange={e => setInstaForm(f => ({ ...f, followers: e.target.value }))} /></div>
+                <div><label style={label}>Posts</label><input type="number" style={inp} placeholder="0" value={instaForm.posts} onChange={e => setInstaForm(f => ({ ...f, posts: e.target.value }))} /></div>
+                <div><label style={label}>Alcance</label><input type="number" style={inp} placeholder="0" value={instaForm.reach} onChange={e => setInstaForm(f => ({ ...f, reach: e.target.value }))} /></div>
+                <div><label style={label}>Curtidas</label><input type="number" style={inp} placeholder="0" value={instaForm.likes} onChange={e => setInstaForm(f => ({ ...f, likes: e.target.value }))} /></div>
+                <div><label style={label}>Salvamentos</label><input type="number" style={inp} placeholder="0" value={instaForm.saves} onChange={e => setInstaForm(f => ({ ...f, saves: e.target.value }))} /></div>
+              </div>
+              <div style={{ marginTop: "0.5rem" }}><label style={label}>Observações</label><input style={inp} placeholder="Ex: Campanha de lançamento" value={instaForm.notes} onChange={e => setInstaForm(f => ({ ...f, notes: e.target.value }))} /></div>
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.875rem" }}>
+                <button onClick={saveInsta} disabled={saving} style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.5rem 1.25rem", fontWeight: 700, cursor: "pointer" }}>{saving ? "..." : "Salvar"}</button>
+                <button onClick={() => setShowInstaForm(false)} style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", borderRadius: "0.625rem", padding: "0.5rem 0.875rem", fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
+              </div>
+            </div>
+          )}
+          {instaMetrics.length === 0 ? (
+            <div style={{ backgroundColor: "#fff", borderRadius: "1rem", border: "1px solid rgba(140,100,20,0.1)", padding: "3rem", textAlign: "center", color: "#b8a080" }}>
+              <p style={{ fontSize: "2rem" }}>📱</p><p>Nenhum registro ainda. Registre os dados da semana!</p>
+            </div>
+          ) : (
+            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+                <thead><tr style={{ backgroundColor: "#FAF6EE" }}>
+                  {["Data","Seguidores","Posts","Alcance","Curtidas","Salvamentos","Obs"].map(h => <th key={h} style={{ textAlign: "left", padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.72rem", fontWeight: 700, borderBottom: "1px solid rgba(140,100,20,0.1)" }}>{h}</th>)}
+                </tr></thead>
+                <tbody>
+                  {instaMetrics.map((m: any, i: number) => {
+                    const prev = instaMetrics[i + 1];
+                    const growth = prev ? m.followers - prev.followers : null;
+                    return (
+                      <tr key={m.id} style={{ borderBottom: "1px solid rgba(140,100,20,0.05)" }}>
+                        <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem" }}>{new Date(m.date).toLocaleDateString("pt-BR")}</td>
+                        <td style={{ padding: "0.75rem 1rem", fontWeight: 700 }}>
+                          {m.followers.toLocaleString("pt-BR")}
+                          {growth !== null && <span style={{ fontSize: "0.7rem", color: growth >= 0 ? "#1a8a2a" : "#c04040", marginLeft: 4 }}>{growth >= 0 ? "▲" : "▼"}{Math.abs(growth)}</span>}
+                        </td>
+                        <td style={{ padding: "0.75rem 1rem" }}>{m.posts}</td>
+                        <td style={{ padding: "0.75rem 1rem" }}>{m.reach.toLocaleString("pt-BR")}</td>
+                        <td style={{ padding: "0.75rem 1rem" }}>{m.likes.toLocaleString("pt-BR")}</td>
+                        <td style={{ padding: "0.75rem 1rem" }}>{m.saves.toLocaleString("pt-BR")}</td>
+                        <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.75rem" }}>{m.notes || "—"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

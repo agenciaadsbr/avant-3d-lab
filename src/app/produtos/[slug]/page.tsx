@@ -27,6 +27,10 @@ export default function ProductPage() {
   const [added, setAdded] = useState(false);
   const [lightbox, setLightbox] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
+  const [showWaitlist, setShowWaitlist] = useState(false);
+  const [waitName, setWaitName] = useState("");
+  const [waitPhone, setWaitPhone] = useState("");
+  const [waitSaved, setWaitSaved] = useState(false);
 
   useEffect(() => {
     fetch(`/api/produtos/${params.slug}`)
