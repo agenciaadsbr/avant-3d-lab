@@ -125,6 +125,20 @@ model ConjuntoItem {
   conjunto Product @relation(fields: [conjuntoId], references: [id], onDelete: Cascade)
 }
 
+model Campaign {
+  id        String    @id @default(cuid())
+  name      String
+  channel   String    @default("instagram")
+  startDate DateTime
+  endDate   DateTime?
+  budget    Float?
+  result    String?
+  notes     String?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
 model Coupon {
   id          String    @id @default(cuid())
   code        String    @unique

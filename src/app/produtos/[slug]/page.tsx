@@ -6,10 +6,13 @@ import { useCart } from "@/store/cart";
 import { formatCurrency, parseJson } from "@/lib/utils";
 import Link from "next/link";
 
+type ConjuntoItem = { id: string; name: string; price: number; quantity: number };
+
 type Product = {
   id: string; name: string; slug: string; description: string | null;
   price: number; compareAt: number | null; images: string;
   sizes: string; colors: string; stock: number; sku: string | null;
+  isConjunto: boolean; sellComponentsSeparately: boolean; conjuntoItems: ConjuntoItem[];
   category: { name: string; slug: string };
 };
 
@@ -23,6 +26,7 @@ export default function ProductPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [added, setAdded] = useState(false);
   const [lightbox, setLightbox] = useState(false);
+  const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/produtos/${params.slug}`)
@@ -57,7 +61,23 @@ export default function ProductPage() {
 
   const handleAddToCart = () => {
     if (outOfStock) return;
-    addItem({ productId: product.id, name: product.name, price: product.price, image: images[0] || "", size: selectedSize || "Único", color: "Padrão", quantity: 1 });
+    if (product.isConjunto && product.sellComponentsSeparately && !selectedComponent) {
+      alert("Selecione qual opção deseja comprar");
+      return;
+    }
+
+    let itemName = product.name;
+    let itemPrice = product.price;
+
+    if (selectedComponent && selectedComponent !== "completo") {
+      const component = product.conjuntoItems.find(c => c.id === selectedComponent);
+      if (component) {
+        itemName = `${product.name} - ${component.name}`;
+        itemPrice = component.price;
+      }
+    }
+
+    addItem({ productId: product.id, name: itemName, price: itemPrice, image: images[0] || "", size: selectedSize || "Único", color: "Padrão", quantity: 1 });
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);
     openCart();
@@ -192,6 +212,32 @@ export default function ProductPage() {
                       style={{ padding: "0.55rem 1.1rem", borderRadius: "0.625rem", border: `2px solid ${selectedSize === size ? "#b8891a" : "rgba(140,100,20,0.2)"}`, backgroundColor: selectedSize === size ? "#b8891a" : "#fff", color: selectedSize === size ? "#fff" : "#5a4a2a", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", transition: "all 0.15s" }}>
                       {size}
                     </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Seleção de Componentes */}
+            {product.isConjunto && product.sellComponentsSeparately && (
+              <div style={{ marginTop: "1.75rem", padding: "1.25rem", backgroundColor: "#fff", borderRadius: "0.875rem", border: "1px solid rgba(184,137,26,0.2)" }}>
+                <h3 style={{ fontSize: "0.72rem", fontWeight: 800, color: "#b8891a", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "1rem" }}>💰 Escolha o que comprar</h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer", padding: "0.75rem", backgroundColor: selectedComponent === "completo" ? "rgba(184,137,26,0.08)" : "#FAF6EE", borderRadius: "0.625rem", border: `2px solid ${selectedComponent === "completo" ? "#b8891a" : "rgba(140,100,20,0.1)"}` }}>
+                    <input type="radio" name="component" value="completo" checked={selectedComponent === "completo"} onChange={() => setSelectedComponent("completo")} style={{ width: "1.1rem", height: "1.1rem", accentColor: "#b8891a", cursor: "pointer" }} />
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.9rem" }}>Conjunto Completo</p>
+                      <p style={{ fontSize: "0.8rem", color: "#9a8060" }}>Todas as peças juntas</p>
+                    </div>
+                    <span style={{ fontSize: "1rem", fontWeight: 900, color: "#b8891a" }}>{formatCurrency(product.price)}</span>
+                  </label>
+                  {product.conjuntoItems.map(comp => (
+                    <label key={comp.id} style={{ display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer", padding: "0.75rem", backgroundColor: selectedComponent === comp.id ? "rgba(184,137,26,0.08)" : "#FAF6EE", borderRadius: "0.625rem", border: `2px solid ${selectedComponent === comp.id ? "#b8891a" : "rgba(140,100,20,0.1)"}` }}>
+                      <input type="radio" name="component" value={comp.id} checked={selectedComponent === comp.id} onChange={() => setSelectedComponent(comp.id)} style={{ width: "1.1rem", height: "1.1rem", accentColor: "#b8891a", cursor: "pointer" }} />
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.9rem" }}>{comp.name}</p>
+                      </div>
+                      <span style={{ fontSize: "1rem", fontWeight: 900, color: "#b8891a" }}>{formatCurrency(comp.price)}</span>
+                    </label>
                   ))}
                 </div>
               </div>
