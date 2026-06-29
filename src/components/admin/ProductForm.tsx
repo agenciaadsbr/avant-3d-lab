@@ -11,7 +11,7 @@ type Product = {
   sizes: string; colors: string; stock: number;
   featuredHero: boolean; featured: boolean; isKit: boolean; active: boolean; categoryId: string;
 };
-type KitItemForm = { productId: string; quantity: number; name?: string; price?: number };
+type KitItemForm = { productId: string; quantity: number; name?: string; price?: number; customName?: string };
 
 const field: React.CSSProperties = {
   width: "100%", padding: "0.7rem 0.875rem",
@@ -45,10 +45,11 @@ export default function ProductForm({ categories, product, allProducts = [], kit
   const imgInputRef = useRef<HTMLInputElement>(null);
 
   const [kitItems, setKitItems] = useState<KitItemForm[]>(
-    initialKitItems.map(item => ({ productId: item.product.id, quantity: item.quantity, name: item.product.name, price: item.product.price }))
+    initialKitItems.map(item => ({ productId: item.product.id, quantity: item.quantity, name: item.product.name, price: item.product.price, customName: (item as any).customName }))
   );
   const [newKitProductId, setNewKitProductId] = useState("");
   const [newKitQuantity, setNewKitQuantity] = useState(1);
+  const [newKitCustomName, setNewKitCustomName] = useState("");
 
   const [form, setForm] = useState({
     name: product?.name || "",
@@ -106,13 +107,10 @@ export default function ProductForm({ categories, product, allProducts = [], kit
     }
     const selected = allProducts.find(p => p.id === newKitProductId);
     if (!selected) return;
-    if (kitItems.some(k => k.productId === newKitProductId)) {
-      setError("Este produto já está no kit");
-      return;
-    }
-    setKitItems([...kitItems, { productId: newKitProductId, quantity: newKitQuantity, name: selected.name, price: selected.price }]);
+    setKitItems([...kitItems, { productId: newKitProductId, quantity: newKitQuantity, name: selected.name, price: selected.price, customName: newKitCustomName }]);
     setNewKitProductId("");
     setNewKitQuantity(1);
+    setNewKitCustomName("");
     setError("");
   };
 
@@ -134,7 +132,7 @@ export default function ProductForm({ categories, product, allProducts = [], kit
       images: JSON.stringify(form.images.split("\n").map((s: string) => s.trim()).filter(Boolean)),
       sizes: JSON.stringify(form.sizes.split(",").map((s: string) => s.trim()).filter(Boolean)),
       colors: JSON.stringify(form.colors.split(",").map((s: string) => s.trim()).filter(Boolean)),
-      ...(form.isKit && { kitItems: kitItems.map(k => ({ productId: k.productId, quantity: k.quantity })) }),
+      ...(form.isKit && { kitItems: kitItems.map(k => ({ productId: k.productId, quantity: k.quantity, customName: k.customName })) }),
     };
 
     const res = await fetch(
@@ -301,7 +299,7 @@ export default function ProductForm({ categories, product, allProducts = [], kit
                   <div key={item.productId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.75rem", backgroundColor: "#FAF6EE", borderRadius: "0.5rem", border: "1px solid rgba(140,100,20,0.1)" }}>
                     <div>
                       <p style={{ fontWeight: 600, color: "#1a1510", fontSize: "0.9rem" }}>
-                        {item.name} <span style={{ color: "#9a8060" }}>x{item.quantity}</span>
+                        {item.name} {item.customName && <span style={{ color: "#b8891a" }}>({item.customName})</span>} <span style={{ color: "#9a8060" }}>x{item.quantity}</span>
                       </p>
                       <p style={{ fontSize: "0.8rem", color: "#9a8060" }}>R$ {item.price?.toFixed(2)}</p>
                     </div>
@@ -329,7 +327,11 @@ export default function ProductForm({ categories, product, allProducts = [], kit
                   ))}
                 </select>
               </div>
-              <div style={{ width: "70px" }}>
+              <div style={{ flex: 0.8, minWidth: "120px" }}>
+                <label style={label}>Nome (ex: Short)</label>
+                <input type="text" value={newKitCustomName} onChange={e => setNewKitCustomName(e.target.value)} placeholder="Short, Top..." style={field} onFocus={focus} onBlur={blur} />
+              </div>
+              <div style={{ width: "60px" }}>
                 <label style={label}>Qtd</label>
                 <input type="number" min="1" max="10" value={newKitQuantity} onChange={e => setNewKitQuantity(Math.max(1, parseInt(e.target.value) || 1))} style={field} onFocus={focus} onBlur={blur} />
               </div>

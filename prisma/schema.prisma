@@ -116,10 +116,11 @@ model Product {
 }
 
 model KitItem {
-  id        String  @id @default(cuid())
-  kitId     String
-  productId String
-  quantity  Int     @default(1)
+  id         String  @id @default(cuid())
+  kitId      String
+  productId  String
+  quantity   Int     @default(1)
+  customName String?
 
   kit     Product @relation("kit", fields: [kitId], references: [id], onDelete: Cascade)
   product Product @relation("item", fields: [productId], references: [id], onDelete: Cascade)
