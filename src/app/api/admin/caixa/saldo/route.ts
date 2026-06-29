@@ -12,23 +12,21 @@ export async function GET(req: Request) {
   const from = searchParams.get("from");
   const dateFilter = from ? { gte: new Date(from) } : undefined;
 
-  const [receitas, despesasOperacionais, despesasEstoque, aportes, estoque, cadernoAberto] = await Promise.all([
-    // Receitas recebidas
+  const [receitas, todasDespesas, despesasEstoque, aportes, estoque, cadernoAberto] = await Promise.all([
     prisma.order.aggregate({
       _sum: { amountPaid: true },
       where: { status: { not: "cancelled" }, ...(dateFilter ? { createdAt: dateFilter } : {}) },
     }),
-    // Despesas operacionais (excluindo reposição de estoque)
+    // Todas as despesas (incluindo estoque)
     prisma.expense.aggregate({
       _sum: { amount: true },
-      where: { category: { not: "estoque" }, ...(dateFilter ? { date: dateFilter } : {}) },
+      where: dateFilter ? { date: dateFilter } : {},
     }),
-    // Despesas de estoque separadas
+    // Estoque separado só para info
     prisma.expense.aggregate({
       _sum: { amount: true },
       where: { category: "estoque", ...(dateFilter ? { date: dateFilter } : {}) },
     }),
-    // Aportes e retiradas de capital
     prisma.cashInjection.aggregate({
       _sum: { amount: true },
       where: dateFilter ? { date: dateFilter } : {},
@@ -38,7 +36,7 @@ export async function GET(req: Request) {
       _sum: { costPrice: true },
       where: { active: true, NOT: { slug: "venda-manual" } },
     }),
-    // A receber (caderno)
+    // A receber
     prisma.order.findMany({
       where: { paymentStatus: { not: "paid" }, status: { not: "cancelled" } },
       select: { total: true, amountPaid: true },
@@ -46,21 +44,21 @@ export async function GET(req: Request) {
   ]);
 
   const receitasVal    = receitas._sum.amountPaid || 0;
-  const despesasOpVal  = despesasOperacionais._sum.amount || 0;
+  const despesasVal    = todasDespesas._sum.amount || 0;
   const despesasEstVal = despesasEstoque._sum.amount || 0;
   const aportesVal     = aportes._sum.amount || 0;
   const estoqueVal     = estoque._sum.costPrice || 0;
   const aReceberVal    = cadernoAberto.reduce((s, o) => s + (o.total - o.amountPaid), 0);
 
-  // Caixa = receitas + aportes - despesas operacionais (estoque não conta pois virou mercadoria)
-  const caixa = receitasVal + aportesVal - despesasOpVal;
+  // Caixa real = receitas + aportes - TODAS as despesas (incluindo estoque)
+  const caixa = receitasVal + aportesVal - despesasVal;
 
   // Patrimônio = caixa + estoque (ao custo) + a receber
   const patrimonio = caixa + estoqueVal + aReceberVal;
 
   return NextResponse.json({
     caixa,
-    despesasOperacionais: despesasOpVal,
+    despesas: despesasVal,
     despesasEstoque: despesasEstVal,
     estoqueValor: estoqueVal,
     aReceber: aReceberVal,
