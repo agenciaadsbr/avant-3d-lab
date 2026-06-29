@@ -62,8 +62,9 @@ export default function ProductPage() {
   const sizes = parseJson<string[]>(product.sizes, []);
   const discount = product.compareAt ? Math.round((1 - product.price / product.compareAt) * 100) : null;
   // Para conjuntos com componentes separados: esgotado só se o conjunto E todos os componentes estiverem sem estoque
+  // stock >= 0 = disponível (0 = padrão/nunca vendido), stock < 0 = esgotado (foi vendido)
   const hasAvailableComponents = product.isConjunto && product.sellComponentsSeparately
-    ? product.conjuntoItems.some(c => (c.stock ?? 0) > 0)
+    ? product.conjuntoItems.some(c => (c.stock ?? 0) >= 0)
     : false;
   const outOfStock = product.stock === 0 && !hasAvailableComponents;
 
@@ -86,7 +87,7 @@ export default function ProductPage() {
     // Bloqueia se selecionou componente sem estoque
     if (selectedComponent && selectedComponent !== "completo") {
       const comp = product.conjuntoItems.find(c => c.id === selectedComponent);
-      if (comp && (comp.stock ?? 0) === 0) return;
+      if (comp && (comp.stock ?? 0) < 0) return;
     }
     if (outOfStock) return;
 
@@ -270,7 +271,7 @@ export default function ProductPage() {
                   {/* Componentes individuais */}
                   {product.conjuntoItems.map(comp => {
                     const compStock = comp.stock ?? 0;
-                    const compSoldOut = compStock === 0;
+                    const compSoldOut = compStock < 0; // < 0 = foi vendido e esgotou
                     return (
                       <label key={comp.id} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem", backgroundColor: compSoldOut ? "#f5f5f5" : selectedComponent === comp.id ? "rgba(184,137,26,0.08)" : "#FAF6EE", borderRadius: "0.625rem", border: `2px solid ${compSoldOut ? "rgba(140,100,20,0.08)" : selectedComponent === comp.id ? "#b8891a" : "rgba(140,100,20,0.1)"}`, cursor: compSoldOut ? "not-allowed" : "pointer", opacity: compSoldOut ? 0.55 : 1 }}>
                         <input type="radio" name="component" value={comp.id} checked={selectedComponent === comp.id} onChange={() => !compSoldOut && setSelectedComponent(comp.id)} disabled={compSoldOut} style={{ width: "1.1rem", height: "1.1rem", accentColor: "#b8891a", cursor: compSoldOut ? "not-allowed" : "pointer" }} />
@@ -291,7 +292,7 @@ export default function ProductPage() {
               const selectedComp = selectedComponent && selectedComponent !== "completo"
                 ? product.conjuntoItems.find(c => c.id === selectedComponent) : null;
               const selectedCompSoldOut = selectedComponent === "completo" ? product.stock === 0
-                : selectedComp ? (selectedComp.stock ?? 0) === 0 : false;
+                : selectedComp ? (selectedComp.stock ?? 0) < 0 : false;
               const btnDisabled = outOfStock || selectedCompSoldOut;
               return (
                 <button onClick={handleAddToCart} disabled={btnDisabled}
