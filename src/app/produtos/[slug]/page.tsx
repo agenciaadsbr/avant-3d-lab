@@ -269,6 +269,37 @@ export default function ProductPage() {
               {added ? "✓ Adicionado ao carrinho!" : outOfStock ? "Esgotado" : "🛍️ Adicionar ao Carrinho"}
             </button>
 
+            {/* Me avise quando voltar */}
+            {outOfStock && (
+              <div style={{ marginTop: "0.75rem" }}>
+                {!waitSaved ? (!showWaitlist ? (
+                  <button onClick={() => setShowWaitlist(true)} style={{ width: "100%", padding: "0.875rem", backgroundColor: "#FAF6EE", border: "2px solid #b8891a", borderRadius: "0.875rem", color: "#b8891a", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer" }}>
+                    🔔 Me avise quando voltar ao estoque
+                  </button>
+                ) : (
+                  <div style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "0.875rem", padding: "1.25rem" }}>
+                    <p style={{ fontWeight: 700, color: "#1a1510", marginBottom: "0.875rem" }}>🔔 Lista de espera</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem", marginBottom: "0.875rem" }}>
+                      <input placeholder="Seu nome" value={waitName} onChange={e => setWaitName(e.target.value)} style={{ padding: "0.625rem 0.875rem", border: "1px solid rgba(140,100,20,0.25)", borderRadius: "0.5rem", fontSize: "0.875rem", backgroundColor: "#fff", outline: "none" }} />
+                      <input placeholder="WhatsApp (51) 9..." value={waitPhone} onChange={e => setWaitPhone(e.target.value)} style={{ padding: "0.625rem 0.875rem", border: "1px solid rgba(140,100,20,0.25)", borderRadius: "0.5rem", fontSize: "0.875rem", backgroundColor: "#fff", outline: "none" }} />
+                    </div>
+                    <div style={{ display: "flex", gap: "0.5rem" }}>
+                      <button onClick={async () => { if (!waitName || !waitPhone) return; await fetch("/api/lista-espera", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId: product.id, name: waitName, phone: waitPhone }) }); setWaitSaved(true); }}
+                        style={{ flex: 1, backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.625rem", fontWeight: 700, cursor: "pointer" }}>
+                        Entrar na lista
+                      </button>
+                      <button onClick={() => setShowWaitlist(false)} style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", borderRadius: "0.625rem", padding: "0.625rem 0.875rem", fontWeight: 700, cursor: "pointer" }}>✕</button>
+                    </div>
+                  </div>
+                )) : (
+                  <div style={{ backgroundColor: "#e8f8e8", border: "1px solid rgba(26,138,42,0.2)", borderRadius: "0.875rem", padding: "1rem", textAlign: "center" }}>
+                    <p style={{ fontWeight: 700, color: "#1a8a2a" }}>✅ Você está na lista!</p>
+                    <p style={{ fontSize: "0.8rem", color: "#5a8a5a", marginTop: "0.25rem" }}>Avisaremos quando chegar.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Descrição */}
             {product.description && (
               <div style={{ marginTop: "1.75rem", padding: "1.25rem", backgroundColor: "#fff", borderRadius: "0.875rem", border: "1px solid rgba(140,100,20,0.1)" }}>
