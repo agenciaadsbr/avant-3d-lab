@@ -612,6 +612,36 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                             {/* Info pagamento + cliente */}
                             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
 
+                              {/* Botão confirmar pedido por WhatsApp */}
+                              {order.user.phone && (
+                                <a
+                                  href={(() => {
+                                    const itens = order.items.map(i =>
+                                      `✅ ${i.product.name}${i.size ? ` (${i.size})` : ""} × ${i.quantity} — ${fmt(i.price * i.quantity)}`
+                                    ).join("\n");
+                                    const metodo: Record<string,string> = { pix:"Pix", cartao:"Cartão", dinheiro:"Dinheiro", caderno:"Caderno", link:"Link de Pagamento" };
+                                    const msg = [
+                                      `Olá ${order.user.name?.split(" ")[0]}! 👋`,
+                                      ``,
+                                      `Segue o resumo do seu pedido na *Access Fit*:`,
+                                      ``,
+                                      itens,
+                                      ``,
+                                      `💰 *Total: ${fmt(order.total)}*`,
+                                      `📋 Pagamento: ${metodo[order.paymentMethod] || order.paymentMethod}`,
+                                      ``,
+                                      `Responda *SIM* para confirmar ou nos chame se tiver dúvidas! 😊`,
+                                    ].join("\n");
+                                    const phone = order.user.phone!.replace(/\D/g, "");
+                                    const ddi = phone.startsWith("55") ? phone : `55${phone}`;
+                                    return `https://wa.me/${ddi}?text=${encodeURIComponent(msg)}`;
+                                  })()}
+                                  target="_blank" rel="noopener noreferrer"
+                                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", backgroundColor: "#25D366", color: "#fff", fontWeight: 700, fontSize: "0.85rem", padding: "0.625rem 1rem", borderRadius: "0.75rem", textDecoration: "none" }}>
+                                  📲 Enviar confirmação ao cliente
+                                </a>
+                              )}
+
                               {/* Banner Home Try-On */}
                               {order.status === "try-on" && (
                                 <div style={{ backgroundColor: "#fce8ff", border: "1px solid rgba(138,26,184,0.25)", borderRadius: "0.75rem", padding: "1rem" }}>
