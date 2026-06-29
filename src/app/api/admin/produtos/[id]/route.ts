@@ -26,6 +26,7 @@ export async function PUT(
             name: item.name,
             price: item.price,
             quantity: item.quantity,
+            stock: item.stock || 0,
           })),
         });
       }

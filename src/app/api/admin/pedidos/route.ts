@@ -105,6 +105,25 @@ export async function POST(req: Request) {
             componentName: i.componentName || null,
           })),
         },
+      }
+    );
+
+    // Decrementar estoque dos componentes se foi vendido um componente de um Conjunto
+    for (const item of items) {
+      if (item.componentName) {
+        const product = await prisma.product.findUnique({ where: { id: item.productId } });
+        if (product?.isConjunto) {
+          await prisma.conjuntoItem.updateMany({
+            where: { conjuntoId: item.productId, name: item.componentName },
+            data: { stock: { decrement: item.quantity } },
+          });
+        }
+      }
+    }
+
+    return NextResponse.json(
+      await prisma.order.findUnique({
+        where: { id: order.id },
       },
       include: { user: true, items: true },
     });
