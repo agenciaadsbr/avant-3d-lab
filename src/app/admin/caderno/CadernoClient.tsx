@@ -78,15 +78,15 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
       })
     ).join("\n");
     const msg = [
-      `Ola ${selectedClient?.client.name?.split(" ")[0]}!`,
+      `Olá ${selectedClient?.client.name?.split(" ")[0]}!`,
       ``,
-      `Segue o resumo das suas pecas na *Access Fit*:`,
+      `Segue o resumo das suas peças na *Access Fit*:`,
       ``,
       linhas || `Total: ${fmt(totalDevido)}`,
       ``,
       `*Total em aberto: ${fmt(totalDevido)}*`,
       ``,
-      `Qualquer duvida estamos a disposicao!`,
+      `Qualquer dúvida estamos à disposição!`,
     ].join("\n");
     const ddi = phone.replace(/\D/g, "").startsWith("55") ? phone.replace(/\D/g, "") : `55${phone.replace(/\D/g, "")}`;
     window.open(`https://wa.me/${ddi}?text=${encodeURIComponent(msg)}`, "_blank");
