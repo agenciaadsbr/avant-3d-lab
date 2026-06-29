@@ -21,7 +21,12 @@ export async function PUT(
       await prisma.kitItem.deleteMany({ where: { kitId: id } });
       if (kitItems && kitItems.length > 0) {
         await prisma.kitItem.createMany({
-          data: kitItems.map((item: any) => ({ kitId: id, productId: item.productId, quantity: item.quantity })),
+          data: kitItems.map((item: any) => ({
+            kitId: id,
+            productId: item.productId,
+            quantity: item.quantity,
+            customName: item.customName || null,
+          })),
         });
       }
     } else {
