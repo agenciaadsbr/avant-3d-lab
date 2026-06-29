@@ -186,6 +186,7 @@ export default function MarketingClient({ gastosMarketing, totalMarketing, campa
               { emoji: "📣", label: "Campanhas", value: campanhas.length, sub: `${campanhas.filter(c => c.active).length} ativas` },
               { emoji: "🎟️", label: "Cupons ativos", value: cupons.filter(c => c.active).length, sub: `${cupons.length} total` },
               { emoji: "😴", label: "Clientes inativos", value: inativos.length, sub: "sem compra há 60+ dias" },
+              { emoji: "📋", label: "Lista de espera", value: listaEspera.filter((i: any) => !i.notified).length, sub: `${listaEspera.length} total` },
             ].map(k => (
               <div key={k.label} style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1rem 1.25rem" }}>
                 <div style={{ fontSize: "1.2rem", marginBottom: "0.25rem" }}>{k.emoji}</div>
@@ -215,6 +216,37 @@ export default function MarketingClient({ gastosMarketing, totalMarketing, campa
               </table>
             )}
           </div>
+          {/* Lista de espera resumida */}
+          {listaEspera.filter((i: any) => !i.notified).length > 0 && (
+            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1.25rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                <h3 style={{ fontWeight: 800, fontSize: "0.9rem", color: "#1a1510" }}>📋 Lista de Espera — aguardando aviso</h3>
+                <button onClick={() => setTab("lista")} style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#b8891a", fontWeight: 700, fontSize: "0.75rem", padding: "0.3rem 0.75rem", borderRadius: "0.5rem", cursor: "pointer" }}>
+                  Ver todas →
+                </button>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {listaEspera.filter((i: any) => !i.notified).slice(0, 5).map((item: any) => (
+                  <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.5rem 0.75rem", backgroundColor: "#FAF6EE", borderRadius: "0.5rem" }}>
+                    <div>
+                      <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "#1a1510" }}>{item.name}</span>
+                      <span style={{ fontSize: "0.75rem", color: "#9a8060", marginLeft: "0.5rem" }}>
+                        {item.product?.sku && <span style={{ fontFamily: "monospace", color: "#b8891a" }}>{item.product.sku} · </span>}
+                        {item.product?.name}
+                        {item.product?.stock > 0 && <span style={{ color: "#1a8a2a", marginLeft: "0.35rem" }}>● Em estoque!</span>}
+                      </span>
+                    </div>
+                    {item.phone && (
+                      <button onClick={() => notifyWaitlist(item.id, item.name, item.phone, item.product?.name || "")}
+                        style={{ backgroundColor: "#25D366", color: "#fff", border: "none", borderRadius: "0.4rem", padding: "0.3rem 0.625rem", fontWeight: 700, fontSize: "0.72rem", cursor: "pointer" }}>
+                        📲 Avisar
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
