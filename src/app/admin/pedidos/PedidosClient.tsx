@@ -150,9 +150,9 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const lucroLiquido = totalReceita - totalCusto - totalExpenses;
   const margemLucro = receitaComCusto > 0 ? ((receitaComCusto - totalCusto - totalExpenses) / receitaComCusto) * 100 : 0;
   const totalEmAberto = filtered.filter(o => o.paymentStatus !== "paid").reduce((s, o) => s + (o.total - o.amountPaid), 0);
-  const cadernoTotal = localOrders.filter(o => o.paymentMethod === "caderno" && o.paymentStatus !== "paid")
+  const cadernoTotal = localOrders.filter(o => o.paymentMethod === "caderno" && o.paymentStatus !== "paid" && o.status !== "cancelled")
     .reduce((s, o) => s + (o.total - o.amountPaid), 0);
-  const cadernoCount = localOrders.filter(o => o.paymentMethod === "caderno" && o.paymentStatus !== "paid").length;
+  const cadernoCount = localOrders.filter(o => o.paymentMethod === "caderno" && o.paymentStatus !== "paid" && o.status !== "cancelled").length;
 
   const updateStatus = async (orderId: string, status: string) => {
     setUpdatingId(orderId);
