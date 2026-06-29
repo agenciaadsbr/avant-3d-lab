@@ -3,8 +3,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 type Customer = { id: string; name: string; email: string; phone?: string };
-type Product = { id: string; name: string; price: number; stock: number; sizes: string; images: string };
-type Item = { productId?: string; description: string; price: number; quantity: number; size?: string };
+type Product = { id: string; name: string; price: number; stock: number; sizes: string; images: string; isConjunto?: boolean; sellComponentsSeparately?: boolean; conjuntoItems?: Array<{ id: string; name: string; price: number }> };
+type Item = { productId?: string; description: string; price: number; quantity: number; size?: string; componentName?: string };
 
 const inp = {
   padding: "0.6rem 0.875rem", border: "1px solid rgba(140,100,20,0.25)",
@@ -27,6 +27,8 @@ export default function NovoPedidoPage() {
   const [productSearch, setProductSearch] = useState<string[]>([""]);
   const [productResults, setProductResults] = useState<Product[][]>([[]]);
   const [showProductDropdown, setShowProductDropdown] = useState<boolean[]>([false]);
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  const [selectedComponents, setSelectedComponents] = useState<(string | null)[]>([null]);
   const [orderStatus, setOrderStatus] = useState("delivered");
   const [paymentMethod, setPaymentMethod] = useState("pix");
   const [paymentStatus, setPaymentStatus] = useState("paid");
@@ -85,12 +87,16 @@ export default function NovoPedidoPage() {
     setProductSearch(p => [...p, ""]);
     setProductResults(p => [...p, []]);
     setShowProductDropdown(p => [...p, false]);
+    setSelectedProducts(p => [...p, {}]);
+    setSelectedComponents(p => [...p, null]);
   };
   const removeItem = (i: number) => {
     setItems(p => p.filter((_, idx) => idx !== i));
     setProductSearch(p => p.filter((_, idx) => idx !== i));
     setProductResults(p => p.filter((_, idx) => idx !== i));
     setShowProductDropdown(p => p.filter((_, idx) => idx !== i));
+    setSelectedProducts(p => p.filter((_, idx) => idx !== i));
+    setSelectedComponents(p => p.filter((_, idx) => idx !== i));
   };
   const updateItem = (i: number, field: keyof Item, value: any) =>
     setItems(p => p.map((it, idx) => idx === i ? { ...it, [field]: value } : it));
@@ -108,11 +114,13 @@ export default function NovoPedidoPage() {
     const sizes = JSON.parse(product.sizes || "[]") as string[];
     setItems(p => p.map((it, idx) => idx === i ? {
       ...it, productId: product.id, description: product.name,
-      price: product.price, size: sizes[0] || undefined,
+      price: product.price, size: sizes[0] || undefined, componentName: undefined,
     } : it));
     setProductSearch(p => p.map((v, idx) => idx === i ? product.name : v));
     setShowProductDropdown(p => p.map((v, idx) => idx === i ? false : v));
     setProductResults(p => p.map((v, idx) => idx === i ? [] : v));
+    setSelectedProducts(p => p.map((_, idx) => idx === i ? product : _));
+    setSelectedComponents(p => p.map((_, idx) => idx === i ? null : _));
   };
 
   const handleAddToExisting = async () => {
@@ -302,6 +310,34 @@ export default function NovoPedidoPage() {
                       </div>
                     )}
                   </div>
+                  {/* Seleção de Componente (se for Conjunto) */}
+                  {selectedProducts[i]?.isConjunto && selectedProducts[i]?.sellComponentsSeparately && selectedProducts[i]?.conjuntoItems && (
+                    <select style={inp} value={selectedComponents[i] || ""}
+                      onChange={e => {
+                        const componentId = e.target.value;
+                        setSelectedComponents(p => p.map((_, idx) => idx === i ? componentId : _));
+
+                        if (componentId) {
+                          if (componentId === "completo") {
+                            updateItem(i, "price", selectedProducts[i].price);
+                            updateItem(i, "componentName", undefined);
+                          } else {
+                            const component = selectedProducts[i].conjuntoItems?.find(c => c.id === componentId);
+                            if (component) {
+                              updateItem(i, "price", component.price);
+                              updateItem(i, "componentName", component.name);
+                            }
+                          }
+                        }
+                      }}>
+                      <option value="">Selecione o componente</option>
+                      <option value="completo">Conjunto Completo - R$ {selectedProducts[i].price?.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</option>
+                      {selectedProducts[i].conjuntoItems?.map(comp => (
+                        <option key={comp.id} value={comp.id}>{comp.name} - R$ {comp.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</option>
+                      ))}
+                    </select>
+                  )}
+
                   {/* Tamanho, preço e quantidade */}
                   <div style={{ display: "grid", gridTemplateColumns: item.productId && JSON.parse(productResults[i]?.find(p => p.id === item.productId)?.sizes || "[]").length > 0 ? "1fr 110px 70px" : "1fr 70px", gap: "0.5rem" }}>
                     <input style={inp} type="number" placeholder="R$ preço" min="0" step="0.01" value={item.price || ""}

@@ -20,10 +20,12 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  addresses Address[]
-  orders    Order[]
-  accounts  Account[]
-  sessions  Session[]
+  addresses   Address[]
+  orders      Order[]
+  accounts    Account[]
+  sessions    Session[]
+  referralsGiven    Referral[] @relation("referrer")
+  referralsReceived Referral[] @relation("referred")
 }
 
 model Account {
@@ -113,6 +115,7 @@ model Product {
   category      Category       @relation(fields: [categoryId], references: [id])
   orderItems    OrderItem[]
   conjuntoItems ConjuntoItem[]
+  waitlist      Waitlist[]
 }
 
 model ConjuntoItem {
@@ -137,6 +140,60 @@ model Campaign {
   active    Boolean   @default(true)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  clientName String
+  text      String
+  rating    Int      @default(5)
+  product   String?
+  photo     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Goal {
+  id        String   @id @default(cuid())
+  month     Int
+  year      Int
+  target    Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([month, year])
+}
+
+model Waitlist {
+  id        String   @id @default(cuid())
+  productId String
+  name      String
+  phone     String
+  notified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Referral {
+  id          String   @id @default(cuid())
+  referrerId  String
+  referredId  String
+  status      String   @default("pending")
+  rewardGiven Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  referrer    User     @relation("referrer", fields: [referrerId], references: [id])
+  referred    User     @relation("referred", fields: [referredId], references: [id])
+}
+
+model InstagramMetric {
+  id        String   @id @default(cuid())
+  date      DateTime
+  followers Int
+  posts     Int      @default(0)
+  reach     Int      @default(0)
+  saves     Int      @default(0)
+  likes     Int      @default(0)
+  notes     String?
+  createdAt DateTime @default(now())
 }
 
 model Coupon {

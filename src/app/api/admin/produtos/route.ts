@@ -17,7 +17,7 @@ export async function GET(req: Request) {
       stock: { gt: 0 },
       ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
     },
-    select: { id: true, name: true, price: true, stock: true, sizes: true, images: true },
+    select: { id: true, name: true, price: true, stock: true, sizes: true, images: true, isConjunto: true, sellComponentsSeparately: true, conjuntoItems: true },
     orderBy: { name: "asc" },
     take: 10,
   });
