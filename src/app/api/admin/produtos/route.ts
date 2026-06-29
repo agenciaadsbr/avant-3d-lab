@@ -32,14 +32,14 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { kitItems, ...data } = await req.json();
+    const { conjuntoItems, ...data } = await req.json();
 
     const product = await prisma.product.create({ data });
 
-    if (data.isKit && kitItems && kitItems.length > 0) {
-      await prisma.kitItem.createMany({
-        data: kitItems.map((item: any) => ({
-          kitId: product.id,
+    if (data.isConjunto && conjuntoItems && conjuntoItems.length > 0) {
+      await prisma.conjuntoItem.createMany({
+        data: conjuntoItems.map((item: any) => ({
+          conjuntoId: product.id,
           productId: item.productId,
           quantity: item.quantity,
           customName: item.customName || null,

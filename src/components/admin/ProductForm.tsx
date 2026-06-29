@@ -9,9 +9,9 @@ type Product = {
   id: string; name: string; slug: string; description: string | null;
   price: number; costPrice: number | null; compareAt: number | null; images: string;
   sizes: string; colors: string; stock: number;
-  featuredHero: boolean; featured: boolean; isKit: boolean; active: boolean; categoryId: string;
+  featuredHero: boolean; featured: boolean; isConjunto: boolean; active: boolean; categoryId: string;
 };
-type KitItemForm = { productId: string; quantity: number; name?: string; price?: number; customName?: string };
+type ConjuntoItemForm = { productId: string; quantity: number; name?: string; price?: number; customName?: string };
 
 const field: React.CSSProperties = {
   width: "100%", padding: "0.7rem 0.875rem",
@@ -44,12 +44,12 @@ export default function ProductForm({ categories, product, allProducts = [], kit
   const [uploadingImg, setUploadingImg] = useState(false);
   const imgInputRef = useRef<HTMLInputElement>(null);
 
-  const [kitItems, setKitItems] = useState<KitItemForm[]>(
+  const [conjuntoItems, setConjuntoItems] = useState<ConjuntoItemForm[]>(
     initialKitItems.map(item => ({ productId: item.product.id, quantity: item.quantity, name: item.product.name, price: item.product.price, customName: (item as any).customName }))
   );
-  const [newKitProductId, setNewKitProductId] = useState("");
-  const [newKitQuantity, setNewKitQuantity] = useState(1);
-  const [newKitCustomName, setNewKitCustomName] = useState("");
+  const [newConjuntoProductId, setNewConjuntoProductId] = useState("");
+  const [newConjuntoQuantity, setNewConjuntoQuantity] = useState(1);
+  const [newConjuntoCustomName, setNewConjuntoCustomName] = useState("");
 
   const [form, setForm] = useState({
     name: product?.name || "",
@@ -100,22 +100,22 @@ export default function ProductForm({ categories, product, allProducts = [], kit
     }
   };
 
-  const handleAddKitItem = () => {
-    if (!newKitProductId) {
-      setError("Selecione um produto para adicionar ao kit");
+  const handleAddConjuntoItem = () => {
+    if (!newConjuntoProductId) {
+      setError("Selecione um produto para adicionar ao conjunto");
       return;
     }
-    const selected = allProducts.find(p => p.id === newKitProductId);
+    const selected = allProducts.find(p => p.id === newConjuntoProductId);
     if (!selected) return;
-    setKitItems([...kitItems, { productId: newKitProductId, quantity: newKitQuantity, name: selected.name, price: selected.price, customName: newKitCustomName }]);
-    setNewKitProductId("");
-    setNewKitQuantity(1);
-    setNewKitCustomName("");
+    setConjuntoItems([...conjuntoItems, { productId: newConjuntoProductId, quantity: newConjuntoQuantity, name: selected.name, price: selected.price, customName: newConjuntoCustomName }]);
+    setNewConjuntoProductId("");
+    setNewConjuntoQuantity(1);
+    setNewConjuntoCustomName("");
     setError("");
   };
 
-  const handleRemoveKitItem = (productId: string) => {
-    setKitItems(kitItems.filter(k => k.productId !== productId));
+  const handleRemoveConjuntoItem = (productId: string) => {
+    setConjuntoItems(conjuntoItems.filter(k => k.productId !== productId));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -132,7 +132,7 @@ export default function ProductForm({ categories, product, allProducts = [], kit
       images: JSON.stringify(form.images.split("\n").map((s: string) => s.trim()).filter(Boolean)),
       sizes: JSON.stringify(form.sizes.split(",").map((s: string) => s.trim()).filter(Boolean)),
       colors: JSON.stringify(form.colors.split(",").map((s: string) => s.trim()).filter(Boolean)),
-      ...(form.isKit && { kitItems: kitItems.map(k => ({ productId: k.productId, quantity: k.quantity, customName: k.customName })) }),
+      ...(form.isConjunto && { conjuntoItems: conjuntoItems.map(k => ({ productId: k.productId, quantity: k.quantity, customName: k.customName })) }),
     };
 
     const res = await fetch(
@@ -270,11 +270,11 @@ export default function ProductForm({ categories, product, allProducts = [], kit
           {[
             { key: "featuredHero", label: "Destaque no Hero (primeiros 4 da home)", emoji: "🎯" },
             { key: "featured", label: "Destaque na seção Destaques", emoji: "⭐" },
-            { key: "isKit", label: "É um Kit/Combo (pode ter várias peças)", emoji: "📦" },
+            { key: "isConjunto", label: "É um Conjunto (pode ter várias peças)", emoji: "📦" },
             { key: "active", label: "Produto ativo (visível na loja)", emoji: "👁️" },
           ].map(({ key, label: lbl, emoji }) => (
             <label key={key} style={{ display: "flex", alignItems: "center", gap: "0.6rem", cursor: "pointer" }}>
-              <input type="checkbox" checked={form[key as "featuredHero" | "featured" | "isKit" | "active"]}
+              <input type="checkbox" checked={form[key as "featuredHero" | "featured" | "isConjunto" | "active"]}
                 onChange={e => setForm({ ...form, [key]: e.target.checked })}
                 style={{ width: "1.1rem", height: "1.1rem", accentColor: "#b8891a" }} />
               <span style={{ color: "#3a2a10", fontSize: "0.875rem", fontWeight: 600 }}>{emoji} {lbl}</span>
@@ -283,19 +283,19 @@ export default function ProductForm({ categories, product, allProducts = [], kit
         </div>
       </div>
 
-      {/* Composição do Kit */}
-      {form.isKit && (
+      {/* Componentes do Conjunto */}
+      {form.isConjunto && (
         <div style={card}>
-          <h2 style={{ color: "#1a1510", fontWeight: 800, fontSize: "0.95rem", marginBottom: "1rem" }}>📦 Composição do Kit</h2>
+          <h2 style={{ color: "#1a1510", fontWeight: 800, fontSize: "0.95rem", marginBottom: "1rem" }}>📦 Componentes do Conjunto</h2>
 
-          {/* Itens do kit */}
-          {kitItems.length > 0 && (
+          {/* Componentes do conjunto */}
+          {conjuntoItems.length > 0 && (
             <div style={{ marginBottom: "1.5rem" }}>
               <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#5a4a2a", marginBottom: "0.75rem", textTransform: "uppercase" }}>
-                Itens ({kitItems.length})
+                Componentes ({conjuntoItems.length})
               </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {kitItems.map((item) => (
+                {conjuntoItems.map((item) => (
                   <div key={item.productId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.75rem", backgroundColor: "#FAF6EE", borderRadius: "0.5rem", border: "1px solid rgba(140,100,20,0.1)" }}>
                     <div>
                       <p style={{ fontWeight: 600, color: "#1a1510", fontSize: "0.9rem" }}>
@@ -303,7 +303,7 @@ export default function ProductForm({ categories, product, allProducts = [], kit
                       </p>
                       <p style={{ fontSize: "0.8rem", color: "#9a8060" }}>R$ {item.price?.toFixed(2)}</p>
                     </div>
-                    <button type="button" onClick={() => handleRemoveKitItem(item.productId)} style={{ padding: "0.5rem 1rem", backgroundColor: "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.2)", borderRadius: "0.4rem", cursor: "pointer", fontWeight: 600, fontSize: "0.8rem" }}>
+                    <button type="button" onClick={() => handleRemoveConjuntoItem(item.productId)} style={{ padding: "0.5rem 1rem", backgroundColor: "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.2)", borderRadius: "0.4rem", cursor: "pointer", fontWeight: 600, fontSize: "0.8rem" }}>
                       🗑️
                     </button>
                   </div>
@@ -312,13 +312,13 @@ export default function ProductForm({ categories, product, allProducts = [], kit
             </div>
           )}
 
-          {/* Adicionar produto */}
-          <div style={{ borderTop: kitItems.length > 0 ? "1px solid rgba(140,100,20,0.1)" : "none", paddingTop: kitItems.length > 0 ? "1.5rem" : "0" }}>
-            <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#5a4a2a", marginBottom: "0.75rem", textTransform: "uppercase" }}>Adicionar Produto</h3>
+          {/* Adicionar componente */}
+          <div style={{ borderTop: conjuntoItems.length > 0 ? "1px solid rgba(140,100,20,0.1)" : "none", paddingTop: conjuntoItems.length > 0 ? "1.5rem" : "0" }}>
+            <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#5a4a2a", marginBottom: "0.75rem", textTransform: "uppercase" }}>Adicionar Componente</h3>
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end" }}>
               <div style={{ flex: 1, minWidth: "200px" }}>
                 <label style={label}>Produto</label>
-                <select value={newKitProductId} onChange={e => setNewKitProductId(e.target.value)} style={field} onFocus={focus} onBlur={blur}>
+                <select value={newConjuntoProductId} onChange={e => setNewConjuntoProductId(e.target.value)} style={field} onFocus={focus} onBlur={blur}>
                   <option value="">Selecione um produto...</option>
                   {allProducts.map(p => (
                     <option key={p.id} value={p.id}>
@@ -329,13 +329,13 @@ export default function ProductForm({ categories, product, allProducts = [], kit
               </div>
               <div style={{ flex: 0.8, minWidth: "120px" }}>
                 <label style={label}>Nome (ex: Short)</label>
-                <input type="text" value={newKitCustomName} onChange={e => setNewKitCustomName(e.target.value)} placeholder="Short, Top..." style={field} onFocus={focus} onBlur={blur} />
+                <input type="text" value={newConjuntoCustomName} onChange={e => setNewConjuntoCustomName(e.target.value)} placeholder="Short, Top..." style={field} onFocus={focus} onBlur={blur} />
               </div>
               <div style={{ width: "60px" }}>
                 <label style={label}>Qtd</label>
-                <input type="number" min="1" max="10" value={newKitQuantity} onChange={e => setNewKitQuantity(Math.max(1, parseInt(e.target.value) || 1))} style={field} onFocus={focus} onBlur={blur} />
+                <input type="number" min="1" max="10" value={newConjuntoQuantity} onChange={e => setNewConjuntoQuantity(Math.max(1, parseInt(e.target.value) || 1))} style={field} onFocus={focus} onBlur={blur} />
               </div>
-              <button type="button" onClick={handleAddKitItem} style={{ padding: "0.75rem 1.5rem", backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.5rem", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem" }}>
+              <button type="button" onClick={handleAddConjuntoItem} style={{ padding: "0.75rem 1.5rem", backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.5rem", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem" }}>
                 ✅ Adicionar
               </button>
             </div>

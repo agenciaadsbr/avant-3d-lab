@@ -103,29 +103,29 @@ model Product {
   featured     Boolean  @default(false)
   saleDiscount Float?
   onSale       Boolean  @default(false)
-  isKit        Boolean  @default(false)
+  isConjunto   Boolean  @default(false)
   active       Boolean  @default(true)
   categoryId  String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  category   Category    @relation(fields: [categoryId], references: [id])
-  orderItems OrderItem[]
-  kitItems   KitItem[]   @relation("kit")
-  usedInKits KitItem[]   @relation("item")
+  category        Category       @relation(fields: [categoryId], references: [id])
+  orderItems      OrderItem[]
+  conjuntoItems   ConjuntoItem[] @relation("conjunto")
+  usedInConjuntos ConjuntoItem[] @relation("item")
 }
 
-model KitItem {
+model ConjuntoItem {
   id         String  @id @default(cuid())
-  kitId      String
+  conjuntoId String
   productId  String
   quantity   Int     @default(1)
   customName String?
 
-  kit     Product @relation("kit", fields: [kitId], references: [id], onDelete: Cascade)
-  product Product @relation("item", fields: [productId], references: [id], onDelete: Cascade)
+  conjunto Product @relation("conjunto", fields: [conjuntoId], references: [id], onDelete: Cascade)
+  product  Product @relation("item", fields: [productId], references: [id], onDelete: Cascade)
 
-  @@unique([kitId, productId])
+  @@unique([conjuntoId, productId])
 }
 
 model Coupon {

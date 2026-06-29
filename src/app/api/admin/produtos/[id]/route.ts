@@ -13,16 +13,16 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const { kitItems, ...data } = await req.json();
+    const { conjuntoItems, ...data } = await req.json();
 
     const product = await prisma.product.update({ where: { id }, data });
 
-    if (data.isKit) {
-      await prisma.kitItem.deleteMany({ where: { kitId: id } });
-      if (kitItems && kitItems.length > 0) {
-        await prisma.kitItem.createMany({
-          data: kitItems.map((item: any) => ({
-            kitId: id,
+    if (data.isConjunto) {
+      await prisma.conjuntoItem.deleteMany({ where: { conjuntoId: id } });
+      if (conjuntoItems && conjuntoItems.length > 0) {
+        await prisma.conjuntoItem.createMany({
+          data: conjuntoItems.map((item: any) => ({
+            conjuntoId: id,
             productId: item.productId,
             quantity: item.quantity,
             customName: item.customName || null,
@@ -30,7 +30,7 @@ export async function PUT(
         });
       }
     } else {
-      await prisma.kitItem.deleteMany({ where: { kitId: id } });
+      await prisma.conjuntoItem.deleteMany({ where: { conjuntoId: id } });
     }
 
     return NextResponse.json(product);
