@@ -64,7 +64,7 @@ export default function ProductForm({ categories, product, allProducts = [], kit
     stock: product?.stock?.toString() || "0",
     featuredHero: product?.featuredHero || false,
     featured: product?.featured || false,
-    isKit: product?.isKit || false,
+    isConjunto: product?.isConjunto || false,
     active: product?.active ?? true,
     categoryId: product?.categoryId || categories[0]?.id || "",
   });
