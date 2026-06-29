@@ -7,8 +7,26 @@ export async function GET() {
   const session = await auth();
   if (!session || (session.user as any)?.role !== "admin")
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+
   const cupons = await prisma.coupon.findMany({ orderBy: { createdAt: "desc" } });
-  return NextResponse.json(cupons);
+
+  // Busca stats reais de pedidos por cupom
+  const stats = await prisma.$queryRaw<Array<{couponCode: string, uses: number, revenue: number}>>`
+    SELECT "couponCode", COUNT(id) as uses, SUM(total) as revenue
+    FROM "Order"
+    WHERE "couponCode" IS NOT NULL AND status != 'cancelled'
+    GROUP BY "couponCode"
+  `;
+
+  const statsMap = Object.fromEntries(stats.map(s => [s.couponCode, { uses: Number(s.uses), revenue: Number(s.revenue) }]));
+
+  const cuponsComStats = cupons.map(c => ({
+    ...c,
+    usesReal: statsMap[c.code]?.uses || 0,
+    revenueGerada: statsMap[c.code]?.revenue || 0,
+  }));
+
+  return NextResponse.json(cuponsComStats);
 }
 
 export async function POST(req: Request) {

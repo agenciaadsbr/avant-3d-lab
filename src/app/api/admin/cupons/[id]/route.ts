@@ -9,10 +9,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   const { id } = await params;
   const body = await req.json();
-  const coupon = await prisma.coupon.update({
-    where: { id },
-    data: { active: body.active },
-  });
+  const data: any = {};
+  if (body.active !== undefined) data.active = body.active;
+  if (body.expiresAt !== undefined) data.expiresAt = body.expiresAt ? new Date(body.expiresAt) : null;
+  if (body.maxUses !== undefined) data.maxUses = body.maxUses ? parseInt(body.maxUses) : null;
+
+  const coupon = await prisma.coupon.update({ where: { id }, data });
   return NextResponse.json(coupon);
 }
 

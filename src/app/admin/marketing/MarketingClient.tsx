@@ -58,9 +58,24 @@ export default function MarketingClient({ gastosMarketing, totalMarketing, campa
     setSaving(false);
   };
 
+  const [editingCupomId, setEditingCupomId] = useState<string | null>(null);
+  const [editExpiresAt, setEditExpiresAt] = useState("");
+  const [editMaxUses, setEditMaxUses] = useState("");
+
   const toggleCupom = async (id: string, active: boolean) => {
     const res = await fetch(`/api/admin/cupons/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active: !active }) });
     if (res.ok) setCupons(p => p.map(c => c.id === id ? { ...c, active: !active } : c));
+  };
+
+  const saveCupomEdit = async (id: string) => {
+    const res = await fetch(`/api/admin/cupons/${id}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ expiresAt: editExpiresAt || null, maxUses: editMaxUses || null }),
+    });
+    if (res.ok) {
+      setCupons(p => p.map(c => c.id === id ? { ...c, expiresAt: editExpiresAt || null, maxUses: editMaxUses ? parseInt(editMaxUses) : null } : c));
+      setEditingCupomId(null);
+    }
   };
 
   const deleteCupom = async (id: string) => {
@@ -319,24 +334,62 @@ export default function MarketingClient({ gastosMarketing, totalMarketing, campa
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             {cupons.map(c => (
-              <div key={c.id} style={{ backgroundColor: "#fff", border: `1px solid ${c.active ? "rgba(140,100,20,0.1)" : "rgba(192,64,64,0.15)"}`, borderRadius: "1rem", padding: "1rem 1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", opacity: c.active ? 1 : 0.65 }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "1rem", color: "#1a1510", backgroundColor: "#FAF6EE", padding: "0.25rem 0.75rem", borderRadius: "0.4rem" }}>{c.code}</span>
-                    <span style={{ fontWeight: 700, color: "#b8891a" }}>{c.type === "percent" ? `${c.discount}% off` : `R$${c.discount} off`}</span>
-                    <span style={{ backgroundColor: c.active ? "#e8f8e8" : "#fee8e8", color: c.active ? "#1a8a2a" : "#c04040", fontSize: "0.7rem", fontWeight: 700, padding: "0.15rem 0.5rem", borderRadius: 999 }}>{c.active ? "Ativo" : "Inativo"}</span>
+              <div key={c.id} style={{ backgroundColor: "#fff", border: `1px solid ${c.active ? "rgba(140,100,20,0.1)" : "rgba(192,64,64,0.15)"}`, borderRadius: "1rem", padding: "1rem 1.25rem", opacity: c.active ? 1 : 0.7 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.5rem" }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", flexWrap: "wrap" }}>
+                      <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "1rem", color: "#1a1510", backgroundColor: "#FAF6EE", padding: "0.25rem 0.75rem", borderRadius: "0.4rem" }}>{c.code}</span>
+                      <span style={{ fontWeight: 700, color: "#b8891a" }}>{c.type === "percent" ? `${c.discount}% off` : `R$${c.discount} off`}</span>
+                      <span style={{ backgroundColor: c.active ? "#e8f8e8" : "#fee8e8", color: c.active ? "#1a8a2a" : "#c04040", fontSize: "0.7rem", fontWeight: 700, padding: "0.15rem 0.5rem", borderRadius: 999 }}>{c.active ? "Ativo" : "Inativo"}</span>
+                    </div>
+                    <p style={{ fontSize: "0.72rem", color: "#9a8060", marginTop: "0.25rem" }}>
+                      {c.expiresAt ? `Expira ${new Date(c.expiresAt).toLocaleDateString("pt-BR")}` : "Sem validade"}
+                      {c.maxUses ? ` · Limite: ${c.maxUses} usos` : ""}
+                    </p>
                   </div>
-                  <p style={{ fontSize: "0.72rem", color: "#9a8060", marginTop: "0.25rem" }}>
-                    {c.usedCount} uso{c.usedCount !== 1 ? "s" : ""}{c.maxUses ? ` de ${c.maxUses}` : ""}
-                    {c.expiresAt ? ` · Expira ${new Date(c.expiresAt).toLocaleDateString("pt-BR")}` : ""}
-                  </p>
+                  <div style={{ display: "flex", gap: "0.4rem" }}>
+                    <button onClick={() => { setEditingCupomId(editingCupomId === c.id ? null : c.id); setEditExpiresAt(c.expiresAt ? c.expiresAt.split("T")[0] : ""); setEditMaxUses(c.maxUses ? String(c.maxUses) : ""); }}
+                      style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", borderRadius: "0.4rem", padding: "0.35rem 0.625rem", fontWeight: 700, fontSize: "0.75rem", color: "#7a6030", cursor: "pointer" }}>
+                      ✏️ Editar
+                    </button>
+                    <button onClick={() => toggleCupom(c.id, c.active)} style={{ backgroundColor: c.active ? "#fee8e8" : "#e8f8e8", border: "none", borderRadius: "0.4rem", padding: "0.35rem 0.75rem", fontWeight: 700, fontSize: "0.75rem", color: c.active ? "#c04040" : "#1a8a2a", cursor: "pointer" }}>
+                      {c.active ? "Desativar" : "Ativar"}
+                    </button>
+                    <button onClick={() => deleteCupom(c.id)} style={{ backgroundColor: "#fee8e8", border: "none", borderRadius: "0.4rem", padding: "0.35rem 0.5rem", color: "#c04040", cursor: "pointer" }}>🗑️</button>
+                  </div>
                 </div>
-                <div style={{ display: "flex", gap: "0.4rem" }}>
-                  <button onClick={() => toggleCupom(c.id, c.active)} style={{ backgroundColor: c.active ? "#fee8e8" : "#e8f8e8", border: "none", borderRadius: "0.4rem", padding: "0.35rem 0.75rem", fontWeight: 700, fontSize: "0.75rem", color: c.active ? "#c04040" : "#1a8a2a", cursor: "pointer" }}>
-                    {c.active ? "Desativar" : "Ativar"}
-                  </button>
-                  <button onClick={() => deleteCupom(c.id)} style={{ backgroundColor: "#fee8e8", border: "none", borderRadius: "0.4rem", padding: "0.35rem 0.5rem", color: "#c04040", cursor: "pointer" }}>🗑️</button>
+
+                {/* Stats */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.5rem", marginTop: "0.875rem" }}>
+                  {[
+                    { label: "Usos reais", value: c.usesReal ?? c.usedCount, color: "#1a6a9a" },
+                    { label: "Receita gerada", value: fmt(c.revenueGerada ?? 0), color: "#1a8a2a" },
+                    { label: "Ticket médio", value: (c.usesReal ?? 0) > 0 ? fmt((c.revenueGerada ?? 0) / (c.usesReal ?? 1)) : "—", color: "#b8891a" },
+                  ].map(s => (
+                    <div key={s.label} style={{ backgroundColor: "#FAF6EE", borderRadius: "0.5rem", padding: "0.5rem 0.75rem" }}>
+                      <p style={{ fontSize: "0.65rem", color: "#9a8060", fontWeight: 700 }}>{s.label}</p>
+                      <p style={{ fontSize: "0.95rem", fontWeight: 900, color: s.color, marginTop: "0.1rem" }}>{s.value}</p>
+                    </div>
+                  ))}
                 </div>
+
+                {/* Edição inline */}
+                {editingCupomId === c.id && (
+                  <div style={{ marginTop: "0.875rem", padding: "0.875rem", backgroundColor: "#FAF6EE", borderRadius: "0.625rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end" }}>
+                    <div>
+                      <label style={label}>Nova validade</label>
+                      <input type="date" style={{ ...inp, width: 160 }} value={editExpiresAt} onChange={e => setEditExpiresAt(e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={label}>Limite de usos</label>
+                      <input type="number" style={{ ...inp, width: 120 }} placeholder="Sem limite" value={editMaxUses} onChange={e => setEditMaxUses(e.target.value)} />
+                    </div>
+                    <div style={{ display: "flex", gap: "0.4rem" }}>
+                      <button onClick={() => saveCupomEdit(c.id)} style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.5rem", padding: "0.5rem 1rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}>Salvar</button>
+                      <button onClick={() => setEditingCupomId(null)} style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", borderRadius: "0.5rem", padding: "0.5rem 0.75rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}>✕</button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
             {cupons.length === 0 && <div style={{ backgroundColor: "#fff", borderRadius: "1rem", border: "1px solid rgba(140,100,20,0.1)", padding: "3rem", textAlign: "center", color: "#b8a080" }}>Nenhum cupom ainda.</div>}
