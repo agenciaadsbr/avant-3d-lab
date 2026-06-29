@@ -9,7 +9,6 @@ const links = [
   { href: "/admin/produtos",    label: "Produtos",    emoji: "👗" },
   { href: "/admin/caderno",     label: "Caderno",     emoji: "📒" },
   { href: "/admin/clientes",    label: "Clientes",    emoji: "👥" },
-  { href: "/admin/caixa",       label: "Caixa",       emoji: "💵" },
   { href: "/admin/financeiro",  label: "Financeiro",  emoji: "💳" },
   { href: "/admin/marketing",   label: "Marketing",   emoji: "📣" },
   { href: "/admin/relatorios",  label: "Relatórios",  emoji: "📊" },
