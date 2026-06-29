@@ -11,7 +11,7 @@ type Product = {
   sizes: string; colors: string; stock: number;
   featuredHero: boolean; featured: boolean; isConjunto: boolean; active: boolean; categoryId: string;
 };
-type ConjuntoItemForm = { productId: string; quantity: number; name?: string; price?: number; customName?: string };
+type ConjuntoItemForm = { name: string; price: number; quantity: number };
 
 const field: React.CSSProperties = {
   width: "100%", padding: "0.7rem 0.875rem",
@@ -32,11 +32,10 @@ const card: React.CSSProperties = {
 interface ProductFormProps {
   categories: Category[];
   product?: Product;
-  allProducts?: Array<{ id: string; name: string; price: number }>;
-  kitItems?: Array<{ product: { id: string; name: string; price: number }; quantity: number }>;
+  kitItems?: Array<{ name: string; price: number; quantity: number }>;
 }
 
-export default function ProductForm({ categories, product, allProducts = [], kitItems: initialKitItems = [] }: ProductFormProps) {
+export default function ProductForm({ categories, product, kitItems: initialKitItems = [] }: ProductFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -45,11 +44,10 @@ export default function ProductForm({ categories, product, allProducts = [], kit
   const imgInputRef = useRef<HTMLInputElement>(null);
 
   const [conjuntoItems, setConjuntoItems] = useState<ConjuntoItemForm[]>(
-    initialKitItems.map(item => ({ productId: item.product.id, quantity: item.quantity, name: item.product.name, price: item.product.price, customName: (item as any).customName }))
+    initialKitItems.map(item => ({ name: (item as any).name, price: (item as any).price, quantity: item.quantity }))
   );
-  const [newConjuntoProductId, setNewConjuntoProductId] = useState("");
-  const [newConjuntoQuantity, setNewConjuntoQuantity] = useState(1);
-  const [newConjuntoCustomName, setNewConjuntoCustomName] = useState("");
+  const [newConjuntoName, setNewConjuntoName] = useState("");
+  const [newConjuntoPrice, setNewConjuntoPrice] = useState("");
 
   const [form, setForm] = useState({
     name: product?.name || "",
@@ -101,21 +99,23 @@ export default function ProductForm({ categories, product, allProducts = [], kit
   };
 
   const handleAddConjuntoItem = () => {
-    if (!newConjuntoProductId) {
-      setError("Selecione um produto para adicionar ao conjunto");
+    if (!newConjuntoName || !newConjuntoPrice) {
+      setError("Preencha nome e preço do componente");
       return;
     }
-    const selected = allProducts.find(p => p.id === newConjuntoProductId);
-    if (!selected) return;
-    setConjuntoItems([...conjuntoItems, { productId: newConjuntoProductId, quantity: newConjuntoQuantity, name: selected.name, price: selected.price, customName: newConjuntoCustomName }]);
-    setNewConjuntoProductId("");
-    setNewConjuntoQuantity(1);
-    setNewConjuntoCustomName("");
+    const price = parseFloat(newConjuntoPrice);
+    if (isNaN(price) || price <= 0) {
+      setError("Preço deve ser um número maior que 0");
+      return;
+    }
+    setConjuntoItems([...conjuntoItems, { name: newConjuntoName, price, quantity: 1 }]);
+    setNewConjuntoName("");
+    setNewConjuntoPrice("");
     setError("");
   };
 
-  const handleRemoveConjuntoItem = (productId: string) => {
-    setConjuntoItems(conjuntoItems.filter(k => k.productId !== productId));
+  const handleRemoveConjuntoItem = (index: number) => {
+    setConjuntoItems(conjuntoItems.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -132,7 +132,7 @@ export default function ProductForm({ categories, product, allProducts = [], kit
       images: JSON.stringify(form.images.split("\n").map((s: string) => s.trim()).filter(Boolean)),
       sizes: JSON.stringify(form.sizes.split(",").map((s: string) => s.trim()).filter(Boolean)),
       colors: JSON.stringify(form.colors.split(",").map((s: string) => s.trim()).filter(Boolean)),
-      ...(form.isConjunto && { conjuntoItems: conjuntoItems.map(k => ({ productId: k.productId, quantity: k.quantity, customName: k.customName })) }),
+      ...(form.isConjunto && { conjuntoItems: conjuntoItems.map(k => ({ name: k.name, price: k.price, quantity: k.quantity })) }),
     };
 
     const res = await fetch(
@@ -288,22 +288,22 @@ export default function ProductForm({ categories, product, allProducts = [], kit
         <div style={card}>
           <h2 style={{ color: "#1a1510", fontWeight: 800, fontSize: "0.95rem", marginBottom: "1rem" }}>📦 Componentes do Conjunto</h2>
 
-          {/* Componentes do conjunto */}
+          {/* Lista de componentes */}
           {conjuntoItems.length > 0 && (
             <div style={{ marginBottom: "1.5rem" }}>
               <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#5a4a2a", marginBottom: "0.75rem", textTransform: "uppercase" }}>
                 Componentes ({conjuntoItems.length})
               </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {conjuntoItems.map((item) => (
-                  <div key={item.productId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.75rem", backgroundColor: "#FAF6EE", borderRadius: "0.5rem", border: "1px solid rgba(140,100,20,0.1)" }}>
+                {conjuntoItems.map((item, idx) => (
+                  <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.75rem", backgroundColor: "#FAF6EE", borderRadius: "0.5rem", border: "1px solid rgba(140,100,20,0.1)" }}>
                     <div>
                       <p style={{ fontWeight: 600, color: "#1a1510", fontSize: "0.9rem" }}>
-                        {item.name} {item.customName && <span style={{ color: "#b8891a" }}>({item.customName})</span>} <span style={{ color: "#9a8060" }}>x{item.quantity}</span>
+                        {item.name}
                       </p>
-                      <p style={{ fontSize: "0.8rem", color: "#9a8060" }}>R$ {item.price?.toFixed(2)}</p>
+                      <p style={{ fontSize: "0.8rem", color: "#9a8060" }}>R$ {item.price.toFixed(2)}</p>
                     </div>
-                    <button type="button" onClick={() => handleRemoveConjuntoItem(item.productId)} style={{ padding: "0.5rem 1rem", backgroundColor: "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.2)", borderRadius: "0.4rem", cursor: "pointer", fontWeight: 600, fontSize: "0.8rem" }}>
+                    <button type="button" onClick={() => handleRemoveConjuntoItem(idx)} style={{ padding: "0.5rem 1rem", backgroundColor: "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.2)", borderRadius: "0.4rem", cursor: "pointer", fontWeight: 600, fontSize: "0.8rem" }}>
                       🗑️
                     </button>
                   </div>
@@ -316,24 +316,13 @@ export default function ProductForm({ categories, product, allProducts = [], kit
           <div style={{ borderTop: conjuntoItems.length > 0 ? "1px solid rgba(140,100,20,0.1)" : "none", paddingTop: conjuntoItems.length > 0 ? "1.5rem" : "0" }}>
             <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#5a4a2a", marginBottom: "0.75rem", textTransform: "uppercase" }}>Adicionar Componente</h3>
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end" }}>
-              <div style={{ flex: 1, minWidth: "200px" }}>
-                <label style={label}>Produto</label>
-                <select value={newConjuntoProductId} onChange={e => setNewConjuntoProductId(e.target.value)} style={field} onFocus={focus} onBlur={blur}>
-                  <option value="">Selecione um produto...</option>
-                  {allProducts.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} (R$ {p.price.toFixed(2)})
-                    </option>
-                  ))}
-                </select>
+              <div style={{ flex: 1, minWidth: "150px" }}>
+                <label style={label}>Nome (ex: Short, Top)</label>
+                <input type="text" value={newConjuntoName} onChange={e => setNewConjuntoName(e.target.value)} placeholder="Short, Top, Calça..." style={field} onFocus={focus} onBlur={blur} />
               </div>
-              <div style={{ flex: 0.8, minWidth: "120px" }}>
-                <label style={label}>Nome (ex: Short)</label>
-                <input type="text" value={newConjuntoCustomName} onChange={e => setNewConjuntoCustomName(e.target.value)} placeholder="Short, Top..." style={field} onFocus={focus} onBlur={blur} />
-              </div>
-              <div style={{ width: "60px" }}>
-                <label style={label}>Qtd</label>
-                <input type="number" min="1" max="10" value={newConjuntoQuantity} onChange={e => setNewConjuntoQuantity(Math.max(1, parseInt(e.target.value) || 1))} style={field} onFocus={focus} onBlur={blur} />
+              <div style={{ width: "120px" }}>
+                <label style={label}>Preço (R$)</label>
+                <input type="number" step="0.01" value={newConjuntoPrice} onChange={e => setNewConjuntoPrice(e.target.value)} placeholder="69.90" style={field} onFocus={focus} onBlur={blur} />
               </div>
               <button type="button" onClick={handleAddConjuntoItem} style={{ padding: "0.75rem 1.5rem", backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.5rem", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem" }}>
                 ✅ Adicionar

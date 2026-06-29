@@ -23,9 +23,9 @@ export async function PUT(
         await prisma.conjuntoItem.createMany({
           data: conjuntoItems.map((item: any) => ({
             conjuntoId: id,
-            productId: item.productId,
+            name: item.name,
+            price: item.price,
             quantity: item.quantity,
-            customName: item.customName || null,
           })),
         });
       }

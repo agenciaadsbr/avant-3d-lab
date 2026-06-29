@@ -12,11 +12,10 @@ export default async function EditarProdutoPage({
   if (!session || (session.user as any)?.role !== "admin") redirect("/");
 
   const { id } = await params;
-  const [product, categories, allProducts, conjuntoItems] = await Promise.all([
+  const [product, categories, conjuntoItems] = await Promise.all([
     prisma.product.findUnique({ where: { id } }),
     prisma.category.findMany(),
-    prisma.product.findMany({ where: { active: true }, select: { id: true, name: true, price: true } }),
-    prisma.conjuntoItem.findMany({ where: { conjuntoId: id }, include: { product: true } }),
+    prisma.conjuntoItem.findMany({ where: { conjuntoId: id } }),
   ]);
 
   if (!product) notFound();
@@ -28,7 +27,7 @@ export default async function EditarProdutoPage({
         <h1 style={{ color: "#1a1510", fontSize: "1.6rem", fontWeight: 900, marginTop: "0.3rem" }}>Editar Produto</h1>
         <p style={{ color: "#9a8060", fontSize: "0.875rem", marginTop: "0.2rem" }}>{product.name}</p>
       </div>
-      <ProductForm categories={categories} product={product} allProducts={allProducts} kitItems={conjuntoItems} />
+      <ProductForm categories={categories} product={product} kitItems={conjuntoItems} />
     </div>
   );
 }

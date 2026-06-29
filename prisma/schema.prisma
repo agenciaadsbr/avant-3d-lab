@@ -109,23 +109,19 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  category        Category       @relation(fields: [categoryId], references: [id])
-  orderItems      OrderItem[]
-  conjuntoItems   ConjuntoItem[] @relation("conjunto")
-  usedInConjuntos ConjuntoItem[] @relation("item")
+  category      Category       @relation(fields: [categoryId], references: [id])
+  orderItems    OrderItem[]
+  conjuntoItems ConjuntoItem[]
 }
 
 model ConjuntoItem {
   id         String  @id @default(cuid())
   conjuntoId String
-  productId  String
+  name       String
+  price      Float
   quantity   Int     @default(1)
-  customName String?
 
-  conjunto Product @relation("conjunto", fields: [conjuntoId], references: [id], onDelete: Cascade)
-  product  Product @relation("item", fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([conjuntoId, productId])
+  conjunto Product @relation(fields: [conjuntoId], references: [id], onDelete: Cascade)
 }
 
 model Coupon {
