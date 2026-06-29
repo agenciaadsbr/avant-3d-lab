@@ -313,11 +313,13 @@ export default function NovoPedidoPage() {
                           if (componentId === "completo") {
                             updateItem(i, "price", product.price);
                             updateItem(i, "componentName", undefined);
+                            updateItem(i, "description", product.name);
                           } else {
                             const component = product.conjuntoItems?.find(c => c.id === componentId);
                             if (component) {
                               updateItem(i, "price", component.price);
                               updateItem(i, "componentName", component.name);
+                              updateItem(i, "description", `${product.name} - ${component.name}`);
                             }
                           }
                         }

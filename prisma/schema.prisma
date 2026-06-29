@@ -128,6 +128,14 @@ model ConjuntoItem {
   conjunto Product @relation(fields: [conjuntoId], references: [id], onDelete: Cascade)
 }
 
+model CashInjection {
+  id          String   @id @default(cuid())
+  amount      Float
+  date        DateTime
+  description String?
+  createdAt   DateTime @default(now())
+}
+
 model Campaign {
   id        String    @id @default(cuid())
   name      String
