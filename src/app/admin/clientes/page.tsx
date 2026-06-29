@@ -30,7 +30,7 @@ export default async function ClientesPage() {
     email: c.email,
     phone: c.phone,
     createdAt: c.createdAt.toISOString(),
-    totalPedidos: c._count.orders,
+    totalPedidos: c.orders.length, // já filtrado sem cancelados
     totalGasto: c.orders.reduce((s, o) => s + o.total, 0),
     totalPago: c.orders.reduce((s, o) => s + o.amountPaid, 0),
     saldoAberto: c.orders.reduce((s, o) => s + (o.total - o.amountPaid), 0),
