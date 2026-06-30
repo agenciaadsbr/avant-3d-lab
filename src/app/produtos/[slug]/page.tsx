@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useCart } from "@/store/cart";
 import { formatCurrency, parseJson } from "@/lib/utils";
 import Link from "next/link";
+import SizeGuide from "@/app/components/SizeGuide";
 
 type ConjuntoItem = { id: string; name: string; price: number; quantity: number; stock?: number | null };
 
@@ -241,6 +242,9 @@ export default function ProductPage() {
                 </div>
               </div>
             )}
+
+            {/* Guia de Tamanho Inteligente */}
+            <SizeGuide />
 
             {/* Seleção de Componentes */}
             {product.isConjunto && product.sellComponentsSeparately && (

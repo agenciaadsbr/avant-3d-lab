@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
+import { auth } from "@/lib/auth";
 
 type SizeStats = {
   size: string;
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
         ];
 
     // Se usuário está logado, salvar as preferências
-    const session = await getServerSession();
+    const session = await auth();
     if (session?.user?.email) {
       const user = await prisma.user.findUnique({
         where: { email: session.user.email },
