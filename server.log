@@ -1,0 +1,26 @@
+
+> access-fit@0.1.0 dev
+> next dev
+
+⚠ Port 3000 is in use by process 4584, using available port 3001 instead.
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://10.135.0.103:3001
+- Environments: .env.local, .env
+✓ Ready in 1529ms
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\ti\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\ti\access-fit\package-lock.json
+
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          4584
+- Dir:          C:\Users\ti\access-fit
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 4584 /F to stop it.
+[?25h
