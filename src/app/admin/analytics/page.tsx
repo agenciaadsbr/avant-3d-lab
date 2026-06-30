@@ -41,7 +41,7 @@ interface Data {
 export default function AnalyticsPage() {
   const [data, setData] = useState<Data | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"lucro" | "margem" | "abc" | "estoque">("lucro");
+  const [tab, setTab] = useState<"lucro" | "margem" | "abc" | "estoque" | "vendas">("lucro");
 
   useEffect(() => {
     fetch("/api/admin/analytics")
@@ -67,6 +67,7 @@ export default function AnalyticsPage() {
         <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
           {[
             { id: "lucro", label: "💰 Lucro Real" },
+            { id: "vendas", label: "🏆 Top Vendas" },
             { id: "margem", label: "📈 Margens" },
             { id: "abc", label: "🎯 ABC" },
             { id: "estoque", label: "⏰ Previsão" },
@@ -97,6 +98,28 @@ export default function AnalyticsPage() {
               <p style={{ color: "#9a8060", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase" }}>Margem</p>
               <p style={{ fontSize: "1.75rem", fontWeight: 900, color: "#b8891a", marginTop: "0.5rem" }}>{data.lucroReal.margem}%</p>
             </div>
+          </div>
+        )}
+
+        {/* TOP VENDAS */}
+        {tab === "vendas" && data && (
+          <div style={{ backgroundColor: "#fff", borderRadius: "1rem", border: "1px solid rgba(140,100,20,0.1)", overflow: "hidden" }}>
+            <div style={{ padding: "1.5rem", borderBottom: "1px solid rgba(140,100,20,0.1)", display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: "1rem", fontWeight: 700, color: "#5a4a2a", fontSize: "0.8rem", textTransform: "uppercase" }}>
+              <div>Produto</div>
+              <div style={{ textAlign: "right" }}>Quantidade</div>
+              <div style={{ textAlign: "right" }}>Faturamento</div>
+              <div style={{ textAlign: "right" }}>Pedidos</div>
+              <div style={{ textAlign: "right" }}>Ticket</div>
+            </div>
+            {data.margensPorProduto.slice(0, 30).map((p, i) => (
+              <div key={i} style={{ padding: "1rem 1.5rem", borderBottom: i < 29 ? "1px solid rgba(140,100,20,0.05)" : "none", display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: "1rem", alignItems: "center" }}>
+                <p style={{ fontWeight: 700, color: "#1a1510" }}>#{i + 1} {p.name}</p>
+                <p style={{ textAlign: "right", fontWeight: 700, color: "#b8891a" }}>{p.quantidade} un</p>
+                <p style={{ textAlign: "right", color: "#1a1510" }}>R$ {p.faturamento.toFixed(2)}</p>
+                <p style={{ textAlign: "right", color: "#6a4a10" }}>{(p.quantidade > 0 ? Math.round(p.quantidade / (p.faturamento / 100)) : 0).toString()}</p>
+                <p style={{ textAlign: "right", fontWeight: 700, color: "#2e7d32" }}>R$ {(p.faturamento / (p.quantidade || 1)).toFixed(2)}</p>
+              </div>
+            ))}
           </div>
         )}
 
