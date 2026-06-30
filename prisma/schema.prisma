@@ -272,6 +272,7 @@ model Order {
   address      Address?      @relation(fields: [addressId], references: [id])
   items        OrderItem[]
   installments Installment[]
+  returns      Return[]
 }
 
 model Installment {
@@ -302,4 +303,21 @@ model OrderItem {
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
+}
+
+model Return {
+  id              String   @id @default(cuid())
+  orderId         String
+  status          String   @default("solicitado") // solicitado | aprovado | recebido | reembolsado
+  reason          String?
+  amount          Float
+  requestedAt     DateTime @default(now())
+  approvedAt      DateTime?
+  returnedAt      DateTime?
+  reimbursedAt    DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
