@@ -104,38 +104,40 @@ export async function GET() {
         : 0,
     }));
 
-    // 6. MARGENS POR CATEGORIA
-    const margensPorCategoria = await prisma.product.groupBy({
-      by: ["categoryId"],
-      where: { active: true },
-      _sum: { costPrice: true },
-      _count: true,
-    });
-
+    // 6. MARGENS POR CATEGORIA — baseado nos itens efetivamente vendidos (não no catálogo)
     const categoriasInfo = await prisma.category.findMany();
     const categoryMap = Object.fromEntries(categoriasInfo.map(c => [c.id, c.name]));
 
-    const margensDetalhadas = await Promise.all(
-      margensPorCategoria.map(async (cat) => {
-        const faturamento = await prisma.orderItem.aggregate({
-          _sum: { price: true },
-          where: { product: { categoryId: cat.categoryId } },
-        });
-        const custo = cat._sum.costPrice || 0;
-        const fat = faturamento._sum.price || 0;
-        const lucro = fat - custo;
-        const margem = fat > 0 ? ((lucro / fat) * 100) : 0;
+    const itensVendidos = await prisma.orderItem.findMany({
+      where: { order: { status: { not: "cancelled" } } },
+      select: {
+        productId: true, price: true, quantity: true, costPrice: true,
+        product: { select: { categoryId: true, costPrice: true } },
+      },
+    });
 
-        return {
-          categoria: categoryMap[cat.categoryId] || cat.categoryId,
-          faturamento: fat,
-          custo,
-          lucro,
-          margem: margem.toFixed(1),
-          produtos: cat._count,
-        };
-      })
-    );
+    const porCategoria: Record<string, { faturamento: number; custo: number; produtos: Set<string> }> = {};
+    for (const item of itensVendidos) {
+      const catId = item.product.categoryId;
+      if (!porCategoria[catId]) porCategoria[catId] = { faturamento: 0, custo: 0, produtos: new Set() };
+      const custoUnit = item.costPrice ?? item.product.costPrice ?? 0;
+      porCategoria[catId].faturamento += item.price * item.quantity;
+      porCategoria[catId].custo += custoUnit * item.quantity;
+      porCategoria[catId].produtos.add(item.productId);
+    }
+
+    const margensDetalhadas = Object.entries(porCategoria).map(([catId, v]) => {
+      const lucro = v.faturamento - v.custo;
+      const margem = v.faturamento > 0 ? ((lucro / v.faturamento) * 100) : 0;
+      return {
+        categoria: categoryMap[catId] || catId,
+        faturamento: v.faturamento,
+        custo: v.custo,
+        lucro,
+        margem: margem.toFixed(1),
+        produtos: v.produtos.size,
+      };
+    });
 
     return NextResponse.json({
       ticketMedio: ticketMedio.toFixed(2),
