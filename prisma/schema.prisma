@@ -26,6 +26,7 @@ model User {
   sessions    Session[]
   referralsGiven    Referral[] @relation("referrer")
   referralsReceived Referral[] @relation("referred")
+  sizePreference UserSizePreference?
 }
 
 model Account {
@@ -322,4 +323,18 @@ model Return {
   updatedAt       DateTime @updatedAt
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model UserSizePreference {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  height        Int      // em cm
+  weight        Int      // em kg
+  bustSize      Int?     // em cm (opcional)
+  waistSize     Int?     // em cm (opcional)
+  preferredSize String?  // P, M, G (tamanho preferido recomendado)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
