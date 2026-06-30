@@ -11,7 +11,7 @@ export async function GET() {
   try {
     // Produtos totais
     const products = await prisma.product.findMany({
-      where: { active: true },
+      where: { active: true, NOT: { slug: "venda-manual" } },
       include: { _count: { select: { orderItems: true } } },
     });
 

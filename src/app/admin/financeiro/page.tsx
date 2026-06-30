@@ -78,6 +78,22 @@ export default function FinanceiroPage() {
 
   useEffect(() => { loadVendas(); }, [loadVendas]);
 
+  // ── DADOS MENSAIS ──
+  const [dadosMensais, setDadosMensais] = useState<{ [key: string]: { receitas: number; despesas: number } }>({});
+  const [loadingMensais, setLoadingMensais] = useState(true);
+
+  const loadDadosMensais = useCallback(async () => {
+    setLoadingMensais(true);
+    const res = await fetch("/api/admin/caixa/mensal");
+    if (res.ok) {
+      const d = await res.json();
+      setDadosMensais(d.meses || {});
+    }
+    setLoadingMensais(false);
+  }, []);
+
+  useEffect(() => { loadDadosMensais(); }, [loadDadosMensais]);
+
   const loadCaixa = useCallback(async () => {
     setLoadingCaixa(true);
     const [recRes, despRes, aporteRes, totalRes] = await Promise.all([
@@ -326,6 +342,26 @@ export default function FinanceiroPage() {
               </div>
             </div>
 
+            {/* Status de Saúde Financeira */}
+            {(() => {
+              const caixa = caixaData?.caixa || 0;
+              const despesasDia = (caixaData?.despesas || 0) / 30;
+              const diasCaixa = despesasDia > 0 ? Math.floor(caixa / despesasDia) : 999;
+              const saudeColor = caixa < 0 ? "#ff6b6b" : diasCaixa < 30 ? "#ffa500" : "#4aff7a";
+              const saudeStatus = caixa < 0 ? "🔴 CRÍTICO" : diasCaixa < 30 ? "🟠 ALERTA" : "🟢 OK";
+
+              return (
+                <div style={{ backgroundColor: "rgba(255,255,255,0.1)", borderRadius: "0.875rem", padding: "1rem", marginBottom: "1rem", borderLeft: `4px solid ${saudeColor}` }}>
+                  <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "rgba(255,255,255,0.7)", marginBottom: "0.3rem" }}>SAÚDE FINANCEIRA</p>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <p style={{ fontSize: "1.5rem", fontWeight: 900, color: saudeColor }}>{saudeStatus}</p>
+                    {diasCaixa !== 999 && <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.8)" }}>⏱️ {diasCaixa} dias de caixa</p>}
+                  </div>
+                  {caixa < 0 && <p style={{ fontSize: "0.68rem", color: "#ff9999", marginTop: "0.5rem", fontWeight: 700 }}>⚠️ Caixa negativo! Você deve {fmt(Math.abs(caixa))}</p>}
+                </div>
+              );
+            })()}
+
             {/* Decomposição do patrimônio */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem" }}>
               {[
@@ -427,6 +463,94 @@ export default function FinanceiroPage() {
               </div>
             ))}
           </div>
+
+          {/* Breakdown de despesas por categoria */}
+          {caixaDespesas > 0 && (
+            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
+              <div style={{ padding: "1.25rem 1.75rem", borderBottom: "1px solid rgba(140,100,20,0.1)" }}>
+                <h3 style={{ color: "#1a1510", fontWeight: 700, fontSize: "0.95rem", margin: 0 }}>💸 Despesas por Categoria</h3>
+              </div>
+              <div style={{ padding: "1.25rem 1.75rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {(() => {
+                  const categoryMap: { [key: string]: { label: string; emoji: string; total: number } } = {
+                    estoque: { label: "Reposição de Estoque", emoji: "🛍️", total: caixaData?.despesasEstoque || 0 },
+                    marketing: { label: "Marketing", emoji: "📣", total: 0 },
+                    embalagem: { label: "Embalagem", emoji: "📦", total: 0 },
+                    frete: { label: "Frete", emoji: "🚚", total: 0 },
+                    cartao: { label: "Cartão / Taxa", emoji: "💳", total: 0 },
+                    outros: { label: "Outros", emoji: "📋", total: 0 },
+                  };
+
+                  const estoqueTotal = caixaData?.despesasEstoque || 0;
+                  const outrasTotal = caixaDespesas - estoqueTotal;
+
+                  return [
+                    { ...categoryMap.estoque, total: estoqueTotal, percentual: ((estoqueTotal / caixaDespesas) * 100).toFixed(1) },
+                    { label: "Outras despesas", emoji: "💼", total: outrasTotal, percentual: ((outrasTotal / caixaDespesas) * 100).toFixed(1) },
+                  ].map(cat => (
+                    <div key={cat.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.05)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <span style={{ fontSize: "1.2rem" }}>{cat.emoji}</span>
+                        <span style={{ color: "#6a4a10", fontWeight: 600 }}>{cat.label}</span>
+                      </div>
+                      <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+                        <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#b8891a" }}>{cat.percentual}%</span>
+                        <span style={{ fontSize: "1rem", fontWeight: 700, color: "#c04040" }}>{fmt(cat.total)}</span>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* Comparação Mês a Mês */}
+          {Object.keys(dadosMensais).length > 0 && (
+            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
+              <div style={{ padding: "1.25rem 1.75rem", borderBottom: "1px solid rgba(140,100,20,0.1)" }}>
+                <h3 style={{ color: "#1a1510", fontWeight: 700, fontSize: "0.95rem", margin: 0 }}>📊 Receitas vs Despesas (Últimos 6 meses)</h3>
+              </div>
+              <div style={{ padding: "1.25rem 1.75rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                {Object.entries(dadosMensais).map(([mes, dados]) => {
+                  const [year, month] = mes.split("-");
+                  const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString("pt-BR", { month: "short" }).toUpperCase();
+                  const saldo = dados.receitas - dados.despesas;
+                  const receitaPct = dados.despesas > 0 ? Math.min(100, (dados.receitas / dados.despesas) * 100) : 100;
+
+                  return (
+                    <div key={mes}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                        <span style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.9rem" }}>{monthName} {year}</span>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: saldo >= 0 ? "#2e7d32" : "#c04040" }}>
+                          {saldo >= 0 ? "+" : ""}{fmt(saldo)}
+                        </span>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
+                            <span style={{ fontSize: "0.75rem", color: "#9a8060", fontWeight: 700 }}>Receitas</span>
+                            <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#2e7d32" }}>{fmt(dados.receitas)}</span>
+                          </div>
+                          <div style={{ backgroundColor: "#e8f5e9", borderRadius: "0.25rem", height: "6px", overflow: "hidden" }}>
+                            <div style={{ backgroundColor: "#4aff7a", height: "100%", width: `${receitaPct}%`, transition: "width 0.3s" }} />
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
+                            <span style={{ fontSize: "0.75rem", color: "#9a8060", fontWeight: 700 }}>Despesas</span>
+                            <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#c04040" }}>{fmt(dados.despesas)}</span>
+                          </div>
+                          <div style={{ backgroundColor: "#fee8e8", borderRadius: "0.25rem", height: "6px", overflow: "hidden" }}>
+                            <div style={{ backgroundColor: "#ff6b6b", height: "100%", width: "100%" }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Histórico de aportes */}
           {caixaAportes.length > 0 && (

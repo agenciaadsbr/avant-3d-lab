@@ -22,6 +22,7 @@ interface Data {
 export default function GiroEstoquePage() {
   const [data, setData] = useState<Data | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<"all" | "products" | "components">("all");
 
   useEffect(() => {
     fetch("/api/admin/giro-estoque")
@@ -47,12 +48,13 @@ export default function GiroEstoquePage() {
         {/* Tabs */}
         <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.5rem", marginBottom: "1.5rem", borderBottom: "2px solid rgba(140,100,20,0.1)", paddingBottom: "0.75rem" }}>
           {[
-            { label: "Tudo", value: "all" },
-            { label: "Produtos", value: "products" },
-            { label: "Componentes", value: "components" },
-          ].map(tab => (
-            <button key={tab.value} style={{ padding: "0.5rem 1rem", border: "none", backgroundColor: "transparent", color: "#9a8060", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer", borderBottom: "3px solid transparent", marginBottom: "-0.75rem" }}>
-              {tab.label}
+            { label: "Tudo", value: "all" as const },
+            { label: "Produtos", value: "products" as const },
+            { label: "Componentes", value: "components" as const },
+          ].map(t => (
+            <button key={t.value} onClick={() => setTab(t.value)}
+              style={{ padding: "0.5rem 1rem", border: "none", backgroundColor: "transparent", color: tab === t.value ? "#b8891a" : "#9a8060", fontWeight: 700, fontSize: "0.875rem", cursor: "pointer", borderBottom: tab === t.value ? "3px solid #b8891a" : "3px solid transparent", marginBottom: "-0.75rem" }}>
+              {t.label}
             </button>
           ))}
         </div>
@@ -67,8 +69,8 @@ export default function GiroEstoquePage() {
             <div style={{ textAlign: "right" }}>Velocidade</div>
             <div style={{ textAlign: "right" }}>Giro</div>
           </div>
-          {data?.all.map((item, i) => (
-            <div key={i} style={{ padding: "1rem 1.5rem", borderBottom: i < (data.all.length - 1) ? "1px solid rgba(140,100,20,0.05)" : "none", display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr", gap: "1rem", alignItems: "center" }}>
+          {data?.[tab].map((item, i, arr) => (
+            <div key={i} style={{ padding: "1rem 1.5rem", borderBottom: i < (arr.length - 1) ? "1px solid rgba(140,100,20,0.05)" : "none", display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr", gap: "1rem", alignItems: "center" }}>
               <div>
                 <p style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.9rem" }}>{item.name}</p>
               </div>
