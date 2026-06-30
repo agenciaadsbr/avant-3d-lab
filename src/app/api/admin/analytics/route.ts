@@ -1,23 +1,45 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await auth();
   if (!session || (session.user as any)?.role !== "admin") {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 
   try {
+    const { searchParams } = new URL(req.url);
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+
+    // Período padrão: este mês
+    const now = new Date();
+    const defaultFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+    const defaultTo = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const startDate = from ? new Date(from) : defaultFrom;
+    const endDate = to ? new Date(to + "T23:59:59") : defaultTo;
+
+    const orderFilter = {
+      status: "delivered", // ✅ APENAS PEDIDOS ENTREGUES
+      paymentStatus: "paid", // ✅ APENAS PAGOS
+      createdAt: { gte: startDate, lte: endDate },
+    };
+
     // 1. LUCRO REAL
     const orders = await prisma.order.findMany({
-      where: { paymentStatus: "paid" },
+      where: orderFilter,
       include: { items: true },
     });
 
     const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
     const totalCost = (await prisma.orderItem.aggregate({
-      where: { costPrice: { not: null } },
+      where: {
+        costPrice: { not: null },
+        order: { status: "delivered", paymentStatus: "paid", createdAt: { gte: startDate, lte: endDate } }
+      },
       _sum: { costPrice: true },
     }))._sum.costPrice || 0;
 
@@ -27,17 +49,26 @@ export async function GET() {
     // 2. MARGEM POR PRODUTO
     const products = await prisma.product.findMany({
       where: { active: true },
-      include: { orderItems: true },
     });
 
     const productMargins = await Promise.all(
       products.map(async (product) => {
         const sales = await prisma.orderItem.aggregate({
-          where: { productId: product.id },
+          where: {
+            productId: product.id,
+            order: { status: "delivered", paymentStatus: "paid", createdAt: { gte: startDate, lte: endDate } }
+          },
           _sum: { quantity: true, costPrice: true },
         });
 
-        const faturamento = product.orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const itemsInPeriod = await prisma.orderItem.findMany({
+          where: {
+            productId: product.id,
+            order: { status: "delivered", paymentStatus: "paid", createdAt: { gte: startDate, lte: endDate } }
+          },
+        });
+
+        const faturamento = itemsInPeriod.reduce((sum, item) => sum + item.price * item.quantity, 0);
         const custo = sales._sum.costPrice || 0;
         const lucro = faturamento - custo;
         const margem = faturamento > 0 ? ((lucro / faturamento) * 100).toFixed(2) : "0";
@@ -74,21 +105,21 @@ export async function GET() {
         };
       });
 
-    // 4. PREVISÃO DE ESTOQUE (quando vai acabar)
+    // 4. PREVISÃO DE ESTOQUE (baseado na velocidade média de venda)
     const predictions = await Promise.all(
       products.map(async (product) => {
-        const sales = await prisma.orderItem.findMany({
-          where: { productId: product.id },
-          include: { order: true },
-          orderBy: { order: { createdAt: "asc" } },
+        const salesInPeriod = await prisma.orderItem.findMany({
+          where: {
+            productId: product.id,
+            order: { status: "delivered", paymentStatus: "paid", createdAt: { gte: startDate, lte: endDate } }
+          },
         });
 
-        if (sales.length === 0) return null;
+        if (salesInPeriod.length === 0) return null;
 
-        const firstSale = sales[0].order.createdAt;
-        const daysActive = Math.max(1, Math.floor((Date.now() - firstSale.getTime()) / (1000 * 60 * 60 * 24)));
-        const totalSold = sales.reduce((sum, s) => sum + s.quantity, 0);
-        const velocidade = totalSold / daysActive;
+        const totalSoldInPeriod = salesInPeriod.reduce((sum, s) => sum + s.quantity, 0);
+        const daysInPeriod = Math.max(1, Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+        const velocidade = totalSoldInPeriod / daysInPeriod;
         const diasRestantes = velocidade > 0 ? Math.floor(product.stock / velocidade) : 999;
 
         return {
@@ -102,12 +133,17 @@ export async function GET() {
       })
     );
 
+    // Período em formato legível
+    const periodLabel = `${startDate.toLocaleDateString("pt-BR")} a ${endDate.toLocaleDateString("pt-BR")}`;
+
     return NextResponse.json({
+      periodo: periodLabel,
       lucroReal: {
         faturamento: totalRevenue.toFixed(2),
         custo: totalCost.toFixed(2),
         lucro: lucroReal.toFixed(2),
         margem: margemTotal,
+        descricao: `Pedidos ENTREGUES e PAGOS no período: ${periodLabel}`
       },
       margensPorProduto: productMargins.sort((a, b) => b.margem - a.margem),
       analiseABC: productABC,

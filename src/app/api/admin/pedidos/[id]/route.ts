@@ -32,6 +32,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
   }
 
+  // Marca data de entrega na primeira vez que o status vira "delivered"
+  if (body.status === "delivered") {
+    const current = await prisma.order.findUnique({ where: { id }, select: { deliveredAt: true } });
+    if (current && !current.deliveredAt) data.deliveredAt = new Date();
+  }
+
   const order = await prisma.order.update({ where: { id }, data });
 
   // Append items to existing order

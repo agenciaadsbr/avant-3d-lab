@@ -14,6 +14,7 @@ const links = [
   { href: "/admin/metricas",    label: "Métricas",    emoji: "📈" },
   { href: "/admin/devolucoes",  label: "Devoluções",  emoji: "🔄" },
   { href: "/admin/marketing",   label: "Marketing",   emoji: "📣" },
+  { href: "/admin/pos-venda",   label: "Pós-venda",   emoji: "💬" },
 ];
 
 const Stars = () => (
