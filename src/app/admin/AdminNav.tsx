@@ -10,8 +10,10 @@ const links = [
   { href: "/admin/caderno",     label: "Caderno",     emoji: "📒" },
   { href: "/admin/clientes",    label: "Clientes",    emoji: "👥" },
   { href: "/admin/financeiro",  label: "Financeiro",  emoji: "💳" },
+  { href: "/admin/analytics",   label: "Analytics",   emoji: "📊" },
+  { href: "/admin/metricas",    label: "Métricas",    emoji: "📈" },
+  { href: "/admin/devolucoes",  label: "Devoluções",  emoji: "🔄" },
   { href: "/admin/marketing",   label: "Marketing",   emoji: "📣" },
-  { href: "/admin/relatorios",  label: "Relatórios",  emoji: "📊" },
 ];
 
 const Stars = () => (
