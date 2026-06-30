@@ -37,7 +37,7 @@ function nextMonthRange() {
 }
 
 export default function FinanceiroPage() {
-  const [tab, setTab] = useState<"caixa"|"lancamentos"|"cartao">("caixa");
+  const [tab, setTab] = useState<"caixa"|"lancamentos"|"cartao"|"vendas">("caixa");
 
   // ── CAIXA ──
   const [caixaFrom, setCaixaFrom] = useState(firstOfMonth());
@@ -57,6 +57,26 @@ export default function FinanceiroPage() {
   const [showAporteForm, setShowAporteForm] = useState<"aporte"|"retirada"|null>(null);
   const [aporteForm, setAporteForm] = useState({ amount: "", date: today(), description: "" });
   const [savingAporte, setSavingAporte] = useState(false);
+
+  // ── VENDAS ──
+  const [vendasFrom, setVendasFrom] = useState(firstOfMonth());
+  const [vendasTo, setVendasTo] = useState(lastOfMonth());
+  const [vendasTotal, setVendasTotal] = useState(0);
+  const [vendidosPorMes, setVendidosPorMes] = useState<{ [key: string]: number }>({});
+  const [loadingVendas, setLoadingVendas] = useState(true);
+
+  const loadVendas = useCallback(async () => {
+    setLoadingVendas(true);
+    const res = await fetch(`/api/admin/vendas?from=${vendasFrom}&to=${vendasTo}`);
+    if (res.ok) {
+      const d = await res.json();
+      setVendasTotal(d.total || 0);
+      setVendidosPorMes(d.vendidosPorMes || {});
+    }
+    setLoadingVendas(false);
+  }, [vendasFrom, vendasTo]);
+
+  useEffect(() => { loadVendas(); }, [loadVendas]);
 
   const loadCaixa = useCallback(async () => {
     setLoadingCaixa(true);
@@ -204,13 +224,66 @@ export default function FinanceiroPage() {
 
       {/* Abas */}
       <div style={{ display: "flex", gap: "0.25rem", marginBottom: "1.5rem", borderBottom: "2px solid rgba(140,100,20,0.1)" }}>
-        {[{ key: "caixa", label: "💰 Caixa" }, { key: "lancamentos", label: "📋 Lançamentos" }, { key: "cartao", label: "💳 Cartão de Crédito" }].map(t => (
+        {[{ key: "caixa", label: "💰 Caixa" }, { key: "vendas", label: "📊 Vendas" }, { key: "lancamentos", label: "📋 Lançamentos" }, { key: "cartao", label: "💳 Cartão de Crédito" }].map(t => (
           <button key={t.key} onClick={() => setTab(t.key as any)}
             style={{ padding: "0.6rem 1.25rem", border: "none", borderBottom: `3px solid ${tab === t.key ? "#b8891a" : "transparent"}`, backgroundColor: "transparent", fontWeight: 700, fontSize: "0.875rem", color: tab === t.key ? "#b8891a" : "#9a8060", cursor: "pointer", marginBottom: "-2px" }}>
             {t.label}
           </button>
         ))}
       </div>
+
+      {/* ══ ABA VENDAS ══ */}
+      {tab === "vendas" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+
+          {/* Filtros */}
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end", marginBottom: "1rem", backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1rem 1.25rem" }}>
+            <div><label style={{ fontSize: "0.7rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>DE</label><input type="date" value={vendasFrom} onChange={e => setVendasFrom(e.target.value)} style={{ padding: "0.5rem", border: "1px solid rgba(140,100,20,0.2)", borderRadius: "0.5rem", fontFamily: "inherit", width: 150 }} /></div>
+            <div><label style={{ fontSize: "0.7rem", color: "#9a8060", fontWeight: 700, display: "block", marginBottom: "0.3rem" }}>ATÉ</label><input type="date" value={vendasTo} onChange={e => setVendasTo(e.target.value)} style={{ padding: "0.5rem", border: "1px solid rgba(140,100,20,0.2)", borderRadius: "0.5rem", fontFamily: "inherit", width: 150 }} /></div>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              {[{ label: "Este mês", fn: () => { setVendasFrom(firstOfMonth()); setVendasTo(lastOfMonth()); } }, { label: "Últimos 30 dias", fn: () => { const d = new Date(); const f = new Date(d.getTime() - 30*24*60*60*1000); setVendasFrom(f.toISOString().split("T")[0]); setVendasTo(d.toISOString().split("T")[0]); } }].map(b => (
+                <button key={b.label} onClick={b.fn} style={{ backgroundColor: "#EDE4CC", border: "1px solid rgba(140,100,20,0.2)", color: "#6a4a10", fontWeight: 700, fontSize: "0.78rem", padding: "0.5rem 0.875rem", borderRadius: "0.625rem", cursor: "pointer" }}>{b.label}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Total vendido */}
+          <div style={{ backgroundColor: "#b8891a", borderRadius: "1rem", padding: "1.5rem", color: "#fff" }}>
+            <p style={{ fontSize: "0.8rem", opacity: 0.9 }}>TOTAL VENDIDO NO PERÍODO</p>
+            <p style={{ fontSize: "2.5rem", fontWeight: 900, marginTop: "0.5rem" }}>{fmt(vendasTotal)}</p>
+          </div>
+
+          {/* Vendas por mês */}
+          {Object.keys(vendidosPorMes).length > 0 && (
+            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
+              <div style={{ padding: "1.25rem 1.75rem", borderBottom: "1px solid rgba(140,100,20,0.1)" }}>
+                <h3 style={{ color: "#1a1510", fontWeight: 700, fontSize: "0.95rem", margin: 0 }}>📊 Vendas por Mês</h3>
+              </div>
+              <div style={{ padding: "1.25rem 1.75rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {Object.entries(vendidosPorMes)
+                  .sort(([a], [b]) => b.localeCompare(a))
+                  .map(([mes, total]) => {
+                    const [year, month] = mes.split("-");
+                    const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+                    return (
+                      <div key={mes} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.05)" }}>
+                        <span style={{ color: "#6a4a10", fontWeight: 600, textTransform: "capitalize" }}>{monthName}</span>
+                        <span style={{ fontSize: "1.1rem", fontWeight: 700, color: "#b8891a" }}>{fmt(total)}</span>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
+          {/* Vazio */}
+          {Object.keys(vendidosPorMes).length === 0 && (
+            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "2rem", textAlign: "center", color: "#9a8060" }}>
+              Nenhuma venda no período selecionado.
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ══ ABA CAIXA ══ */}
       {tab === "caixa" && (
