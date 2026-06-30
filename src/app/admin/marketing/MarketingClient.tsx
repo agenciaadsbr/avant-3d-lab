@@ -14,7 +14,7 @@ type Props = {
   inativos: any[]; tryOnEmAndamento: number; tryOnTotal: number;
   mesAtual: string; mesProximo: string;
   depoimentos: any[]; listaEspera: any[]; indicacoes: any[];
-  instagramMetrics: any[]; metaMes: any; receitaMes: number;
+  instagramMetrics: any[]; metaMes: any; receitaMes: number; vendasTotalMes: number;
   mesAtualNum: number; anoAtual: number; allClients: any[];
 };
 
@@ -35,7 +35,7 @@ const TABS = [
 
 const CHANNELS = ["instagram","whatsapp","email","tiktok","indicação","outro"];
 
-export default function MarketingClient({ gastosMarketing, totalMarketing, campanhas: campanhasInit, cupons: cuponsInit, topClientes, anivEste, anivProximo, inativos, tryOnEmAndamento, tryOnTotal, mesAtual, mesProximo, depoimentos: depInit, listaEspera: listaInit, indicacoes: indInit, instagramMetrics: instaInit, metaMes, receitaMes, mesAtualNum, anoAtual, allClients }: Props) {
+export default function MarketingClient({ gastosMarketing, totalMarketing, campanhas: campanhasInit, cupons: cuponsInit, topClientes, anivEste, anivProximo, inativos, tryOnEmAndamento, tryOnTotal, mesAtual, mesProximo, depoimentos: depInit, listaEspera: listaInit, indicacoes: indInit, instagramMetrics: instaInit, metaMes, receitaMes, vendasTotalMes, mesAtualNum, anoAtual, allClients }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState("visao");
   const [campanhas, setCampanhas] = useState(campanhasInit);
@@ -568,6 +568,19 @@ export default function MarketingClient({ gastosMarketing, totalMarketing, campa
                   ? <p style={{ color: "#1a8a2a", fontWeight: 700, marginTop: "0.75rem", fontSize: "0.9rem" }}>🎉 Meta batida! Parabéns!</p>
                   : <p style={{ color: "#9a8060", fontSize: "0.8rem", marginTop: "0.5rem" }}>Faltam {fmt(metaMes.target - receitaMes)} para bater a meta</p>
                 }
+
+                <div style={{ marginTop: "1.5rem", paddingTop: "1.25rem", borderTop: "1px dashed rgba(140,100,20,0.15)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+                    <span style={{ fontSize: "0.85rem", color: "#5a4a2a" }}>Vendido no mês (inclui caderno): {fmt(vendasTotalMes)}</span>
+                    <span style={{ fontSize: "0.85rem", fontWeight: 900, color: "#6a30b8" }}>
+                      {Math.round((vendasTotalMes / metaMes.target) * 100)}%
+                    </span>
+                  </div>
+                  <div style={{ height: 14, backgroundColor: "#f0e8d0", borderRadius: 999, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${Math.min((vendasTotalMes / metaMes.target) * 100, 100)}%`, backgroundColor: "#8a4fd8", borderRadius: 999, transition: "width 0.5s" }} />
+                  </div>
+                  <p style={{ color: "#9a8060", fontSize: "0.72rem", marginTop: "0.4rem" }}>Valor total das peças vendidas, mesmo as ainda não pagas (caderno)</p>
+                </div>
               </div>
             )}
             {!metaMes && <p style={{ color: "#b8a080", fontSize: "0.85rem" }}>Defina uma meta para este mês acima.</p>}

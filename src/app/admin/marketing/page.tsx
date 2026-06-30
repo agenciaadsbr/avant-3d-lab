@@ -23,6 +23,7 @@ export default async function MarketingPage() {
     depoimentos, listasEspera, indicacoes,
     instagramMetrics, metaMes,
     receitaMes,
+    vendasTotalMes,
   ] = await Promise.all([
     prisma.expense.findMany({ where: { category: "marketing" }, orderBy: { date: "desc" }, include: { supplier: { select: { name: true } } } }),
     prisma.campaign.findMany({ orderBy: { startDate: "desc" } }),
@@ -44,6 +45,7 @@ export default async function MarketingPage() {
     prisma.instagramMetric.findMany({ orderBy: { date: "desc" }, take: 12 }),
     prisma.goal.findFirst({ where: { month: thisMonth + 1, year: now.getFullYear() } }),
     prisma.order.aggregate({ _sum: { amountPaid: true }, where: { status: { not: "cancelled" }, createdAt: { gte: startMonth } } }),
+    prisma.order.aggregate({ _sum: { total: true }, where: { status: { not: "cancelled" }, createdAt: { gte: startMonth } } }),
   ]);
 
   const statsMap = await prisma.$queryRaw<Array<{couponCode: string, uses: number, revenue: number}>>`
@@ -103,6 +105,7 @@ export default async function MarketingPage() {
         instagramMetrics={serialize(instagramMetrics)}
         metaMes={metaMes ? { ...metaMes } : null}
         receitaMes={receitaMes._sum.amountPaid || 0}
+        vendasTotalMes={vendasTotalMes._sum.total || 0}
         mesAtualNum={thisMonth + 1}
         anoAtual={now.getFullYear()}
         allClients={allClients.map(c => ({ id: c.id, name: c.name, phone: c.phone }))}
