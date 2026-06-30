@@ -7,7 +7,6 @@ const links = [
   { href: "/admin",             label: "Início",      emoji: "🏠" },
   { href: "/admin/pedidos",     label: "Pedidos",     emoji: "📦" },
   { href: "/admin/produtos",    label: "Produtos",    emoji: "👗" },
-  { href: "/admin/produtos-sem-custo", label: "⚠️ Sem Custo", emoji: "⚠️" },
   { href: "/admin/caderno",     label: "Caderno",     emoji: "📒" },
   { href: "/admin/clientes",    label: "Clientes",    emoji: "👥" },
   { href: "/admin/financeiro",  label: "Financeiro",  emoji: "💳" },

@@ -55,9 +55,14 @@ export default function AdminProdutosClient({ products, categories }: { products
           <a href="/admin" style={{ color: "#b8891a", fontSize: "0.875rem", textDecoration: "none" }}>← Admin</a>
           <h1 style={{ color: "#1a1510", fontSize: "1.75rem", fontWeight: 900, marginTop: "0.2rem" }}>Produtos</h1>
         </div>
-        <a href="/admin/produtos/novo" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", backgroundColor: "#b8891a", color: "#fff", fontWeight: 700, fontSize: "0.875rem", padding: "0.6rem 1.25rem", borderRadius: "0.75rem", textDecoration: "none" }}>
-          + Novo Produto
-        </a>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <a href="/admin/produtos/novo" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", backgroundColor: "#b8891a", color: "#fff", fontWeight: 700, fontSize: "0.875rem", padding: "0.6rem 1.25rem", borderRadius: "0.75rem", textDecoration: "none" }}>
+            + Novo Produto
+          </a>
+          <a href="/admin/produtos-sem-custo" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", backgroundColor: "#c04040", color: "#fff", fontWeight: 700, fontSize: "0.875rem", padding: "0.6rem 1.25rem", borderRadius: "0.75rem", textDecoration: "none" }}>
+            ⚠️ Sem Custo
+          </a>
+        </div>
       </div>
 
       {/* KPIs */}
