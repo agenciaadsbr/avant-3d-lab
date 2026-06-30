@@ -30,27 +30,39 @@ export default function SizeGuide() {
     setLoading(true);
 
     try {
+      const payload = {
+        height: parseInt(height),
+        weight: parseInt(weight),
+        bustSize: bustSize ? parseInt(bustSize) : null,
+        waistSize: waistSize ? parseInt(waistSize) : null,
+      };
+
+      console.log("📤 Enviando requisição:", payload);
+
       const response = await fetch("/api/tamanho/recomendacao", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          height: parseInt(height),
-          weight: parseInt(weight),
-          bustSize: bustSize ? parseInt(bustSize) : null,
-          waistSize: waistSize ? parseInt(waistSize) : null,
-        }),
+        body: JSON.stringify(payload),
       });
 
+      console.log("📥 Status:", response.status);
+
       const data = await response.json();
+      console.log("📄 Response:", data);
+
       if (!response.ok) {
-        setError(data.error || "Erro ao processar");
+        const errorMsg = data.error || `Erro ${response.status}`;
+        setError(errorMsg);
+        console.error("❌ Erro:", errorMsg);
         return;
       }
 
       setResult(data);
+      console.log("✅ Recomendação recebida!");
     } catch (err) {
-      setError("Erro na requisição");
-      console.error(err);
+      const errorMsg = err instanceof Error ? err.message : "Erro desconhecido";
+      setError(`Erro na requisição: ${errorMsg}`);
+      console.error("❌ Erro de requisição:", err);
     } finally {
       setLoading(false);
     }
