@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 
+function dateOnly(s: string): Date { return new Date(s + "T12:00:00.000Z"); }
+
 function addMonths(date: Date, n: number): Date {
   const d = new Date(date);
   d.setMonth(d.getMonth() + n);
@@ -40,7 +42,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const expense = await prisma.expense.update({
       where: { id },
       data: {
-        date: new Date(date), description, amount: parseFloat(amount),
+        date: dateOnly(date), description, amount: parseFloat(amount),
         category, paymentMethod, supplierId: supplierId || null,
         notes: notes || null, dueDate: firstDue,
         installments: 1, installmentNumber: 1, groupId: null,
@@ -56,7 +58,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   await prisma.expense.update({
     where: { id },
     data: {
-      date: new Date(date),
+      date: dateOnly(date),
       description: `${description} (1/${totalInst})`,
       amount: instAmt, category, paymentMethod: "cartao_credito",
       supplierId: supplierId || null, notes: notes || null,
@@ -73,7 +75,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       : instAmt;
     await prisma.expense.create({
       data: {
-        date: new Date(date),
+        date: dateOnly(date),
         description: `${description} (${i + 1}/${totalInst})`,
         amount: parcAmt, category, paymentMethod: "cartao_credito",
         supplierId: supplierId || null, notes: notes || null,

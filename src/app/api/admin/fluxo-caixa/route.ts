@@ -14,8 +14,8 @@ export async function GET(req: Request) {
   const from = searchParams.get("from");
   const to = searchParams.get("to");
 
-  const startDate = from ? new Date(from + "T00:00:00") : new Date("2020-01-01");
-  const endDate = to ? new Date(to + "T23:59:59") : new Date();
+  const startDate = from ? new Date(from + "T00:00:00.000Z") : new Date("2020-01-01");
+  const endDate = to ? new Date(to + "T23:59:59.999Z") : new Date();
 
   // Verificar se existe saldo de abertura configurado
   const aberturaEntry = await prisma.cashInjection.findFirst({

@@ -4,14 +4,17 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 
+// Salva datas como meio-dia UTC para evitar problema de timezone (UTC-3 Brasil)
+function dateOnly(s: string): Date { return new Date(s + "T12:00:00.000Z"); }
+
 function monthToDueDate(month: string): Date {
   // month = "YYYY-MM" → dia 10
   const [y, m] = month.split("-").map(Number);
-  return new Date(y, m - 1, 10);
+  return new Date(Date.UTC(y, m - 1, 10, 12, 0, 0));
 }
 
 function addMonths(date: Date, n: number): Date {
-  const d = new Date(date);
+  const d = dateOnly(date);
   d.setMonth(d.getMonth() + n);
   if (d.getDate() !== date.getDate()) d.setDate(0); // ajuste fim de mês
   return d;
@@ -35,14 +38,14 @@ export async function GET(req: Request) {
     where.paymentMethod = "cartao_credito";
     if (from || to) {
       where.dueDate = {};
-      if (from) where.dueDate.gte = new Date(from);
-      if (to) { const d = new Date(to); d.setHours(23,59,59,999); where.dueDate.lte = d; }
+      if (from) where.dueDate.gte = new Date(from + "T00:00:00.000Z");
+      if (to) where.dueDate.lte = new Date(to + "T23:59:59.999Z");
     }
   } else {
     if (from || to) {
       where.date = {};
-      if (from) where.date.gte = new Date(from);
-      if (to) { const d = new Date(to); d.setHours(23,59,59,999); where.date.lte = d; }
+      if (from) where.date.gte = new Date(from + "T00:00:00.000Z");
+      if (to) where.date.lte = new Date(to + "T23:59:59.999Z");
     }
     if (supplierId) where.supplierId = supplierId;
     if (category) where.category = category;
@@ -81,7 +84,7 @@ export async function POST(req: Request) {
   if (totalInst === 1) {
     const expense = await prisma.expense.create({
       data: {
-        date: new Date(date), description: description.trim(),
+        date: dateOnly(date), description: description.trim(),
         amount: parseFloat(amount), category: category || "outros",
         paymentMethod: paymentMethod || "pix",
         supplierId: supplierId || null, notes: notes || null,
@@ -99,7 +102,7 @@ export async function POST(req: Request) {
     const parcAmt = isLast ? parseFloat((amount - instAmt * (totalInst - 1)).toFixed(2)) : instAmt;
     created.push(await prisma.expense.create({
       data: {
-        date: new Date(date),
+        date: dateOnly(date),
         description: `${description.trim()} (${i + 1}/${totalInst})`,
         amount: parcAmt, category: category || "outros",
         paymentMethod: "cartao_credito",
