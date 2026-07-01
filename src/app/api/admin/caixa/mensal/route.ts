@@ -9,7 +9,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   try {
-    // Últimos 6 meses
     const meses: { [key: string]: { receitas: number; despesas: number } } = {};
 
     for (let i = 5; i >= 0; i--) {
@@ -20,22 +19,37 @@ export async function GET(req: Request) {
       const inicio = new Date(d.getFullYear(), d.getMonth(), 1);
       const fim = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
 
-      const [receitas, despesas] = await Promise.all([
-        prisma.order.aggregate({
-          _sum: { amountPaid: true },
+      const [orders, despesas, cadernoAgg] = await Promise.all([
+        // Vendas normais (não caderno) pagas no mês
+        prisma.order.findMany({
           where: {
             status: { not: "cancelled" },
-            createdAt: { gte: inicio, lte: fim }
+            paymentStatus: { in: ["paid", "partial"] },
+            paymentMethod: { not: "caderno" },
+            createdAt: { gte: inicio, lte: fim },
           },
+          select: { total: true, amountPaid: true, paymentStatus: true },
         }),
+        // Despesas do mês
         prisma.expense.aggregate({
           _sum: { amount: true },
           where: { date: { gte: inicio, lte: fim } },
         }),
+        // Pagamentos de caderno recebidos no mês
+        prisma.cashInjection.aggregate({
+          _sum: { amount: true },
+          where: {
+            description: { startsWith: "Caderno —" },
+            date: { gte: inicio, lte: fim },
+          },
+        }),
       ]);
 
+      const totalVendas = orders.reduce((s, o) =>
+        s + (o.paymentStatus === "paid" ? o.total : o.amountPaid), 0);
+
       meses[mesKey] = {
-        receitas: receitas._sum.amountPaid || 0,
+        receitas: totalVendas + (cadernoAgg._sum.amount || 0),
         despesas: despesas._sum.amount || 0,
       };
     }
