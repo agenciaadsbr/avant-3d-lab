@@ -13,17 +13,33 @@ export async function GET(req: Request) {
   const from = searchParams.get("from");
   const to = searchParams.get("to");
 
-  const where: any = { status: { not: "cancelled" } };
-  if (from || to) {
-    where.createdAt = {};
-    if (from) where.createdAt.gte = new Date(from);
-    if (to) { const d = new Date(to); d.setHours(23,59,59,999); where.createdAt.lte = d; }
-  }
+  const startDate = from ? new Date(from + "T00:00:00") : new Date("2020-01-01");
+  const endDate = to ? new Date(to + "T23:59:59") : new Date();
 
-  const result = await prisma.order.aggregate({
-    _sum: { amountPaid: true },
-    where,
+  // Vendas normais (não caderno) pagas no período — usa total quando paid, amountPaid quando partial
+  const orders = await prisma.order.findMany({
+    where: {
+      status: { not: "cancelled" },
+      paymentStatus: { in: ["paid", "partial"] },
+      paymentMethod: { not: "caderno" },
+      createdAt: { gte: startDate, lte: endDate },
+    },
+    select: { total: true, amountPaid: true, paymentStatus: true },
   });
 
-  return NextResponse.json({ total: result._sum.amountPaid || 0 });
+  const totalVendas = orders.reduce((s, o) =>
+    s + (o.paymentStatus === "paid" ? o.total : o.amountPaid), 0);
+
+  // Pagamentos recebidos do caderno no período (registrados como CashInjection)
+  const cadernoResult = await prisma.cashInjection.aggregate({
+    _sum: { amount: true },
+    where: {
+      description: { startsWith: "Caderno —" },
+      date: { gte: startDate, lte: endDate },
+    },
+  });
+
+  const totalCaderno = cadernoResult._sum.amount || 0;
+
+  return NextResponse.json({ total: totalVendas + totalCaderno });
 }
