@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     prisma.order.findMany({
       where: {
         status: { not: "cancelled" },
-        amountPaid: { gt: 0 },
+        paymentStatus: { in: ["paid", "partial"] },
         createdAt: { gte: startDate, lte: endDate },
       },
       select: {
@@ -54,11 +54,14 @@ export async function GET(req: Request) {
   ]);
 
   // Saldo anterior (tudo antes do período)
-  const [receitasAntes, despesasAntes, aportesAntes] = await Promise.all([
-    prisma.order.aggregate({
-      _sum: { amountPaid: true },
-      where: { status: { not: "cancelled" }, amountPaid: { gt: 0 }, createdAt: { lt: startDate } },
-    }),
+  // Para o saldo anterior, precisa buscar os pedidos para calcular corretamente
+  const ordensAntes = await prisma.order.findMany({
+    where: { status: { not: "cancelled" }, paymentStatus: { in: ["paid", "partial"] }, createdAt: { lt: startDate } },
+    select: { total: true, amountPaid: true, paymentStatus: true },
+  });
+  const receitasAntesVal = ordensAntes.reduce((s, o) => s + (o.paymentStatus === "paid" ? o.total : o.amountPaid), 0);
+
+  const [despesasAntes, aportesAntes] = await Promise.all([
     prisma.expense.aggregate({
       _sum: { amount: true },
       where: { date: { lt: startDate } },
@@ -70,7 +73,7 @@ export async function GET(req: Request) {
   ]);
 
   const saldoAnterior =
-    (receitasAntes._sum.amountPaid || 0) +
+    receitasAntesVal +
     (aportesAntes._sum.amount || 0) -
     (despesasAntes._sum.amount || 0);
 
@@ -91,7 +94,8 @@ export async function GET(req: Request) {
       description: `Venda — ${o.user?.name || "cliente"}`,
       tipo: "entrada" as const,
       categoria: "venda",
-      valor: o.amountPaid,
+      // Se pago integralmente, usa total; se parcial, usa amountPaid
+      valor: o.paymentStatus === "paid" ? o.total : o.amountPaid,
     })),
     ...expenses.map(e => ({
       id: "exp-" + e.id,
