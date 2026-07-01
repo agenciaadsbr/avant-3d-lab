@@ -60,7 +60,7 @@ export default function NotaPedidoClient({ order }: { order: any }) {
             onClick={() => {
               const phone = order.user?.phone?.replace(/\D/g, "");
               if (!phone) return alert("Cliente sem telefone cadastrado.");
-              const url = `${window.location.origin}/admin/pedidos/${order.id}/nota`;
+              const url = `${window.location.origin}/nota/${order.id}`;
               const msg = encodeURIComponent(`Olá ${order.user?.name?.split(" ")[0] || ""}! Segue a nota do seu pedido:\n${url}`);
               window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
             }}
