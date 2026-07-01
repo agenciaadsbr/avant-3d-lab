@@ -22,12 +22,14 @@ export default function CadastroPage() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", birthDate: "", password: "" });
   const [error, setError] = useState("");
   const [alreadyExists, setAlreadyExists] = useState(false);
+  const [phoneExists, setPhoneExists] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setAlreadyExists(false);
+    setPhoneExists(false);
     setLoading(true);
 
     const res = await fetch("/api/cadastro", {
@@ -40,6 +42,7 @@ export default function CadastroPage() {
       const data = await res.json();
       setError(data.error || "Erro ao criar conta.");
       if (data.alreadyExists) setAlreadyExists(true);
+      if (data.phoneExists) setPhoneExists(true);
       setLoading(false);
       return;
     }
@@ -76,6 +79,15 @@ export default function CadastroPage() {
                     <Link href={`/login?email=${encodeURIComponent(form.email)}`} style={{ display: "inline-block", backgroundColor: "#b8891a", color: "#fff", fontWeight: 700, fontSize: "0.8rem", padding: "0.4rem 1rem", borderRadius: "0.5rem", textDecoration: "none" }}>
                       Fazer login →
                     </Link>
+                  </div>
+                )}
+                {phoneExists && (
+                  <div style={{ marginTop: "0.625rem" }}>
+                    <a href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}?text=${encodeURIComponent(`Olá! Meu número ${form.phone} já tem pedidos e quero acessar minha conta.`)}`}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{ display: "inline-block", backgroundColor: "#25D366", color: "#fff", fontWeight: 700, fontSize: "0.8rem", padding: "0.4rem 1rem", borderRadius: "0.5rem", textDecoration: "none" }}>
+                      📱 Falar com a loja
+                    </a>
                   </div>
                 )}
               </div>

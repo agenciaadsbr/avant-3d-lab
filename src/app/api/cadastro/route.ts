@@ -14,9 +14,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Senha deve ter pelo menos 6 caracteres." }, { status: 400 });
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
+  const [existingEmail, existingPhone] = await Promise.all([
+    prisma.user.findUnique({ where: { email } }),
+    phone ? prisma.user.findFirst({ where: { phone: phone.replace(/\D/g, "") } }) : null,
+  ]);
+
+  if (existingEmail) {
     return NextResponse.json({ error: "Este e-mail já possui cadastro. Faça login para acessar sua conta.", alreadyExists: true }, { status: 409 });
+  }
+
+  if (existingPhone) {
+    return NextResponse.json({
+      error: "Este número de telefone já está vinculado a uma conta. Entre em contato com a loja para acessar seus pedidos.",
+      phoneExists: true,
+    }, { status: 409 });
   }
 
   const hashed = await bcrypt.hash(password, 10);
@@ -24,7 +35,7 @@ export async function POST(req: Request) {
     data: {
       name,
       email,
-      phone,
+      phone: phone.replace(/\D/g, ""),
       birthDate: new Date(birthDate),
       password: hashed,
     },
