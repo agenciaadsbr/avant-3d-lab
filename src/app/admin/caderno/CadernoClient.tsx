@@ -6,6 +6,9 @@ type ClientData = {
   client: { id: string; name: string | null; email: string; phone?: string | null };
   totalDevido: number;
   pedidosCount: number;
+  ultimaCompra: string;
+  maiorAtraso: number;
+  temVencimento: boolean;
 };
 
 type PedidoItem = { quantity: number; price: number; size: string | null; componentName?: string | null; product?: { name: string } | null };
@@ -34,6 +37,10 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(false);
   const [consolidando, setConsolidando] = useState(false);
+  const [valorPagamento, setValorPagamento] = useState("");
+  const [metodoPagamento, setMetodoPagamento] = useState("pix");
+  const [registrando, setRegistrando] = useState(false);
+  const [confirmPagamento, setConfirmPagamento] = useState(false);
 
   const selectedClient = clientsData.find(c => c.userId === selectedClientId);
 
@@ -95,6 +102,27 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
     window.open(`https://wa.me/${ddi}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
+  const handleRegistrarPagamento = async () => {
+    const valor = parseFloat(valorPagamento.replace(",", "."));
+    if (!selectedClientId || isNaN(valor) || valor <= 0) return;
+    setRegistrando(true);
+    const res = await fetch("/api/admin/caderno/pagamento", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clientId: selectedClientId, valor, metodo: metodoPagamento }),
+    });
+    if (res.ok) {
+      setValorPagamento("");
+      setConfirmPagamento(false);
+      await loadClientPedidos(selectedClientId);
+      // Recarrega a lista de clientes para atualizar o totalDevido
+      window.location.reload();
+    } else {
+      alert("Erro ao registrar pagamento");
+    }
+    setRegistrando(false);
+  };
+
   const handleConsolidar = async () => {
     if (!selectedClientId) return;
     setConsolidando(true);
@@ -116,14 +144,73 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
 
   return (
     <div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
-        {clientsData.map(c => (
-          <div key={c.userId} onClick={() => handleSelectClient(c.userId)} style={{ backgroundColor: selectedClientId === c.userId ? "#b8891a" : "#fff", border: `2px solid ${selectedClientId === c.userId ? "#b8891a" : "rgba(140,100,20,0.1)"}`, borderRadius: "1rem", padding: "1.25rem", cursor: "pointer", transition: "all 0.3s" }}>
-            <div style={{ fontSize: "1.1rem", fontWeight: 900, color: selectedClientId === c.userId ? "#fff" : "#1a1510", marginBottom: "0.5rem" }}>{c.client.name || "—"}</div>
-            <div style={{ color: selectedClientId === c.userId ? "rgba(255,255,255,0.8)" : "#9a8060", fontSize: "0.85rem", marginBottom: "0.75rem" }}>{c.pedidosCount} pedido{c.pedidosCount > 1 ? "s" : ""}</div>
-            <div style={{ fontSize: "1.35rem", fontWeight: 900, color: selectedClientId === c.userId ? "#fff" : "#b8891a" }}>{fmt(c.totalDevido)}</div>
+      {/* Resumo geral */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
+        {[
+          { label: "Clientes", value: clientsData.length, emoji: "👥" },
+          { label: "Total em aberto", value: fmt(clientsData.reduce((s, c) => s + c.totalDevido, 0)), emoji: "💰" },
+          { label: "Em atraso", value: clientsData.filter(c => c.maiorAtraso > 0).length, emoji: "🔴", warn: true },
+          { label: "Sem vencimento", value: clientsData.filter(c => !c.temVencimento).length, emoji: "🟡", warn: true },
+        ].map(k => (
+          <div key={k.label} style={{ backgroundColor: "#fff", border: `1px solid ${(k as any).warn ? "rgba(192,64,64,0.15)" : "rgba(140,100,20,0.1)"}`, borderRadius: "0.875rem", padding: "1rem 1.25rem" }}>
+            <div style={{ fontSize: "1.1rem", marginBottom: "0.25rem" }}>{k.emoji}</div>
+            <div style={{ fontSize: "1.25rem", fontWeight: 900, color: "#1a1510" }}>{k.value}</div>
+            <div style={{ fontSize: "0.72rem", color: "#9a8060", fontWeight: 700 }}>{k.label}</div>
           </div>
         ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
+        {clientsData.map(c => {
+          const isSelected = selectedClientId === c.userId;
+          const urgencia = c.maiorAtraso > 0 ? "critico" : !c.temVencimento ? "alerta" : "ok";
+          const urgenciaConfig = {
+            critico: { dot: "#c04040", border: "rgba(192,64,64,0.4)", tag: `⚠️ ${c.maiorAtraso}d em atraso`, tagBg: "#fee8e8", tagColor: "#c04040" },
+            alerta:  { dot: "#b8891a", border: "rgba(184,137,26,0.3)", tag: "📅 Sem vencimento", tagBg: "#fff8e1", tagColor: "#b8891a" },
+            ok:      { dot: "#2e7d32", border: "rgba(140,100,20,0.12)", tag: "✅ Em dia", tagBg: "#e8f8e8", tagColor: "#2e7d32" },
+          }[urgencia];
+          const diasDesdeCompra = Math.floor((Date.now() - new Date(c.ultimaCompra).getTime()) / (1000 * 60 * 60 * 24));
+
+          return (
+            <div key={c.userId} onClick={() => handleSelectClient(c.userId)}
+              style={{ backgroundColor: isSelected ? "#b8891a" : "#fff", border: `2px solid ${isSelected ? "#b8891a" : urgenciaConfig.border}`, borderRadius: "1rem", padding: "1.25rem", cursor: "pointer", transition: "all 0.2s", position: "relative", overflow: "hidden" }}>
+
+              {/* Barra lateral de urgência */}
+              {!isSelected && <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, backgroundColor: urgenciaConfig.dot, borderRadius: "1rem 0 0 1rem" }} />}
+
+              <div style={{ paddingLeft: isSelected ? 0 : "0.5rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
+                  <div style={{ fontSize: "1rem", fontWeight: 900, color: isSelected ? "#fff" : "#1a1510" }}>{c.client.name || "—"}</div>
+                  {!isSelected && (
+                    <span style={{ fontSize: "0.65rem", fontWeight: 700, backgroundColor: urgenciaConfig.tagBg, color: urgenciaConfig.tagColor, padding: "0.2rem 0.5rem", borderRadius: "999px", whiteSpace: "nowrap" }}>
+                      {urgenciaConfig.tag}
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", gap: "1rem", marginBottom: "0.75rem" }}>
+                  <span style={{ color: isSelected ? "rgba(255,255,255,0.75)" : "#9a8060", fontSize: "0.78rem" }}>
+                    {c.pedidosCount} pedido{c.pedidosCount > 1 ? "s" : ""}
+                  </span>
+                  <span style={{ color: isSelected ? "rgba(255,255,255,0.75)" : "#9a8060", fontSize: "0.78rem" }}>
+                    última compra há {diasDesdeCompra}d
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ fontSize: "1.3rem", fontWeight: 900, color: isSelected ? "#fff" : "#b8891a" }}>{fmt(c.totalDevido)}</div>
+                  {c.client.phone && !isSelected && (
+                    <a href={`https://wa.me/55${c.client.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Olá ${c.client.name?.split(" ")[0]}! Passando para lembrar do saldo em aberto de ${fmt(c.totalDevido)} na Access Fit 🌟`)}`}
+                      onClick={e => e.stopPropagation()} target="_blank" rel="noopener noreferrer"
+                      style={{ backgroundColor: "#25D366", color: "#fff", border: "none", borderRadius: "0.5rem", padding: "0.3rem 0.6rem", fontSize: "0.72rem", fontWeight: 700, textDecoration: "none", cursor: "pointer" }}>
+                      📱
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {selectedClient && (
@@ -149,6 +236,69 @@ export default function CadernoClient({ clientsData }: { clientsData: ClientData
                   <span>Total em Aberto</span>
                   <span>{fmt(totalDevido)}</span>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── REGISTRAR PAGAMENTO ── */}
+          <div style={{ marginBottom: "2rem", backgroundColor: "#f0faf4", borderRadius: "0.75rem", padding: "1.25rem", border: "1px solid rgba(46,125,50,0.2)" }}>
+            <h3 style={{ fontSize: "0.95rem", fontWeight: 800, color: "#2e7d32", marginBottom: "1rem", textTransform: "uppercase" }}>💵 Registrar Pagamento</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#5a4a2a", marginBottom: "0.3rem" }}>Valor recebido (R$)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0,00"
+                  value={valorPagamento}
+                  onChange={e => { setValorPagamento(e.target.value); setConfirmPagamento(false); }}
+                  style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid rgba(46,125,50,0.3)", fontSize: "1rem", fontWeight: 700, backgroundColor: "#fff", boxSizing: "border-box" }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#5a4a2a", marginBottom: "0.3rem" }}>Forma de pagamento</label>
+                <select
+                  value={metodoPagamento}
+                  onChange={e => setMetodoPagamento(e.target.value)}
+                  style={{ width: "100%", padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid rgba(46,125,50,0.3)", fontSize: "0.95rem", fontWeight: 700, backgroundColor: "#fff", boxSizing: "border-box" }}
+                >
+                  <option value="pix">Pix</option>
+                  <option value="dinheiro">Dinheiro</option>
+                  <option value="credito">Cartão Crédito</option>
+                  <option value="debito">Cartão Débito</option>
+                  <option value="transferencia">Transferência</option>
+                </select>
+              </div>
+            </div>
+
+            {valorPagamento && parseFloat(valorPagamento.replace(",", ".")) > 0 && (
+              <div style={{ backgroundColor: "#fff", borderRadius: "0.5rem", padding: "0.75rem", marginBottom: "0.75rem", fontSize: "0.85rem", color: "#5a4a2a", border: "1px solid rgba(46,125,50,0.2)" }}>
+                <div>Recebendo: <strong style={{ color: "#2e7d32" }}>{fmt(parseFloat(valorPagamento.replace(",", ".")))}</strong></div>
+                <div>Saldo após pagamento: <strong style={{ color: totalDevido - parseFloat(valorPagamento.replace(",", ".")) > 0 ? "#b8891a" : "#2e7d32" }}>{fmt(Math.max(0, totalDevido - parseFloat(valorPagamento.replace(",", "."))))}</strong></div>
+                {parseFloat(valorPagamento.replace(",", ".")) > totalDevido && (
+                  <div style={{ color: "#c04040", marginTop: "0.3rem", fontWeight: 700 }}>⚠️ Valor maior que o saldo em aberto ({fmt(totalDevido)})</div>
+                )}
+              </div>
+            )}
+
+            {!confirmPagamento ? (
+              <button
+                onClick={() => setConfirmPagamento(true)}
+                disabled={!valorPagamento || parseFloat(valorPagamento.replace(",", ".")) <= 0}
+                style={{ backgroundColor: "#2e7d32", color: "#fff", border: "none", borderRadius: "0.5rem", padding: "0.75rem 1.5rem", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", opacity: (!valorPagamento || parseFloat(valorPagamento.replace(",", ".")) <= 0) ? 0.4 : 1 }}
+              >
+                Dar baixa no pagamento
+              </button>
+            ) : (
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                <span style={{ fontSize: "0.85rem", color: "#5a4a2a", fontWeight: 600 }}>Confirmar pagamento de {fmt(parseFloat(valorPagamento.replace(",", ".")))}?</span>
+                <button onClick={handleRegistrarPagamento} disabled={registrando} style={{ backgroundColor: "#2e7d32", color: "#fff", border: "none", borderRadius: "0.5rem", padding: "0.5rem 1rem", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer" }}>
+                  {registrando ? "..." : "Sim, confirmar"}
+                </button>
+                <button onClick={() => setConfirmPagamento(false)} style={{ backgroundColor: "#fff", color: "#5a4a2a", border: "1px solid rgba(140,100,20,0.2)", borderRadius: "0.5rem", padding: "0.5rem 1rem", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer" }}>
+                  Cancelar
+                </button>
               </div>
             )}
           </div>
