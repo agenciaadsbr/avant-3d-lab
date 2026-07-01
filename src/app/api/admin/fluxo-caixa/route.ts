@@ -43,7 +43,7 @@ export async function GET(req: Request) {
           where: { status: { not: "cancelled" }, paymentStatus: { in: ["paid", "partial"] }, createdAt: { gte: aberturaDate, lt: startDate } },
           select: { total: true, amountPaid: true, paymentStatus: true },
         }),
-        prisma.expense.aggregate({ _sum: { amount: true }, where: { date: { gte: aberturaDate, lt: startDate } } }),
+        prisma.expense.aggregate({ _sum: { amount: true }, where: { OR: [{ paymentMethod: { not: "cartao_credito" }, date: { gte: aberturaDate, lt: startDate } }, { paymentMethod: "cartao_credito", dueDate: { gte: aberturaDate, lt: startDate } }] } }),
         prisma.cashInjection.aggregate({
           _sum: { amount: true },
           where: { date: { gte: aberturaDate, lt: startDate }, NOT: { description: { startsWith: MARKER } } },
@@ -60,7 +60,7 @@ export async function GET(req: Request) {
     });
     const receitasAntesVal = ordensAntes.reduce((s, o) => s + (o.paymentStatus === "paid" ? o.total : o.amountPaid), 0);
     const [despesasAntes, aportesAntes] = await Promise.all([
-      prisma.expense.aggregate({ _sum: { amount: true }, where: { date: { lt: startDate } } }),
+      prisma.expense.aggregate({ _sum: { amount: true }, where: { OR: [{ paymentMethod: { not: "cartao_credito" }, date: { lt: startDate } }, { paymentMethod: "cartao_credito", dueDate: { lt: startDate } }] } }),
       prisma.cashInjection.aggregate({
         _sum: { amount: true },
         where: { date: { lt: startDate }, NOT: { description: { startsWith: MARKER } } },
@@ -70,7 +70,7 @@ export async function GET(req: Request) {
   }
 
   // Buscar movimentações do período (excluindo entrada de abertura)
-  const [orders, expenses, aportes] = await Promise.all([
+  const [orders, expensesNormais, expensesCartao, aportes] = await Promise.all([
     prisma.order.findMany({
       where: {
         status: { not: "cancelled" },
@@ -84,10 +84,17 @@ export async function GET(req: Request) {
       },
       orderBy: { createdAt: "asc" },
     }),
+    // Despesas normais (não cartão) → usa campo date
     prisma.expense.findMany({
-      where: { date: { gte: startDate, lte: endDate } },
+      where: { paymentMethod: { not: "cartao_credito" }, date: { gte: startDate, lte: endDate } },
       select: { id: true, date: true, description: true, amount: true, category: true, paymentMethod: true, supplier: { select: { name: true } } },
       orderBy: { date: "asc" },
+    }),
+    // Despesas de cartão → usa campo dueDate (mês da fatura = saída real do caixa)
+    prisma.expense.findMany({
+      where: { paymentMethod: "cartao_credito", dueDate: { gte: startDate, lte: endDate } },
+      select: { id: true, dueDate: true, description: true, amount: true, category: true, paymentMethod: true, installments: true, installmentNumber: true, supplier: { select: { name: true } } },
+      orderBy: { dueDate: "asc" },
     }),
     prisma.cashInjection.findMany({
       where: { date: { gte: startDate, lte: endDate }, NOT: { description: { startsWith: MARKER } } },
@@ -107,12 +114,20 @@ export async function GET(req: Request) {
       categoria: "venda",
       valor: o.paymentStatus === "paid" ? o.total : o.amountPaid,
     })),
-    ...expenses.map(e => ({
+    ...expensesNormais.map(e => ({
       id: "exp-" + e.id,
       date: e.date,
       description: e.description + (e.supplier ? ` (${e.supplier.name})` : ""),
       tipo: "saida" as const,
       categoria: e.category,
+      valor: e.amount,
+    })),
+    ...expensesCartao.map((e: any) => ({
+      id: "card-" + e.id,
+      date: e.dueDate,
+      description: `💳 ${e.description}${e.installments > 1 ? ` (${e.installmentNumber}/${e.installments}x)` : ""}${e.supplier ? ` — ${e.supplier.name}` : ""}`,
+      tipo: "saida" as const,
+      categoria: "cartao",
       valor: e.amount,
     })),
     ...aportes.map(a => ({
