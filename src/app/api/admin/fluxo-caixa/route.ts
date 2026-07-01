@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+const MARKER = "__saldo_abertura__";
+
 export async function GET(req: Request) {
   const session = await auth();
   if (!session || (session.user as any)?.role !== "admin")
@@ -15,6 +17,59 @@ export async function GET(req: Request) {
   const startDate = from ? new Date(from + "T00:00:00") : new Date("2020-01-01");
   const endDate = to ? new Date(to + "T23:59:59") : new Date();
 
+  // Verificar se existe saldo de abertura configurado
+  const aberturaEntry = await prisma.cashInjection.findFirst({
+    where: { description: { startsWith: MARKER } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const aberturaDate = aberturaEntry ? aberturaEntry.date : null;
+  const aberturaAmount = aberturaEntry ? aberturaEntry.amount : null;
+
+  // Se há saldo de abertura e o período começa a partir dele, ignora histórico anterior
+  const usarAbertura = aberturaDate && startDate >= aberturaDate;
+
+  let saldoAnterior: number;
+
+  if (usarAbertura && aberturaAmount !== null) {
+    // Calcula apenas o que aconteceu entre a data de abertura e o início do período filtrado
+    if (startDate.getTime() === aberturaDate.getTime()) {
+      // Período começa exatamente na data de abertura
+      saldoAnterior = aberturaAmount;
+    } else {
+      // Há transações entre abertura e início do período
+      const [ordensInter, despesasInter, aportesInter] = await Promise.all([
+        prisma.order.findMany({
+          where: { status: { not: "cancelled" }, paymentStatus: { in: ["paid", "partial"] }, createdAt: { gte: aberturaDate, lt: startDate } },
+          select: { total: true, amountPaid: true, paymentStatus: true },
+        }),
+        prisma.expense.aggregate({ _sum: { amount: true }, where: { date: { gte: aberturaDate, lt: startDate } } }),
+        prisma.cashInjection.aggregate({
+          _sum: { amount: true },
+          where: { date: { gte: aberturaDate, lt: startDate }, NOT: { description: { startsWith: MARKER } } },
+        }),
+      ]);
+      const receitasInter = ordensInter.reduce((s, o) => s + (o.paymentStatus === "paid" ? o.total : o.amountPaid), 0);
+      saldoAnterior = aberturaAmount + receitasInter + (aportesInter._sum.amount || 0) - (despesasInter._sum.amount || 0);
+    }
+  } else {
+    // Sem saldo de abertura: soma tudo antes do período
+    const ordensAntes = await prisma.order.findMany({
+      where: { status: { not: "cancelled" }, paymentStatus: { in: ["paid", "partial"] }, createdAt: { lt: startDate } },
+      select: { total: true, amountPaid: true, paymentStatus: true },
+    });
+    const receitasAntesVal = ordensAntes.reduce((s, o) => s + (o.paymentStatus === "paid" ? o.total : o.amountPaid), 0);
+    const [despesasAntes, aportesAntes] = await Promise.all([
+      prisma.expense.aggregate({ _sum: { amount: true }, where: { date: { lt: startDate } } }),
+      prisma.cashInjection.aggregate({
+        _sum: { amount: true },
+        where: { date: { lt: startDate }, NOT: { description: { startsWith: MARKER } } },
+      }),
+    ]);
+    saldoAnterior = receitasAntesVal + (aportesAntes._sum.amount || 0) - (despesasAntes._sum.amount || 0);
+  }
+
+  // Buscar movimentações do período (excluindo entrada de abertura)
   const [orders, expenses, aportes] = await Promise.all([
     prisma.order.findMany({
       where: {
@@ -23,69 +78,25 @@ export async function GET(req: Request) {
         createdAt: { gte: startDate, lte: endDate },
       },
       select: {
-        id: true,
-        createdAt: true,
-        amountPaid: true,
-        total: true,
-        paymentMethod: true,
-        paymentStatus: true,
+        id: true, createdAt: true, amountPaid: true, total: true,
+        paymentMethod: true, paymentStatus: true,
         user: { select: { name: true } },
       },
       orderBy: { createdAt: "asc" },
     }),
     prisma.expense.findMany({
       where: { date: { gte: startDate, lte: endDate } },
-      select: {
-        id: true,
-        date: true,
-        description: true,
-        amount: true,
-        category: true,
-        paymentMethod: true,
-        supplier: { select: { name: true } },
-      },
+      select: { id: true, date: true, description: true, amount: true, category: true, paymentMethod: true, supplier: { select: { name: true } } },
       orderBy: { date: "asc" },
     }),
     prisma.cashInjection.findMany({
-      where: { date: { gte: startDate, lte: endDate } },
+      where: { date: { gte: startDate, lte: endDate }, NOT: { description: { startsWith: MARKER } } },
       select: { id: true, date: true, amount: true, description: true },
       orderBy: { date: "asc" },
     }),
   ]);
 
-  // Saldo anterior (tudo antes do período)
-  // Para o saldo anterior, precisa buscar os pedidos para calcular corretamente
-  const ordensAntes = await prisma.order.findMany({
-    where: { status: { not: "cancelled" }, paymentStatus: { in: ["paid", "partial"] }, createdAt: { lt: startDate } },
-    select: { total: true, amountPaid: true, paymentStatus: true },
-  });
-  const receitasAntesVal = ordensAntes.reduce((s, o) => s + (o.paymentStatus === "paid" ? o.total : o.amountPaid), 0);
-
-  const [despesasAntes, aportesAntes] = await Promise.all([
-    prisma.expense.aggregate({
-      _sum: { amount: true },
-      where: { date: { lt: startDate } },
-    }),
-    prisma.cashInjection.aggregate({
-      _sum: { amount: true },
-      where: { date: { lt: startDate } },
-    }),
-  ]);
-
-  const saldoAnterior =
-    receitasAntesVal +
-    (aportesAntes._sum.amount || 0) -
-    (despesasAntes._sum.amount || 0);
-
-  // Montar movimentações
-  type Mov = {
-    id: string;
-    date: Date;
-    description: string;
-    tipo: "entrada" | "saida";
-    categoria: string;
-    valor: number;
-  };
+  type Mov = { id: string; date: Date; description: string; tipo: "entrada" | "saida"; categoria: string; valor: number };
 
   const movs: Mov[] = [
     ...orders.map(o => ({
@@ -94,7 +105,6 @@ export async function GET(req: Request) {
       description: `Venda — ${o.user?.name || "cliente"}`,
       tipo: "entrada" as const,
       categoria: "venda",
-      // Se pago integralmente, usa total; se parcial, usa amountPaid
       valor: o.paymentStatus === "paid" ? o.total : o.amountPaid,
     })),
     ...expenses.map(e => ({
@@ -115,7 +125,6 @@ export async function GET(req: Request) {
     })),
   ].sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  // Calcular saldo corrente
   let saldo = saldoAnterior;
   const extrato = movs.map(m => {
     if (m.tipo === "entrada") saldo += m.valor;
@@ -132,5 +141,6 @@ export async function GET(req: Request) {
     totalEntradas,
     totalSaidas,
     extrato,
+    abertura: aberturaEntry ? { amount: aberturaEntry.amount, date: aberturaEntry.date.toISOString().split("T")[0] } : null,
   });
 }

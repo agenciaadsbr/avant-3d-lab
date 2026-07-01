@@ -59,11 +59,22 @@ export default function FinanceiroPage() {
   const [savingAporte, setSavingAporte] = useState(false);
 
   // ── FLUXO DE CAIXA ──
-  const [fluxoFrom, setFluxoFrom] = useState(firstOfMonth());
+  const [fluxoFrom, setFluxoFrom] = useState("2026-07-01");
   const [fluxoTo, setFluxoTo] = useState(lastOfMonth());
   const [fluxoData, setFluxoData] = useState<any>(null);
   const [loadingFluxo, setLoadingFluxo] = useState(false);
   const [fluxoFiltro, setFluxoFiltro] = useState<"todos"|"entrada"|"saida">("todos");
+  const [showAberturaForm, setShowAberturaForm] = useState(false);
+  const [aberturaForm, setAberturaForm] = useState({ amount: "490", date: "2026-07-01" });
+  const [savingAbertura, setSavingAbertura] = useState(false);
+
+  const saveAbertura = async () => {
+    setSavingAbertura(true);
+    await fetch("/api/admin/fluxo-caixa/abertura", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(aberturaForm) });
+    setSavingAbertura(false);
+    setShowAberturaForm(false);
+    loadFluxo();
+  };
 
   const loadFluxo = useCallback(async () => {
     setLoadingFluxo(true);
@@ -268,16 +279,39 @@ export default function FinanceiroPage() {
       {tab === "fluxo" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 
+          {/* Banner saldo de abertura */}
+          {fluxoData?.abertura ? (
+            <div style={{ backgroundColor: "#fff8e1", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "0.875rem", padding: "0.875rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
+              <span style={{ fontSize: "0.82rem", color: "#5a4a2a" }}>
+                📌 Saldo de abertura: <strong>{fmt(fluxoData.abertura.amount)}</strong> em {new Date(fluxoData.abertura.date + "T00:00:00").toLocaleDateString("pt-BR")}
+              </span>
+              <button onClick={() => { setAberturaForm({ amount: String(fluxoData.abertura.amount), date: fluxoData.abertura.date }); setShowAberturaForm(true); }} style={{ background: "none", border: "none", color: "#b8891a", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", textDecoration: "underline" }}>alterar</button>
+            </div>
+          ) : (
+            <div style={{ backgroundColor: "#fff8e1", border: "1px dashed rgba(184,137,26,0.4)", borderRadius: "0.875rem", padding: "0.875rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
+              <span style={{ fontSize: "0.82rem", color: "#7a6030" }}>📌 Defina um saldo de abertura para partir de um valor inicial correto</span>
+              <button onClick={() => setShowAberturaForm(true)} style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.5rem", padding: "0.4rem 0.875rem", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer" }}>Definir saldo inicial</button>
+            </div>
+          )}
+
+          {/* Form saldo de abertura */}
+          {showAberturaForm && (
+            <div style={{ backgroundColor: "#fff", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "1rem", padding: "1.25rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end" }}>
+              <div><label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", display: "block", marginBottom: "0.3rem" }}>Valor inicial (R$)</label><input type="number" value={aberturaForm.amount} onChange={e => setAberturaForm(f => ({ ...f, amount: e.target.value }))} style={inp({ width: 160 })} /></div>
+              <div><label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", display: "block", marginBottom: "0.3rem" }}>Data de abertura</label><input type="date" value={aberturaForm.date} onChange={e => setAberturaForm(f => ({ ...f, date: e.target.value }))} style={inp({ width: 160 })} /></div>
+              <button onClick={saveAbertura} disabled={savingAbertura} style={{ backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.6rem 1.25rem", fontWeight: 700, cursor: "pointer" }}>{savingAbertura ? "Salvando..." : "Salvar"}</button>
+              <button onClick={() => setShowAberturaForm(false)} style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", borderRadius: "0.625rem", padding: "0.6rem 1rem", fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
+            </div>
+          )}
+
           {/* Filtros */}
           <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1rem 1.25rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end" }}>
             <div><label style={{ fontSize: "0.7rem", fontWeight: 700, color: "#9a8060", display: "block", marginBottom: "0.3rem" }}>DE</label><input type="date" value={fluxoFrom} onChange={e => setFluxoFrom(e.target.value)} style={inp({ width: 160 })} /></div>
             <div><label style={{ fontSize: "0.7rem", fontWeight: 700, color: "#9a8060", display: "block", marginBottom: "0.3rem" }}>ATÉ</label><input type="date" value={fluxoTo} onChange={e => setFluxoTo(e.target.value)} style={inp({ width: 160 })} /></div>
             <div style={{ display: "flex", gap: "0.4rem" }}>
               {[
+                { label: "Desde abertura", fn: () => { setFluxoFrom(fluxoData?.abertura?.date || "2026-07-01"); setFluxoTo(lastOfMonth()); } },
                 { label: "Este mês", fn: () => { setFluxoFrom(firstOfMonth()); setFluxoTo(lastOfMonth()); } },
-                { label: "Últimos 3 meses", fn: () => { const d = new Date(); const f = new Date(d.getFullYear(), d.getMonth()-2, 1); setFluxoFrom(`${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,"0")}-01`); setFluxoTo(lastOfMonth()); } },
-                { label: "Este ano", fn: () => { setFluxoFrom(`${new Date().getFullYear()}-01-01`); setFluxoTo(lastOfMonth()); } },
-                { label: "Tudo", fn: () => { setFluxoFrom("2020-01-01"); setFluxoTo(lastOfMonth()); } },
               ].map(b => (
                 <button key={b.label} onClick={b.fn} style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#7a6030", fontWeight: 700, fontSize: "0.78rem", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", cursor: "pointer" }}>{b.label}</button>
               ))}
