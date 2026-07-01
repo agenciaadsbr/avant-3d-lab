@@ -37,7 +37,7 @@ function nextMonthRange() {
 }
 
 export default function FinanceiroPage() {
-  const [tab, setTab] = useState<"caixa"|"lancamentos"|"cartao"|"vendas">("caixa");
+  const [tab, setTab] = useState<"caixa"|"fluxo"|"lancamentos"|"cartao"|"vendas">("caixa");
 
   // ── CAIXA ──
   const [caixaFrom, setCaixaFrom] = useState(firstOfMonth());
@@ -57,6 +57,22 @@ export default function FinanceiroPage() {
   const [showAporteForm, setShowAporteForm] = useState<"aporte"|"retirada"|null>(null);
   const [aporteForm, setAporteForm] = useState({ amount: "", date: today(), description: "" });
   const [savingAporte, setSavingAporte] = useState(false);
+
+  // ── FLUXO DE CAIXA ──
+  const [fluxoFrom, setFluxoFrom] = useState(firstOfMonth());
+  const [fluxoTo, setFluxoTo] = useState(lastOfMonth());
+  const [fluxoData, setFluxoData] = useState<any>(null);
+  const [loadingFluxo, setLoadingFluxo] = useState(false);
+  const [fluxoFiltro, setFluxoFiltro] = useState<"todos"|"entrada"|"saida">("todos");
+
+  const loadFluxo = useCallback(async () => {
+    setLoadingFluxo(true);
+    const res = await fetch(`/api/admin/fluxo-caixa?from=${fluxoFrom}&to=${fluxoTo}`);
+    if (res.ok) setFluxoData(await res.json());
+    setLoadingFluxo(false);
+  }, [fluxoFrom, fluxoTo]);
+
+  useEffect(() => { if (tab === "fluxo") loadFluxo(); }, [tab, loadFluxo]);
 
   // ── VENDAS ──
   const [vendasFrom, setVendasFrom] = useState(firstOfMonth());
@@ -240,13 +256,137 @@ export default function FinanceiroPage() {
 
       {/* Abas */}
       <div style={{ display: "flex", gap: "0.25rem", marginBottom: "1.5rem", borderBottom: "2px solid rgba(140,100,20,0.1)" }}>
-        {[{ key: "caixa", label: "💰 Caixa" }, { key: "vendas", label: "📊 Vendas" }, { key: "lancamentos", label: "📋 Lançamentos" }, { key: "cartao", label: "💳 Cartão de Crédito" }].map(t => (
+        {[{ key: "caixa", label: "💰 Caixa" }, { key: "fluxo", label: "📈 Fluxo de Caixa" }, { key: "vendas", label: "📊 Vendas" }, { key: "lancamentos", label: "📋 Lançamentos" }, { key: "cartao", label: "💳 Cartão de Crédito" }].map(t => (
           <button key={t.key} onClick={() => setTab(t.key as any)}
             style={{ padding: "0.6rem 1.25rem", border: "none", borderBottom: `3px solid ${tab === t.key ? "#b8891a" : "transparent"}`, backgroundColor: "transparent", fontWeight: 700, fontSize: "0.875rem", color: tab === t.key ? "#b8891a" : "#9a8060", cursor: "pointer", marginBottom: "-2px" }}>
             {t.label}
           </button>
         ))}
       </div>
+
+      {/* ══ ABA FLUXO DE CAIXA ══ */}
+      {tab === "fluxo" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+
+          {/* Filtros */}
+          <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", padding: "1rem 1.25rem", display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end" }}>
+            <div><label style={{ fontSize: "0.7rem", fontWeight: 700, color: "#9a8060", display: "block", marginBottom: "0.3rem" }}>DE</label><input type="date" value={fluxoFrom} onChange={e => setFluxoFrom(e.target.value)} style={inp({ width: 160 })} /></div>
+            <div><label style={{ fontSize: "0.7rem", fontWeight: 700, color: "#9a8060", display: "block", marginBottom: "0.3rem" }}>ATÉ</label><input type="date" value={fluxoTo} onChange={e => setFluxoTo(e.target.value)} style={inp({ width: 160 })} /></div>
+            <div style={{ display: "flex", gap: "0.4rem" }}>
+              {[
+                { label: "Este mês", fn: () => { setFluxoFrom(firstOfMonth()); setFluxoTo(lastOfMonth()); } },
+                { label: "Últimos 3 meses", fn: () => { const d = new Date(); const f = new Date(d.getFullYear(), d.getMonth()-2, 1); setFluxoFrom(`${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,"0")}-01`); setFluxoTo(lastOfMonth()); } },
+                { label: "Este ano", fn: () => { setFluxoFrom(`${new Date().getFullYear()}-01-01`); setFluxoTo(lastOfMonth()); } },
+                { label: "Tudo", fn: () => { setFluxoFrom("2020-01-01"); setFluxoTo(lastOfMonth()); } },
+              ].map(b => (
+                <button key={b.label} onClick={b.fn} style={{ backgroundColor: "#FAF6EE", border: "1px solid rgba(140,100,20,0.2)", color: "#7a6030", fontWeight: 700, fontSize: "0.78rem", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", cursor: "pointer" }}>{b.label}</button>
+              ))}
+            </div>
+            <button onClick={loadFluxo} style={{ backgroundColor: "#b8891a", color: "#fff", fontWeight: 700, fontSize: "0.8rem", padding: "0.6rem 1.25rem", borderRadius: "0.625rem", border: "none", cursor: "pointer" }}>Filtrar</button>
+          </div>
+
+          {loadingFluxo && <div style={{ textAlign: "center", padding: "2rem", color: "#b8a080" }}>Carregando extrato...</div>}
+
+          {fluxoData && !loadingFluxo && (
+            <>
+              {/* Cards resumo */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
+                <div style={{ backgroundColor: "#e8f5e9", borderRadius: "1rem", padding: "1.25rem" }}>
+                  <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#2e7d32", marginBottom: "0.25rem" }}>SALDO ANTERIOR AO PERÍODO</div>
+                  <div style={{ fontSize: "1.4rem", fontWeight: 900, color: fluxoData.saldoAnterior >= 0 ? "#2e7d32" : "#c04040" }}>{fmt(fluxoData.saldoAnterior)}</div>
+                </div>
+                <div style={{ backgroundColor: "#e3f2fd", borderRadius: "1rem", padding: "1.25rem" }}>
+                  <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#1565c0", marginBottom: "0.25rem" }}>ENTRADAS NO PERÍODO</div>
+                  <div style={{ fontSize: "1.4rem", fontWeight: 900, color: "#1565c0" }}>+{fmt(fluxoData.totalEntradas)}</div>
+                </div>
+                <div style={{ backgroundColor: "#fee8e8", borderRadius: "1rem", padding: "1.25rem" }}>
+                  <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#c04040", marginBottom: "0.25rem" }}>SAÍDAS NO PERÍODO</div>
+                  <div style={{ fontSize: "1.4rem", fontWeight: 900, color: "#c04040" }}>-{fmt(fluxoData.totalSaidas)}</div>
+                </div>
+                <div style={{ backgroundColor: fluxoData.saldoFinal >= 0 ? "#f0fdf4" : "#fee8e8", border: `2px solid ${fluxoData.saldoFinal >= 0 ? "#4aff7a" : "#c04040"}`, borderRadius: "1rem", padding: "1.25rem" }}>
+                  <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#9a8060", marginBottom: "0.25rem" }}>SALDO EM CAIXA AGORA</div>
+                  <div style={{ fontSize: "1.6rem", fontWeight: 900, color: fluxoData.saldoFinal >= 0 ? "#2e7d32" : "#c04040" }}>{fmt(fluxoData.saldoFinal)}</div>
+                </div>
+              </div>
+
+              {/* Filtro tipo */}
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                {(["todos", "entrada", "saida"] as const).map(f => (
+                  <button key={f} onClick={() => setFluxoFiltro(f)}
+                    style={{ padding: "0.4rem 1rem", borderRadius: "999px", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", border: "1px solid", borderColor: fluxoFiltro === f ? "#b8891a" : "rgba(140,100,20,0.2)", backgroundColor: fluxoFiltro === f ? "#b8891a" : "#fff", color: fluxoFiltro === f ? "#fff" : "#9a8060" }}>
+                    {f === "todos" ? "Todos" : f === "entrada" ? "✅ Entradas" : "❌ Saídas"}
+                  </button>
+                ))}
+              </div>
+
+              {/* Extrato */}
+              <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+                    <thead>
+                      <tr style={{ backgroundColor: "#FAF6EE" }}>
+                        {["Data", "Descrição", "Tipo", "Valor", "Saldo"].map(h => (
+                          <th key={h} style={{ textAlign: "left", padding: "0.875rem 1rem", color: "#9a8060", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.1)", whiteSpace: "nowrap" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* Linha de saldo anterior */}
+                      <tr style={{ backgroundColor: "#FDFAF4", borderBottom: "2px solid rgba(140,100,20,0.15)" }}>
+                        <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem" }}>—</td>
+                        <td colSpan={2} style={{ padding: "0.75rem 1rem", color: "#5a4a2a", fontWeight: 700, fontSize: "0.82rem", fontStyle: "italic" }}>Saldo anterior ao período</td>
+                        <td style={{ padding: "0.75rem 1rem" }} />
+                        <td style={{ padding: "0.75rem 1rem", fontWeight: 900, color: fluxoData.saldoAnterior >= 0 ? "#2e7d32" : "#c04040", fontSize: "0.9rem", whiteSpace: "nowrap" }}>{fmt(fluxoData.saldoAnterior)}</td>
+                      </tr>
+
+                      {fluxoData.extrato
+                        .filter((m: any) => fluxoFiltro === "todos" || m.tipo === fluxoFiltro)
+                        .map((m: any, i: number) => {
+                          const catLabels: Record<string, string> = {
+                            venda: "💰 Venda", aporte: m.tipo === "entrada" ? "💉 Aporte" : "💸 Retirada",
+                            estoque: "🛍️ Estoque", marketing: "📣 Marketing", embalagem: "📦 Embalagem",
+                            frete: "🚚 Frete", cartao: "💳 Cartão", outros: "📋 Outros",
+                          };
+                          return (
+                            <tr key={m.id} style={{ borderBottom: "1px solid rgba(140,100,20,0.05)", backgroundColor: i % 2 === 0 ? "#fff" : "#FDFAF4" }}>
+                              <td style={{ padding: "0.75rem 1rem", color: "#9a8060", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+                                {new Date(m.date).toLocaleDateString("pt-BR")}
+                              </td>
+                              <td style={{ padding: "0.75rem 1rem", color: "#1a1510", fontWeight: 500, maxWidth: 320 }}>
+                                <span style={{ fontSize: "0.875rem" }}>{m.description}</span>
+                              </td>
+                              <td style={{ padding: "0.75rem 1rem" }}>
+                                <span style={{ fontSize: "0.72rem", fontWeight: 700, padding: "0.2rem 0.6rem", borderRadius: 999, whiteSpace: "nowrap", backgroundColor: m.tipo === "entrada" ? "#e3f2fd" : "#fee8e8", color: m.tipo === "entrada" ? "#1565c0" : "#c04040" }}>
+                                  {catLabels[m.categoria] || m.categoria}
+                                </span>
+                              </td>
+                              <td style={{ padding: "0.75rem 1rem", fontWeight: 700, color: m.tipo === "entrada" ? "#2e7d32" : "#c04040", whiteSpace: "nowrap", fontSize: "0.9rem" }}>
+                                {m.tipo === "entrada" ? "+" : "-"}{fmt(m.valor)}
+                              </td>
+                              <td style={{ padding: "0.75rem 1rem", fontWeight: 800, color: m.saldo >= 0 ? "#1a1510" : "#c04040", whiteSpace: "nowrap", fontSize: "0.9rem" }}>
+                                {fmt(m.saldo)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      {fluxoData.extrato.length === 0 && (
+                        <tr><td colSpan={5} style={{ textAlign: "center", padding: "2rem", color: "#b8a080" }}>Nenhuma movimentação no período.</td></tr>
+                      )}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ backgroundColor: "#FAF6EE", borderTop: "2px solid rgba(140,100,20,0.15)" }}>
+                        <td colSpan={3} style={{ padding: "1rem", fontWeight: 800, color: "#1a1510" }}>Saldo Final</td>
+                        <td style={{ padding: "1rem", fontWeight: 700, color: "#2e7d32" }}>+{fmt(fluxoData.totalEntradas)} &nbsp; <span style={{ color: "#c04040" }}>-{fmt(fluxoData.totalSaidas)}</span></td>
+                        <td style={{ padding: "1rem", fontWeight: 900, fontSize: "1.1rem", color: fluxoData.saldoFinal >= 0 ? "#2e7d32" : "#c04040", whiteSpace: "nowrap" }}>{fmt(fluxoData.saldoFinal)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* ══ ABA VENDAS ══ */}
       {tab === "vendas" && (
