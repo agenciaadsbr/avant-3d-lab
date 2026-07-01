@@ -14,7 +14,7 @@ function monthToDueDate(month: string): Date {
 }
 
 function addMonths(date: Date, n: number): Date {
-  const d = dateOnly(date);
+  const d = new Date(date);
   d.setMonth(d.getMonth() + n);
   if (d.getDate() !== date.getDate()) d.setDate(0); // ajuste fim de mês
   return d;
