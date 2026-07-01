@@ -40,7 +40,7 @@ export async function GET(req: Request) {
       // Há transações entre abertura e início do período
       const [ordensInter, despesasInter, aportesInter] = await Promise.all([
         prisma.order.findMany({
-          where: { status: { not: "cancelled" }, paymentStatus: { in: ["paid", "partial"] }, createdAt: { gte: aberturaDate, lt: startDate } },
+          where: { status: { not: "cancelled" }, paymentStatus: { in: ["paid", "partial"] }, paymentMethod: { not: "caderno" }, createdAt: { gte: aberturaDate, lt: startDate } },
           select: { total: true, amountPaid: true, paymentStatus: true },
         }),
         prisma.expense.aggregate({ _sum: { amount: true }, where: { OR: [{ paymentMethod: { not: "cartao_credito" }, date: { gte: aberturaDate, lt: startDate } }, { paymentMethod: "cartao_credito", dueDate: { gte: aberturaDate, lt: startDate } }] } }),
@@ -55,7 +55,7 @@ export async function GET(req: Request) {
   } else {
     // Sem saldo de abertura: soma tudo antes do período
     const ordensAntes = await prisma.order.findMany({
-      where: { status: { not: "cancelled" }, paymentStatus: { in: ["paid", "partial"] }, createdAt: { lt: startDate } },
+      where: { status: { not: "cancelled" }, paymentStatus: { in: ["paid", "partial"] }, paymentMethod: { not: "caderno" }, createdAt: { lt: startDate } },
       select: { total: true, amountPaid: true, paymentStatus: true },
     });
     const receitasAntesVal = ordensAntes.reduce((s, o) => s + (o.paymentStatus === "paid" ? o.total : o.amountPaid), 0);
@@ -75,6 +75,7 @@ export async function GET(req: Request) {
       where: {
         status: { not: "cancelled" },
         paymentStatus: { in: ["paid", "partial"] },
+        paymentMethod: { not: "caderno" },
         createdAt: { gte: startDate, lte: endDate },
       },
       select: {
