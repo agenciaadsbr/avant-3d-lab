@@ -14,17 +14,17 @@ export async function GET(req: Request) {
     const from = searchParams.get("from");
     const to = searchParams.get("to");
 
-    // Período padrão: este mês
+    // Período padrão: últimos 3 meses
     const now = new Date();
-    const defaultFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+    const defaultFrom = new Date(now.getFullYear(), now.getMonth() - 2, 1);
     const defaultTo = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const startDate = from ? new Date(from) : defaultFrom;
-    const endDate = to ? new Date(to + "T23:59:59") : defaultTo;
+    const startDate = from ? new Date(from + "T00:00:00.000Z") : defaultFrom;
+    const endDate = to ? new Date(to + "T23:59:59.999Z") : defaultTo;
 
     const orderFilter = {
-      status: "delivered", // ✅ APENAS PEDIDOS ENTREGUES
-      paymentStatus: "paid", // ✅ APENAS PAGOS
+      status: { not: "cancelled" },
+      paymentStatus: { in: ["paid", "partial"] },
       createdAt: { gte: startDate, lte: endDate },
     };
 
@@ -54,7 +54,7 @@ export async function GET(req: Request) {
         const itemsInPeriod = await prisma.orderItem.findMany({
           where: {
             productId: product.id,
-            order: { status: "delivered", paymentStatus: "paid", createdAt: { gte: startDate, lte: endDate } }
+            order: { status: { not: "cancelled" }, paymentStatus: { in: ["paid", "partial"] }, createdAt: { gte: startDate, lte: endDate } }
           },
         });
 
@@ -103,7 +103,7 @@ export async function GET(req: Request) {
         const salesInPeriod = await prisma.orderItem.findMany({
           where: {
             productId: product.id,
-            order: { status: "delivered", paymentStatus: "paid", createdAt: { gte: startDate, lte: endDate } }
+            order: { status: { not: "cancelled" }, paymentStatus: { in: ["paid", "partial"] }, createdAt: { gte: startDate, lte: endDate } }
           },
         });
 

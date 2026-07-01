@@ -38,17 +38,33 @@ interface Data {
   previsaoEstoque: Predicao[];
 }
 
+function firstOfMonth(offset = 0) {
+  const d = new Date();
+  d.setMonth(d.getMonth() + offset);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+}
+function lastOfMonth(offset = 0) {
+  const d = new Date();
+  const last = new Date(d.getFullYear(), d.getMonth() + offset + 1, 0);
+  return last.toISOString().split("T")[0];
+}
+
 export default function AnalyticsPage() {
   const [data, setData] = useState<Data | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"lucro" | "margem" | "abc" | "estoque" | "vendas">("lucro");
+  const [from, setFrom] = useState(firstOfMonth(-2));
+  const [to, setTo] = useState(lastOfMonth());
 
-  useEffect(() => {
-    fetch("/api/admin/analytics")
+  const loadData = (f = from, t = to) => {
+    setLoading(true);
+    fetch(`/api/admin/analytics?from=${f}&to=${t}`)
       .then(r => r.json())
       .then(setData)
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadData(); }, []);
 
   if (loading)
     return (
@@ -62,6 +78,31 @@ export default function AnalyticsPage() {
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <Link href="/admin" style={{ color: "#b8891a", fontSize: "0.875rem", textDecoration: "none" }}>← Admin</Link>
         <h1 style={{ color: "#1a1510", fontSize: "2rem", fontWeight: 900, marginTop: "0.5rem" }}>📊 Analytics</h1>
+
+        {/* Filtro de período */}
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginTop: "1rem", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "#5a4a2a" }}>DE</label>
+            <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ padding: "0.4rem 0.6rem", borderRadius: "0.5rem", border: "1px solid rgba(140,100,20,0.3)", fontSize: "0.85rem" }} />
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "#5a4a2a" }}>ATÉ</label>
+            <input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ padding: "0.4rem 0.6rem", borderRadius: "0.5rem", border: "1px solid rgba(140,100,20,0.3)", fontSize: "0.85rem" }} />
+          </div>
+          {[
+            { label: "Este mês", f: firstOfMonth(0), t: lastOfMonth(0) },
+            { label: "Últimos 3 meses", f: firstOfMonth(-2), t: lastOfMonth(0) },
+            { label: "Últimos 6 meses", f: firstOfMonth(-5), t: lastOfMonth(0) },
+          ].map(s => (
+            <button key={s.label} onClick={() => { setFrom(s.f); setTo(s.t); loadData(s.f, s.t); }}
+              style={{ padding: "0.4rem 0.75rem", borderRadius: "0.5rem", border: "1px solid rgba(140,100,20,0.3)", backgroundColor: "#fff", color: "#b8891a", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer" }}>
+              {s.label}
+            </button>
+          ))}
+          <button onClick={() => loadData()} style={{ padding: "0.4rem 1rem", borderRadius: "0.5rem", border: "none", backgroundColor: "#b8891a", color: "#fff", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer" }}>
+            Filtrar
+          </button>
+        </div>
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: "1rem", marginTop: "1.5rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
