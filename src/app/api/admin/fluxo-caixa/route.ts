@@ -26,14 +26,15 @@ export async function GET(req: Request) {
   const aberturaDate = aberturaEntry ? aberturaEntry.date : null;
   const aberturaAmount = aberturaEntry ? aberturaEntry.amount : null;
 
-  // Se há saldo de abertura e o período começa a partir dele, ignora histórico anterior
-  const usarAbertura = aberturaDate && startDate >= aberturaDate;
+  // Compara apenas a parte da data (YYYY-MM-DD) para evitar problemas de hora/timezone
+  const toDateStr = (d: Date) => d.toISOString().split("T")[0];
+  const usarAbertura = aberturaDate && toDateStr(startDate) >= toDateStr(aberturaDate);
 
   let saldoAnterior: number;
 
   if (usarAbertura && aberturaAmount !== null) {
     // Calcula apenas o que aconteceu entre a data de abertura e o início do período filtrado
-    if (startDate.getTime() === aberturaDate.getTime()) {
+    if (toDateStr(startDate) === toDateStr(aberturaDate)) {
       // Período começa exatamente na data de abertura
       saldoAnterior = aberturaAmount;
     } else {
