@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
-    return NextResponse.json({ error: "Este e-mail já está cadastrado." }, { status: 409 });
+    return NextResponse.json({ error: "Este e-mail já possui cadastro. Faça login para acessar sua conta.", alreadyExists: true }, { status: 409 });
   }
 
   const hashed = await bcrypt.hash(password, 10);

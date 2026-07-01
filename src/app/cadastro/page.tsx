@@ -21,11 +21,13 @@ export default function CadastroPage() {
   const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", phone: "", birthDate: "", password: "" });
   const [error, setError] = useState("");
+  const [alreadyExists, setAlreadyExists] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setAlreadyExists(false);
     setLoading(true);
 
     const res = await fetch("/api/cadastro", {
@@ -37,6 +39,7 @@ export default function CadastroPage() {
     if (!res.ok) {
       const data = await res.json();
       setError(data.error || "Erro ao criar conta.");
+      if (data.alreadyExists) setAlreadyExists(true);
       setLoading(false);
       return;
     }
@@ -68,6 +71,13 @@ export default function CadastroPage() {
             {error && (
               <div style={{ backgroundColor: "rgba(153, 27, 27, 0.3)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#fca5a5", fontSize: "0.875rem", padding: "0.75rem", borderRadius: "0.5rem", marginBottom: "1.25rem" }}>
                 {error}
+                {alreadyExists && (
+                  <div style={{ marginTop: "0.625rem" }}>
+                    <Link href={`/login?email=${encodeURIComponent(form.email)}`} style={{ display: "inline-block", backgroundColor: "#b8891a", color: "#fff", fontWeight: 700, fontSize: "0.8rem", padding: "0.4rem 1rem", borderRadius: "0.5rem", textDecoration: "none" }}>
+                      Fazer login →
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 

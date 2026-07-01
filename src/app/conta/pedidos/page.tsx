@@ -94,7 +94,12 @@ export default async function MeusPedidosPage() {
                       <div style={{ fontSize: "0.8rem", color: "#9a8060" }}>
                         {order.paymentStatus === "paid" ? "✅ Pago" : order.paymentStatus === "partial" ? "⚠️ Parcialmente pago" : "⏳ Pagamento pendente"}
                       </div>
-                      <span style={{ fontWeight: 900, color: "#b8891a", fontSize: "1rem" }}>{formatCurrency(order.total)}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        <Link href={`/nota/${order.id}`} target="_blank" style={{ fontSize: "0.78rem", color: "#b8891a", fontWeight: 700, textDecoration: "none", backgroundColor: "#fff8e1", border: "1px solid rgba(184,137,26,0.3)", padding: "0.3rem 0.75rem", borderRadius: "999px" }}>
+                          🧾 Ver nota
+                        </Link>
+                        <span style={{ fontWeight: 900, color: "#b8891a", fontSize: "1rem" }}>{formatCurrency(order.total)}</span>
+                      </div>
                     </div>
 
                     {order.status === "pending" && (
