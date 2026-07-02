@@ -31,14 +31,14 @@ export async function GET(req: Request) {
     // 1. LUCRO REAL
     const orders = await prisma.order.findMany({
       where: orderFilter,
-      include: { items: { include: { product: true } } },
+      include: { items: { include: { product: { select: { costPrice: true } } } } },
     });
 
     const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
     // Usa o custo ATUAL do produto cadastrado, não o salvo no momento da venda
     // (pedidos antigos podem ter sido criados antes do custo ser preenchido)
     const totalCost = orders.reduce((sum, order) =>
-      sum + order.items.reduce((s, item) => s + (item.product.costPrice || 0) * item.quantity, 0), 0
+      sum + order.items.reduce((s, item) => s + (item.costPrice ?? item.product?.costPrice ?? 0) * item.quantity, 0), 0
     );
 
     const lucroReal = totalRevenue - totalCost;
@@ -61,7 +61,7 @@ export async function GET(req: Request) {
         const faturamento = itemsInPeriod.reduce((sum, item) => sum + item.price * item.quantity, 0);
         const quantidade = itemsInPeriod.reduce((sum, item) => sum + item.quantity, 0);
         // Usa o custo ATUAL do produto, não o salvo no item (que pode estar zerado em pedidos antigos)
-        const custo = quantidade * (product.costPrice || 0);
+        const custo = itemsInPeriod.reduce((s, item) => s + (item.costPrice ?? product.costPrice ?? 0) * item.quantity, 0);
         const lucro = faturamento - custo;
         const margem = faturamento > 0 ? ((lucro / faturamento) * 100).toFixed(2) : "0";
 

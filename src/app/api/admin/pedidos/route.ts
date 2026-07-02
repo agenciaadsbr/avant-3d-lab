@@ -98,12 +98,17 @@ export async function POST(req: Request) {
         installmentCount: installments || 1,
         createdAt: createdAt ? new Date(createdAt) : new Date(),
         items: {
-          create: items.map((i: any) => ({
-            productId: i.productId || fallbackProductId!,
-            quantity: i.quantity,
-            price: i.price,
-            size: i.size || null,
-            componentName: i.componentName || null,
+          create: await Promise.all(items.map(async (i: any) => {
+            const pid = i.productId || fallbackProductId!;
+            const prod = await prisma.product.findUnique({ where: { id: pid }, select: { costPrice: true } });
+            return {
+              productId: pid,
+              quantity: i.quantity,
+              price: i.price,
+              size: i.size || null,
+              componentName: i.componentName || null,
+              costPrice: prod?.costPrice ?? null,
+            };
           })),
         },
       },
