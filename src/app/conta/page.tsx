@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
+import BirthdayCoupon from "@/app/components/BirthdayCoupon";
 
 export const dynamic = "force-dynamic";
 
@@ -47,17 +48,20 @@ export default async function ContaPage() {
           <p style={{ color: "#9a8060", fontSize: "0.875rem", marginTop: "0.2rem" }}>Olá, {user?.name?.split(" ")[0] || "cliente"}!</p>
         </div>
 
+        {/* Cupom de Aniversário */}
+        <BirthdayCoupon />
+
         {/* KPIs */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.875rem", marginBottom: "1.5rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
           {[
             { emoji: "🛍️", label: "Pedidos", value: orders.length },
             { emoji: "💰", label: "Total gasto", value: formatCurrency(totalGasto) },
             { emoji: "✅", label: "Entregues", value: orders.filter(o => o.status === "delivered").length },
           ].map(k => (
-            <div key={k.label} style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "0.875rem", padding: "1rem", textAlign: "center" }}>
-              <div style={{ fontSize: "1.25rem", marginBottom: "0.25rem" }}>{k.emoji}</div>
-              <div style={{ fontWeight: 900, fontSize: "1.1rem", color: "#1a1510" }}>{k.value}</div>
-              <div style={{ fontSize: "0.7rem", color: "#9a8060", marginTop: "0.1rem" }}>{k.label}</div>
+            <div key={k.label} style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "0.75rem", padding: "0.875rem", textAlign: "center" }}>
+              <div style={{ fontSize: "1.1rem", marginBottom: "0.25rem" }}>{k.emoji}</div>
+              <div style={{ fontWeight: 900, fontSize: "0.95rem", color: "#1a1510" }}>{k.value}</div>
+              <div style={{ fontSize: "0.65rem", color: "#9a8060", marginTop: "0.1rem" }}>{k.label}</div>
             </div>
           ))}
         </div>

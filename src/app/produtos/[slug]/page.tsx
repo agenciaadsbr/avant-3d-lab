@@ -6,13 +6,14 @@ import { useCart } from "@/store/cart";
 import { formatCurrency, parseJson } from "@/lib/utils";
 import Link from "next/link";
 import SizeGuide from "@/app/components/SizeGuide";
+import RecommendedProducts from "@/app/components/RecommendedProducts";
 
 type ConjuntoItem = { id: string; name: string; price: number; quantity: number; stock?: number | null };
 
 type Product = {
   id: string; name: string; slug: string; description: string | null;
   price: number; compareAt: number | null; images: string;
-  sizes: string; colors: string; stock: number; sku: string | null;
+  sizes: string; sizeRange: string | null; colors: string; stock: number; sku: string | null;
   isConjunto: boolean; sellComponentsSeparately: boolean; conjuntoItems: ConjuntoItem[];
   category: { name: string; slug: string };
 };
@@ -244,7 +245,7 @@ export default function ProductPage() {
             )}
 
             {/* Guia de Tamanho Inteligente */}
-            <SizeGuide />
+            <SizeGuide productSizeRange={product.sizeRange} productName={product.name} />
 
             {/* Seleção de Componentes */}
             {product.isConjunto && product.sellComponentsSeparately && (
@@ -358,6 +359,9 @@ export default function ProductPage() {
                 </div>
               ))}
             </div>
+
+            {/* Produtos Recomendados */}
+            <RecommendedProducts productSlug={product.slug} />
           </div>
         </div>
       </div>

@@ -15,18 +15,21 @@ model User {
   password      String?
   image         String?
   role          String    @default("customer")
+  adminRole     String?
   phone         String?
   birthDate     DateTime?
+  birthdayCouponYear Int?  // Ano em que recebeu cupom de aniversário
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  addresses   Address[]
-  orders      Order[]
-  accounts    Account[]
-  sessions    Session[]
-  referralsGiven    Referral[] @relation("referrer")
-  referralsReceived Referral[] @relation("referred")
-  sizePreference UserSizePreference?
+  addresses           Address[]
+  orders              Order[]
+  accounts            Account[]
+  sessions            Session[]
+  referralsGiven      Referral[] @relation("referrer")
+  referralsReceived   Referral[] @relation("referred")
+  sizePreference      UserSizePreference?
+  notificationToken   NotificationToken?
 }
 
 model Account {
@@ -98,6 +101,7 @@ model Product {
   compareAt   Float?
   images      String   @default("[]")
   sizes       String   @default("[]")
+  sizeRange   String?  // Para tamanho único: "PM" (P/M), "GGG" (G/GG), etc
   colors      String   @default("[]")
   stock        Int      @default(0)
   sku          String?  @unique
@@ -335,6 +339,16 @@ model UserSizePreference {
   preferredSize String?  // P, M, G (tamanho preferido recomendado)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NotificationToken {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

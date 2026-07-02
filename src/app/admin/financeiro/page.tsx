@@ -1,6 +1,7 @@
 "use client";
 export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback } from "react";
+import CardPaymentForm from "./CardPaymentForm";
 
 const CATEGORIES = [
   { value: "estoque", label: "🛍️ Reposição de Estoque" },
@@ -849,6 +850,7 @@ export default function FinanceiroPage() {
             <div><p style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.75rem", fontWeight: 700 }}>TOTAL DA FATURA — {MESES[parseInt(cardMonth.split("-")[1])-1]}/{cardMonth.split("-")[0]}</p><p style={{ color: "#fff", fontSize: "1.75rem", fontWeight: 900 }}>{fmt(cardTotal)}</p></div>
             <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.8rem" }}>{cardExpenses.length} lançamentos</p>
           </div>
+          <CardPaymentForm onSuccess={loadCardExpenses} />
           <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
               <thead><tr style={{ backgroundColor: "#f0e8ff" }}>{["Compra","Vencimento","Descrição","Parcela","Valor"].map(h => <th key={h} style={{ textAlign: "left", padding: "0.75rem 1rem", color: "#6a30b8", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid rgba(106,48,184,0.1)" }}>{h}</th>)}</tr></thead>

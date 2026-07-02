@@ -26,8 +26,16 @@ export default function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
-  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    setMounted(true);
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,21 +54,23 @@ export default function Header() {
         borderBottom: "1px solid rgba(140,100,20,0.15)",
         boxShadow: "0 1px 12px rgba(140,100,20,0.06)",
       }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 1.25rem", height: 72, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: isMobile ? "0 1rem" : "0 1.25rem", height: isMobile ? 64 : 72, display: "flex", alignItems: "center", justifyContent: "space-between", gap: isMobile ? "0.5rem" : "1rem" }}>
 
           {/* Logo */}
-          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "0.75rem", flexShrink: 0 }}>
-            <div style={{ width: 56, height: 56, position: "relative", flexShrink: 0, borderRadius: "50%", overflow: "hidden" }}>
+          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: isMobile ? "0.5rem" : "0.75rem", flexShrink: 0 }}>
+            <div style={{ width: isMobile ? 44 : 56, height: isMobile ? 44 : 56, position: "relative", flexShrink: 0, borderRadius: "50%", overflow: "hidden" }}>
               <Image src="/logo.png" alt="Access Fit Logo" fill style={{ objectFit: "cover" }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             </div>
-            <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
-              <span style={{ fontSize: "1.15rem", fontWeight: 900, letterSpacing: "0.12em", background: "linear-gradient(135deg, #c9920a, #e0b030, #a07010)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                ACCESS FIT
-              </span>
-              <span style={{ fontSize: "0.65rem", color: "#9a7a3a", letterSpacing: "0.06em", fontWeight: 500, marginTop: "0.2rem" }}>
-                Desbloqueie sua energia infinita
-              </span>
-            </div>
+            {!isMobile && (
+              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
+                <span style={{ fontSize: "1.15rem", fontWeight: 900, letterSpacing: "0.12em", background: "linear-gradient(135deg, #c9920a, #e0b030, #a07010)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                  ACCESS FIT
+                </span>
+                <span style={{ fontSize: "0.65rem", color: "#9a7a3a", letterSpacing: "0.06em", fontWeight: 500, marginTop: "0.2rem" }}>
+                  Desbloqueie sua energia infinita
+                </span>
+              </div>
+            )}
           </Link>
 
           {/* Nav desktop */}
@@ -87,8 +97,8 @@ export default function Header() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   onBlur={() => { if (!searchQuery) setSearchOpen(false); }}
-                  placeholder="Buscar produto..."
-                  style={{ width: 180, padding: "0.4rem 0.75rem", border: "1px solid rgba(184,137,26,0.35)", borderRadius: "999px", fontSize: "0.82rem", backgroundColor: "#FAF6EE", outline: "none", color: "#1a1510" }}
+                  placeholder="Buscar..."
+                  style={{ width: isMobile ? 140 : 180, padding: "0.4rem 0.75rem", border: "1px solid rgba(184,137,26,0.35)", borderRadius: "999px", fontSize: "0.82rem", backgroundColor: "#FAF6EE", outline: "none", color: "#1a1510" }}
                 />
               )}
               <button type={searchOpen ? "submit" : "button"}
@@ -107,7 +117,7 @@ export default function Header() {
               {userOpen && (
                 <>
                   <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={() => setUserOpen(false)} />
-                  <div style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", width: 200, backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.15)", borderRadius: "0.875rem", overflow: "hidden", zIndex: 50, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
+                  <div style={{ position: "absolute", right: isMobile ? -10 : 0, top: "calc(100% + 8px)", width: isMobile ? "90vw" : 200, maxWidth: 200, backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.15)", borderRadius: "0.875rem", overflow: "hidden", zIndex: 50, boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
                     {session ? (
                       <>
                         <div style={{ padding: "0.75rem 1rem", borderBottom: "1px solid rgba(140,100,20,0.1)", backgroundColor: "#FAF6EE" }}>

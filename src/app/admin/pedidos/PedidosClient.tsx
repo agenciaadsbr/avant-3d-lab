@@ -219,7 +219,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   };
 
   const generateShareLink = (orderId: string) => {
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : "https://access-fit.vercel.app";
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : "https://www.accessfit.com.br";
     const link = `${baseUrl}/pedido-preview/${orderId}`;
 
     try {

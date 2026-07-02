@@ -2,19 +2,21 @@
 import { usePathname } from "next/navigation";
 import { useAdmin } from "@/store/admin";
 import { useMobileView } from "@/hooks/useMediaQuery";
+import { getNavLinks } from "@/lib/permissions";
 
-const links = [
+const ALL_LINKS = [
   { href: "/admin",             label: "Início",      emoji: "🏠" },
   { href: "/admin/pedidos",     label: "Pedidos",     emoji: "📦" },
   { href: "/admin/produtos",    label: "Produtos",    emoji: "👗" },
   { href: "/admin/caderno",     label: "Caderno",     emoji: "📒" },
   { href: "/admin/clientes",    label: "Clientes",    emoji: "👥" },
+  { href: "/admin/pos-venda",   label: "Pós-venda",   emoji: "💬" },
   { href: "/admin/financeiro",  label: "Financeiro",  emoji: "💳" },
   { href: "/admin/analytics",   label: "Analytics",   emoji: "📊" },
   { href: "/admin/metricas",    label: "Métricas",    emoji: "📈" },
   { href: "/admin/devolucoes",  label: "Devoluções",  emoji: "🔄" },
   { href: "/admin/marketing",   label: "Marketing",   emoji: "📣" },
-  { href: "/admin/pos-venda",   label: "Pós-venda",   emoji: "💬" },
+  { href: "/admin/gestao",      label: "Gestão",      emoji: "⚙️" },
 ];
 
 const Stars = () => (
@@ -33,12 +35,17 @@ const Stars = () => (
   </svg>
 );
 
-export default function AdminNav() {
+export default function AdminNav({ adminRole }: { adminRole?: string | null }) {
   const pathname = usePathname();
   const { hideProfit, toggleHideProfit } = useAdmin();
   const isMobile = useMobileView();
   const isActive = (href: string) =>
     href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+
+  const allowedNav = getNavLinks(adminRole);
+  const links = allowedNav.includes("*")
+    ? ALL_LINKS
+    : ALL_LINKS.filter(l => allowedNav.includes(l.href));
 
   return (
     <>

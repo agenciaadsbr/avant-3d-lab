@@ -28,9 +28,6 @@ export async function POST(req: Request) {
   if (pedidos.length === 0)
     return NextResponse.json({ error: "Nenhum pedido em aberto" }, { status: 404 });
 
-  // Busca nome do cliente para a descrição do lançamento
-  const cliente = await prisma.user.findUnique({ where: { id: clientId }, select: { name: true } });
-
   let restante = valor;
   const atualizados: string[] = [];
 
@@ -56,22 +53,6 @@ export async function POST(req: Request) {
   }
 
   const valorAplicado = valor - Math.max(0, restante);
-
-  // Registra o pagamento como entrada no caixa (com data de hoje)
-  if (valorAplicado > 0) {
-    const metodLabel: Record<string, string> = {
-      pix: "Pix", dinheiro: "Dinheiro", credito: "Cartão Crédito",
-      debito: "Cartão Débito", transferencia: "Transferência",
-    };
-    await prisma.cashInjection.create({
-      data: {
-        amount: valorAplicado,
-        date: new Date(),
-        description: `Caderno — ${cliente?.name || "cliente"} (${metodLabel[metodo] || metodo || "Pix"})`,
-      },
-    });
-  }
-
   const totalRestante = pedidos.reduce((s, p) => s + (p.total - p.amountPaid), 0) - valor;
 
   return NextResponse.json({

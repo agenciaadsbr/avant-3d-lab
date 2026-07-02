@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import DashboardKPIs from "./DashboardKPIs";
+import ProjecaoCaixa from "./ProjecaoCaixa";
 
 export const dynamic = 'force-dynamic';
 
@@ -264,6 +265,9 @@ export default async function AdminPage() {
         { emoji: "📦", label: "Pedidos este mês", value: String(ordersThisMonth), sub: `${orderCount} total` },
         { emoji: "👗", label: "Em estoque", value: formatCurrency(valorVenda), sub: `${lowStock > 0 ? `${lowStock} com estoque baixo` : "tudo ok"}`, subOk: lowStock === 0 },
       ]} />
+
+      {/* ===== PROJEÇÃO DE CAIXA ===== */}
+      <ProjecaoCaixa />
 
       {/* ===== PEDIDOS RECENTES ===== */}
       <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden" }}>

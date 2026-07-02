@@ -52,51 +52,51 @@ export default function ProductCard({ product }: { product: Product }) {
             </div>
           )}
 
-          <div style={{ position: "absolute", top: 8, left: 8, display: "flex", flexDirection: "column", gap: "4px" }}>
+          <div style={{ position: "absolute", top: 6, left: 6, display: "flex", flexDirection: "column", gap: "3px" }}>
             {isNew && !outOfStock && !saleInfo && (
-              <span style={{ backgroundColor: "#b8891a", color: "#fff", fontSize: "0.65rem", fontWeight: 900, padding: "3px 10px", borderRadius: "999px" }}>Novo</span>
+              <span style={{ backgroundColor: "#b8891a", color: "#fff", fontSize: "0.6rem", fontWeight: 900, padding: "2px 8px", borderRadius: "999px", whiteSpace: "nowrap" }}>Novo</span>
             )}
             {saleInfo && !outOfStock && (
-              <span style={{ backgroundColor: "#e74c3c", color: "#fff", fontSize: "0.65rem", fontWeight: 900, padding: "3px 10px", borderRadius: "999px" }}>SALE -20%</span>
+              <span style={{ backgroundColor: "#e74c3c", color: "#fff", fontSize: "0.6rem", fontWeight: 900, padding: "2px 8px", borderRadius: "999px", whiteSpace: "nowrap" }}>SALE</span>
             )}
             {discount && !saleInfo && !outOfStock && (
-              <span style={{ backgroundColor: "#1a1510", color: "#b8891a", fontSize: "0.65rem", fontWeight: 900, padding: "3px 10px", borderRadius: "999px" }}>-{discount}%</span>
+              <span style={{ backgroundColor: "#1a1510", color: "#b8891a", fontSize: "0.6rem", fontWeight: 900, padding: "2px 8px", borderRadius: "999px", whiteSpace: "nowrap" }}>-{discount}%</span>
             )}
             {outOfStock && (
-              <span style={{ backgroundColor: "rgba(0,0,0,0.55)", color: "#fff", fontSize: "0.65rem", fontWeight: 900, padding: "3px 10px", borderRadius: "999px" }}>Esgotado</span>
+              <span style={{ backgroundColor: "rgba(0,0,0,0.55)", color: "#fff", fontSize: "0.6rem", fontWeight: 900, padding: "2px 8px", borderRadius: "999px", whiteSpace: "nowrap" }}>Esgotado</span>
             )}
           </div>
         </div>
 
         {/* Info */}
-        <div style={{ padding: "0.875rem" }}>
-          <p style={{ fontSize: "0.68rem", color: "#b8891a", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.3rem" }}>
+        <div style={{ padding: "0.75rem" }}>
+          <p style={{ fontSize: "0.65rem", color: "#b8891a", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>
             {product.category.name}
           </p>
-          <p style={{ fontSize: "0.875rem", fontWeight: 700, color: "#1a1510", lineHeight: 1.3, marginBottom: "0.5rem", overflow: "hidden", display: "-webkit-box", WebkitBoxOrient: "vertical" as const, WebkitLineClamp: 2, minHeight: "2.4em" }}>
+          <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "#1a1510", lineHeight: 1.3, marginBottom: "0.4rem", overflow: "hidden", display: "-webkit-box", WebkitBoxOrient: "vertical" as const, WebkitLineClamp: 2, minHeight: "2.2em" }}>
             {product.name}
           </p>
 
           {sizes.length > 0 && (
-            <div style={{ display: "flex", gap: "3px", flexWrap: "wrap", marginBottom: "0.625rem" }}>
-              {sizes.slice(0, 5).map(s => (
-                <span key={s} style={{ fontSize: "0.6rem", fontWeight: 700, padding: "2px 6px", borderRadius: "4px", backgroundColor: "#FAF6EE", color: "#9a8060", border: "1px solid rgba(140,100,20,0.15)" }}>{s}</span>
+            <div style={{ display: "flex", gap: "2px", flexWrap: "wrap", marginBottom: "0.5rem" }}>
+              {sizes.slice(0, 4).map(s => (
+                <span key={s} style={{ fontSize: "0.55rem", fontWeight: 700, padding: "1px 4px", borderRadius: "3px", backgroundColor: "#FAF6EE", color: "#9a8060", border: "1px solid rgba(140,100,20,0.15)" }}>{s}</span>
               ))}
-              {sizes.length > 5 && <span style={{ fontSize: "0.6rem", color: "#b8891a", fontWeight: 700 }}>+{sizes.length - 5}</span>}
+              {sizes.length > 4 && <span style={{ fontSize: "0.55rem", color: "#b8891a", fontWeight: 700 }}>+{sizes.length - 4}</span>}
             </div>
           )}
 
-          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.75rem", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "1.1rem", fontWeight: 900, color: saleInfo ? "#e74c3c" : "#b8891a" }}>{formatCurrency(finalPrice)}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", marginBottom: "0.6rem", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "1rem", fontWeight: 900, color: saleInfo ? "#e74c3c" : "#b8891a" }}>{formatCurrency(finalPrice)}</span>
             {(product.compareAt || saleInfo) && (
-              <span style={{ fontSize: "0.78rem", color: "#b8a080", textDecoration: "line-through" }}>
+              <span style={{ fontSize: "0.7rem", color: "#b8a080", textDecoration: "line-through" }}>
                 {formatCurrency(product.compareAt || product.price)}
               </span>
             )}
           </div>
 
           <button onClick={handleAddToCart} disabled={outOfStock}
-            style={{ width: "100%", padding: "0.6rem", backgroundColor: outOfStock ? "#e8e0d0" : "#1a1510", color: outOfStock ? "#9a8060" : "#FAF6EE", fontWeight: 800, fontSize: "0.8rem", border: "none", borderRadius: "0.625rem", cursor: outOfStock ? "not-allowed" : "pointer", letterSpacing: "0.03em" }}>
+            style={{ width: "100%", padding: "0.5rem", backgroundColor: outOfStock ? "#e8e0d0" : "#1a1510", color: outOfStock ? "#9a8060" : "#FAF6EE", fontWeight: 800, fontSize: "0.75rem", border: "none", borderRadius: "0.5rem", cursor: outOfStock ? "not-allowed" : "pointer", letterSpacing: "0.03em" }}>
             {outOfStock ? "Esgotado" : "Ver produto"}
           </button>
         </div>

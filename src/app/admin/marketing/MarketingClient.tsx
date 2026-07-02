@@ -93,7 +93,7 @@ export default function MarketingClient({ gastosMarketing, totalMarketing, campa
   };
 
   const notifyWaitlist = async (id: string, name: string, phone: string, product: string) => {
-    const msg = `Olá ${name?.split(" ")[0]}! 👗 Boa notícia! O produto "${product}" que você esperava voltou ao estoque na Access Fit! Corre conferir: https://access-fit-xi.vercel.app`;
+    const msg = `Olá ${name?.split(" ")[0]}! 👗 Boa notícia! O produto "${product}" que você esperava voltou ao estoque na Access Fit! Corre conferir: https://www.accessfit.com.br`;
     const ddi = phone.replace(/\D/g,"").startsWith("55") ? phone.replace(/\D/g,"") : `55${phone.replace(/\D/g,"")}`;
     window.open(`https://wa.me/${ddi}?text=${encodeURIComponent(msg)}`, "_blank");
     await fetch("/api/admin/lista-espera", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
@@ -315,7 +315,7 @@ export default function MarketingClient({ gastosMarketing, totalMarketing, campa
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
             <p style={{ color: "#9a8060", fontSize: "0.875rem" }}>Top 15 clientes por valor gasto</p>
-            <button onClick={() => whatsappLista(topClientes, "Olá {nome}! 🌟 Você é uma das nossas clientes especiais da Access Fit! Temos novidades incríveis esperando por você. Dá uma olhada: https://access-fit-xi.vercel.app")}
+            <button onClick={() => whatsappLista(topClientes, "Olá {nome}! 🌟 Você é uma das nossas clientes especiais da Access Fit! Temos novidades incríveis esperando por você. Dá uma olhada: https://www.accessfit.com.br")}
               style={{ backgroundColor: "#25D366", color: "#fff", border: "none", borderRadius: "0.625rem", padding: "0.5rem 1rem", fontWeight: 700, fontSize: "0.82rem", cursor: "pointer" }}>
               📲 Enviar mensagem para todas
             </button>

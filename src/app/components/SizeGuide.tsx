@@ -14,7 +14,12 @@ type RecommendationResult = {
   similarClientsCount: number;
 };
 
-export default function SizeGuide() {
+type Props = {
+  productSizeRange?: string | null;
+  productName?: string;
+};
+
+export default function SizeGuide({ productSizeRange, productName }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
@@ -23,6 +28,18 @@ export default function SizeGuide() {
   const [result, setResult] = useState<RecommendationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const checkSizeFit = (recommendedSize: string): boolean => {
+    if (!productSizeRange) return true; // Se não tem sizeRange definido, assume que serve
+
+    const range = productSizeRange.toUpperCase();
+
+    // PM = P/M (38-42), GGG = G/GG (42-48)
+    if (range === "PM") return ["P", "M"].includes(recommendedSize);
+    if (range === "GGG") return ["G", "GG"].includes(recommendedSize);
+
+    return true; // Default: assume que serve
+  };
 
   const handleGetRecommendation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,6 +225,16 @@ export default function SizeGuide() {
 
           {result && (
             <div style={{ marginTop: "2rem" }}>
+              {!checkSizeFit(result.recommendedSize) && (
+                <div style={{ marginBottom: "1rem", padding: "1rem", backgroundColor: "#ffe8e8", border: "2px solid #d32f2f", borderRadius: "8px", color: "#d32f2f" }}>
+                  <p style={{ margin: 0, fontWeight: 700, marginBottom: "0.25rem" }}>⚠️ Atenção!</p>
+                  <p style={{ margin: 0, fontSize: "0.9rem" }}>
+                    {productName} é tamanho único para {productSizeRange === "PM" ? "P/M (38-42)" : "G/GG (42-48)"}.
+                    Você recomendado é <strong>{result.recommendedSize}</strong> - pode não servir bem.
+                  </p>
+                </div>
+              )}
+
               <div style={{ marginBottom: "1.5rem", padding: "1.5rem", backgroundColor: "white", borderRadius: "8px", border: "2px solid #b8891a" }}>
                 <p style={{ margin: 0, fontSize: "0.9rem", color: "#7a6a4a", marginBottom: "0.5rem" }}>Tamanho Recomendado:</p>
                 <p style={{ margin: 0, fontSize: "2.5rem", fontWeight: 700, color: "#b8891a" }}>{result.recommendedSize}</p>

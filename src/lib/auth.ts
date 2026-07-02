@@ -6,11 +6,13 @@ import bcrypt from "bcryptjs";
 declare module "next-auth" {
   interface User {
     role?: string;
+    adminRole?: string | null;
   }
   interface Session {
     user: User & {
       id?: string;
       role?: string;
+      adminRole?: string | null;
     };
   }
 }
@@ -42,6 +44,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           email: user.email,
           role: user.role,
+          adminRole: user.adminRole,
           image: user.image,
         };
       },
@@ -52,6 +55,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.adminRole = user.adminRole;
       }
       return token;
     },
@@ -59,6 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token) {
         if (typeof token.id === 'string') session.user.id = token.id;
         if (typeof token.role === 'string') session.user.role = token.role;
+        session.user.adminRole = token.adminRole as string | null;
       }
       return session;
     },

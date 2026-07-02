@@ -5,8 +5,8 @@ import Image from "next/image";
 export default function Footer() {
   return (
     <footer style={{ backgroundColor: "#1a1510", borderTop: "1px solid rgba(184,137,26,0.15)", color: "#9a8060" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "3rem 1.5rem 2rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "2.5rem" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 1rem 1.5rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1.5rem" }}>
 
           {/* Marca */}
           <div>
