@@ -61,7 +61,12 @@ export async function GET(req: Request) {
       ? Math.floor((now.getTime() - ultimaVenda.getTime()) / (1000 * 60 * 60 * 24))
       : 999;
 
-    const imagens: string[] = Array.isArray(p.images) ? p.images as string[] : [];
+    let imagens: string[] = [];
+    if (Array.isArray(p.images)) {
+      imagens = p.images as string[];
+    } else if (typeof p.images === "string") {
+      try { imagens = JSON.parse(p.images); } catch {}
+    }
 
     return {
       sku: p.slug || p.id,
