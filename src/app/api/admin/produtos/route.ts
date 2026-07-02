@@ -57,7 +57,7 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           evento: "produto_novo",
           nome: product.name,
-          categoria: product.category || "sem-categoria",
+          categoria: product.categoryId || "sem-categoria",
           estoque: product.stock,
           preco: product.price,
           imagem_url: imagens[0] || null,

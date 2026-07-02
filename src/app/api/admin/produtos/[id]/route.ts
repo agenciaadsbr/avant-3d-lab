@@ -28,7 +28,7 @@ export async function PUT(
         body: JSON.stringify({
           evento: "reposicao_estoque",
           nome: product.name,
-          categoria: product.category || "sem-categoria",
+          categoria: product.categoryId || "sem-categoria",
           estoque: product.stock,
           preco: product.price,
           imagem_url: imagens[0] || null,
