@@ -15,7 +15,27 @@ export async function PUT(
     const { id } = await params;
     const { conjuntoItems, ...data } = await req.json();
 
+    const produtoAntes = await prisma.product.findUnique({ where: { id }, select: { stock: true } });
     const product = await prisma.product.update({ where: { id }, data });
+
+    // Dispara webhook se houve reposição de estoque
+    const webhookUrl = process.env.N8N_PRODUTO_WEBHOOK_URL;
+    if (webhookUrl && data.stock !== undefined && produtoAntes && data.stock > produtoAntes.stock) {
+      const imagens: string[] = typeof product.images === "string" ? JSON.parse(product.images) : (product.images as string[]) || [];
+      fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          evento: "reposicao_estoque",
+          nome: product.name,
+          categoria: product.category || "sem-categoria",
+          estoque: product.stock,
+          preco: product.price,
+          imagem_url: imagens[0] || null,
+          slug: product.slug,
+        }),
+      }).catch(() => {});
+    }
 
     if (data.isConjunto) {
       await prisma.conjuntoItem.deleteMany({ where: { conjuntoId: id } });

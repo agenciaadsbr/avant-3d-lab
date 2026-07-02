@@ -47,6 +47,25 @@ export async function POST(req: Request) {
       });
     }
 
+    // Dispara webhook para N8n gerar post no Instagram
+    const webhookUrl = process.env.N8N_PRODUTO_WEBHOOK_URL;
+    if (webhookUrl) {
+      const imagens: string[] = typeof product.images === "string" ? JSON.parse(product.images) : (product.images as string[]) || [];
+      fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          evento: "produto_novo",
+          nome: product.name,
+          categoria: product.category || "sem-categoria",
+          estoque: product.stock,
+          preco: product.price,
+          imagem_url: imagens[0] || null,
+          slug: product.slug,
+        }),
+      }).catch(() => {});
+    }
+
     return NextResponse.json(product, { status: 201 });
   } catch (err: any) {
     console.error("Erro ao criar produto:", err);
