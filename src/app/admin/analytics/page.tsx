@@ -38,6 +38,10 @@ interface Data {
   previsaoEstoque: Predicao[];
 }
 
+function fmt(n: number | string) {
+  return Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
 function firstOfMonth(offset = 0) {
   const d = new Date();
   d.setMonth(d.getMonth() + offset);
@@ -125,15 +129,15 @@ export default function AnalyticsPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
             <div style={{ backgroundColor: "#fff", borderRadius: "1rem", padding: "1.5rem", border: "1px solid rgba(140,100,20,0.1)" }}>
               <p style={{ color: "#9a8060", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase" }}>Faturamento</p>
-              <p style={{ fontSize: "1.75rem", fontWeight: 900, color: "#b8891a", marginTop: "0.5rem" }}>R$ {data.lucroReal.faturamento}</p>
+              <p style={{ fontSize: "1.75rem", fontWeight: 900, color: "#b8891a", marginTop: "0.5rem" }}>{fmt(data.lucroReal.faturamento)}</p>
             </div>
             <div style={{ backgroundColor: "#fff", borderRadius: "1rem", padding: "1.5rem", border: "1px solid rgba(140,100,20,0.1)" }}>
               <p style={{ color: "#9a8060", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase" }}>Custo</p>
-              <p style={{ fontSize: "1.75rem", fontWeight: 900, color: "#c04040", marginTop: "0.5rem" }}>R$ {data.lucroReal.custo}</p>
+              <p style={{ fontSize: "1.75rem", fontWeight: 900, color: "#c04040", marginTop: "0.5rem" }}>{fmt(data.lucroReal.custo)}</p>
             </div>
             <div style={{ backgroundColor: "#fff", borderRadius: "1rem", padding: "1.5rem", border: "1px solid rgba(140,100,20,0.1)" }}>
               <p style={{ color: "#9a8060", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase" }}>Lucro</p>
-              <p style={{ fontSize: "1.75rem", fontWeight: 900, color: "#2e7d32", marginTop: "0.5rem" }}>R$ {data.lucroReal.lucro}</p>
+              <p style={{ fontSize: "1.75rem", fontWeight: 900, color: "#2e7d32", marginTop: "0.5rem" }}>{fmt(data.lucroReal.lucro)}</p>
             </div>
             <div style={{ backgroundColor: "#fff", borderRadius: "1rem", padding: "1.5rem", border: "1px solid rgba(140,100,20,0.1)" }}>
               <p style={{ color: "#9a8060", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase" }}>Margem</p>
@@ -156,9 +160,9 @@ export default function AnalyticsPage() {
               <div key={i} style={{ padding: "1rem 1.5rem", borderBottom: i < 29 ? "1px solid rgba(140,100,20,0.05)" : "none", display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: "1rem", alignItems: "center" }}>
                 <p style={{ fontWeight: 700, color: "#1a1510" }}>#{i + 1} {p.name}</p>
                 <p style={{ textAlign: "right", fontWeight: 700, color: "#b8891a" }}>{p.quantidade} un</p>
-                <p style={{ textAlign: "right", color: "#1a1510" }}>R$ {p.faturamento.toFixed(2)}</p>
+                <p style={{ textAlign: "right", color: "#1a1510" }}>{fmt(p.faturamento)}</p>
                 <p style={{ textAlign: "right", color: "#6a4a10" }}>{(p.quantidade > 0 ? Math.round(p.quantidade / (p.faturamento / 100)) : 0).toString()}</p>
-                <p style={{ textAlign: "right", fontWeight: 700, color: "#2e7d32" }}>R$ {(p.faturamento / (p.quantidade || 1)).toFixed(2)}</p>
+                <p style={{ textAlign: "right", fontWeight: 700, color: "#2e7d32" }}>{fmt(p.faturamento / (p.quantidade || 1))}</p>
               </div>
             ))}
           </div>
@@ -177,9 +181,9 @@ export default function AnalyticsPage() {
             {data.margensPorProduto.slice(0, 20).map((p, i) => (
               <div key={i} style={{ padding: "1rem 1.5rem", borderBottom: i < 19 ? "1px solid rgba(140,100,20,0.05)" : "none", display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: "1rem", alignItems: "center" }}>
                 <p style={{ fontWeight: 700, color: "#1a1510" }}>{p.name}</p>
-                <p style={{ textAlign: "right", color: "#1a1510" }}>R$ {p.faturamento.toFixed(2)}</p>
-                <p style={{ textAlign: "right", color: "#9a8060" }}>R$ {p.custo.toFixed(2)}</p>
-                <p style={{ textAlign: "right", fontWeight: 700, color: "#2e7d32" }}>R$ {p.lucro.toFixed(2)}</p>
+                <p style={{ textAlign: "right", color: "#1a1510" }}>{fmt(p.faturamento)}</p>
+                <p style={{ textAlign: "right", color: "#9a8060" }}>{fmt(p.custo)}</p>
+                <p style={{ textAlign: "right", fontWeight: 700, color: "#2e7d32" }}>{fmt(p.lucro)}</p>
                 <p style={{ textAlign: "right", fontWeight: 700, color: "#b8891a", fontSize: "1.1rem" }}>{p.margem.toFixed(1)}%</p>
               </div>
             ))}
@@ -199,7 +203,7 @@ export default function AnalyticsPage() {
               <div key={i} style={{ padding: "1rem 1.5rem", borderBottom: i < data.analiseABC.length - 1 ? "1px solid rgba(140,100,20,0.05)" : "none", display: "grid", gridTemplateColumns: "2fr 0.5fr 1fr 1fr", gap: "1rem", alignItems: "center" }}>
                 <p style={{ fontWeight: 700, color: "#1a1510" }}>{p.name}</p>
                 <div style={{ textAlign: "center", fontWeight: 900, color: p.classe === "A" ? "#2e7d32" : p.classe === "B" ? "#f57c00" : "#c04040", fontSize: "1.1rem" }}>{p.classe}</div>
-                <p style={{ textAlign: "right" }}>R$ {p.faturamento.toFixed(2)}</p>
+                <p style={{ textAlign: "right" }}>{fmt(p.faturamento)}</p>
                 <p style={{ textAlign: "right", fontWeight: 700, color: "#b8891a" }}>{p.percentual}%</p>
               </div>
             ))}
