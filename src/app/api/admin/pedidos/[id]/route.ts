@@ -2,6 +2,14 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendPushToUser } from "@/lib/firebase-admin";
+
+const STATUS_NOTIFICATION: Record<string, { title: string; body: string }> = {
+  confirmed: { title: "Pedido confirmado ✅", body: "Já estamos preparando tudo para você." },
+  shipped: { title: "Pedido a caminho 📦", body: "Seu pedido saiu para entrega." },
+  delivered: { title: "Pedido entregue 🎉", body: "Esperamos que você ame suas peças!" },
+  cancelled: { title: "Pedido cancelado", body: "Seu pedido foi cancelado." },
+};
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -10,6 +18,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const { id } = await params;
   const body = await req.json();
+  const previousStatus = body.status !== undefined
+    ? (await prisma.order.findUnique({ where: { id }, select: { status: true } }))?.status
+    : undefined;
   const data: Record<string, unknown> = {};
   if (body.status !== undefined) data.status = body.status;
   if (body.paymentStatus !== undefined) data.paymentStatus = body.paymentStatus;
@@ -39,6 +50,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   }
 
   const order = await prisma.order.update({ where: { id }, data });
+
+  // Notifica o cliente por push quando o status muda (não bloqueia a resposta em caso de falha)
+  if (body.status !== undefined && body.status !== previousStatus) {
+    const notification = STATUS_NOTIFICATION[body.status];
+    if (notification) {
+      sendPushToUser(order.userId, notification.title, notification.body).catch(err =>
+        console.error("[push] Erro ao notificar pedido", id, err)
+      );
+    }
+  }
 
   // Append items to existing order
   if (body.addItems?.length) {

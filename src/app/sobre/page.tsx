@@ -1,5 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Anton } from "next/font/google";
+
+const anton = Anton({ subsets: ["latin"], weight: "400" });
 
 export const metadata = {
   title: "Sobre Nós — Access Fit",
@@ -43,6 +46,78 @@ export default function SobrePage() {
           <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "1.05rem", lineHeight: 1.7, maxWidth: 560, margin: "0 auto" }}>
             Nascemos da paixão por moda fitness feminina com propósito — peças que combinam conforto, qualidade e elegância para quem não abre mão de se sentir bem em movimento.
           </p>
+        </div>
+      </section>
+
+      {/* Nossa História */}
+      <section style={{ padding: "4.5rem 1.5rem 3rem" }}>
+        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+
+          <div className="historia-intro" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "2.5rem", alignItems: "center", marginBottom: "3rem" }}>
+            <div>
+              <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#b8891a", letterSpacing: "0.15em", marginBottom: "0.75rem" }}>NOSSA HISTÓRIA</p>
+              <h2 className={anton.className} style={{ fontSize: "clamp(2rem, 4.5vw, 3rem)", color: "#1a1510", lineHeight: 0.95, marginBottom: "1.25rem", letterSpacing: "0.01em" }}>
+                BRUNO &amp; BRUNA
+              </h2>
+              <p style={{ color: "#5a4a2a", fontSize: "1rem", lineHeight: 1.8, maxWidth: 480 }}>
+                Juntos há 4 anos, sempre em busca de evolução — os dois nomes por trás de cada peça da Access Fit.
+              </p>
+            </div>
+            <div style={{ position: "relative", width: 180, aspectRatio: "3/4", flexShrink: 0, justifySelf: "center", borderRadius: "0.75rem", overflow: "hidden", boxShadow: "0 12px 30px rgba(26,21,16,0.25)", transform: "rotate(-2deg)", border: "6px solid #fff" }}>
+              <Image src="/sobre/hero-quem-somos.jpg" alt="Bruno e Bruna, fundadores da Access Fit, em treino na barra" fill style={{ objectFit: "cover" }} sizes="180px" />
+            </div>
+          </div>
+
+          <RigDivider />
+
+          <FounderBlock
+            name="BRUNO"
+            age="30 anos"
+            role="TI e empreendedor de alma"
+            tag="Crossfiteiro e multi esportista"
+            bio={[
+              "Tecnologia corre nas veias desde sempre. Já empreendeu em moda masculina e e-commerce de telefones, mas foi no esporte que encontrou seu propósito de vida.",
+              "Ariano nato, observador e direto na régua: acredita que o esporte salva vidas. Vive o equilíbrio perfeito entre se permitir e se cuidar — porque lifestyle saudável não é restrição, é liberdade.",
+            ]}
+            mainPhoto="/sobre/bruno-principal.jpg"
+            sidePhotos={["/sobre/bruno-corrida.jpg", "/sobre/bruno-treino.jpg"]}
+          />
+
+          <RigDivider />
+
+          <FounderBlock
+            reverse
+            name="BRUNA"
+            age="27 anos"
+            role="Enfermeira amante da vida"
+            tag="Apaixonada pelas redes, espiritualidade e wellness"
+            bio={[
+              "Nunca pensou em empreender, até que a vida mostrou outro caminho. Passou por uma transformação de -15kg ao tratar um lipedema — e junto vieram autoestima, saúde e propósito.",
+              "Compartilha seu lifestyle, looks e paixão por terapias holísticas. Crossfiteira de coração e pregadora oficial do esporte, acredita no poder da energia e do movimento.",
+            ]}
+            mainPhoto="/sobre/bruna-principal.jpg"
+            sidePhotos={["/sobre/bruna-enfermeira.jpg", "/sobre/bruna-look.jpg"]}
+          />
+
+          <RigDivider />
+
+          <div className="historia-fundacao" style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "2.5rem", alignItems: "center" }}>
+            <div style={{ position: "relative", width: 150, aspectRatio: "112/200", flexShrink: 0, justifySelf: "center", borderRadius: "0.75rem", overflow: "hidden", boxShadow: "0 12px 30px rgba(26,21,16,0.25)", transform: "rotate(3deg)", border: "6px solid #fff" }}>
+              <Image src="/sobre/casal.jpg" alt="Bruno e Bruna" fill style={{ objectFit: "cover" }} sizes="150px" />
+            </div>
+            <div>
+              <p style={{ color: "#5a4a2a", fontSize: "1rem", lineHeight: 1.8, marginBottom: "1rem" }}>
+                Decidimos unir a paixão da Bruna por moda fitness e terapias holísticas com a experiência do Bruno em tecnologia e empreendedorismo.
+              </p>
+              <p style={{ color: "#5a4a2a", fontSize: "1rem", lineHeight: 1.8, marginBottom: "1.5rem" }}>
+                Nasceu assim a <strong style={{ color: "#1a1510" }}>Access Fit</strong>: roupas de treino que te dão conforto e beleza até nos treinos mais intensos, trazendo a essência das barras de access — uma terapia holística que transforma.
+              </p>
+              <p style={{ fontStyle: "italic", color: "#b8891a", fontWeight: 700, fontSize: "0.95rem" }}>
+                Idealizado com muito carinho para todas vocês.
+              </p>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -128,8 +203,84 @@ export default function SobrePage() {
             grid-template-columns: 1fr !important;
             gap: 2rem !important;
           }
+          .historia-intro, .historia-fundacao, .founder-block {
+            grid-template-columns: 1fr !important;
+            text-align: center;
+            gap: 1.75rem !important;
+          }
+          .founder-block p {
+            text-align: left;
+          }
         }
       `}</style>
+    </div>
+  );
+}
+
+function RigDivider() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem", margin: "3rem 0" }} aria-hidden="true">
+      <span style={{ width: 13, height: 13, borderRadius: "50%", background: "#a8402c", flexShrink: 0 }} />
+      <span style={{ flex: 1, maxWidth: 200, height: 6, borderRadius: 999, background: "linear-gradient(90deg, #a8402c, #c96a4a)" }} />
+      <span style={{ width: 13, height: 13, borderRadius: "50%", background: "#a8402c", flexShrink: 0 }} />
+    </div>
+  );
+}
+
+function FounderPhotos({ main, side }: { main: string; side: [string, string] }) {
+  return (
+    <div style={{ position: "relative", width: 210, height: 260, flexShrink: 0, justifySelf: "center", margin: "0 auto" }}>
+      <div style={{ position: "absolute", left: 0, bottom: 0, width: 92, aspectRatio: "3/4", borderRadius: "0.5rem", overflow: "hidden", border: "5px solid #fff", boxShadow: "0 8px 18px rgba(26,21,16,0.2)", transform: "rotate(-8deg)", zIndex: 1 }}>
+        <Image src={side[0]} alt="" fill style={{ objectFit: "cover" }} sizes="92px" />
+      </div>
+      <div style={{ position: "absolute", right: 0, bottom: -6, width: 92, aspectRatio: "3/4", borderRadius: "0.5rem", overflow: "hidden", border: "5px solid #fff", boxShadow: "0 8px 18px rgba(26,21,16,0.2)", transform: "rotate(8deg)", zIndex: 1 }}>
+        <Image src={side[1]} alt="" fill style={{ objectFit: "cover" }} sizes="92px" />
+      </div>
+      <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%) rotate(-2deg)", width: 160, aspectRatio: "4/5", borderRadius: "0.75rem", overflow: "hidden", border: "6px solid #fff", boxShadow: "0 14px 28px rgba(26,21,16,0.28)", zIndex: 2 }}>
+        <Image src={main} alt="" fill style={{ objectFit: "cover" }} sizes="160px" />
+      </div>
+    </div>
+  );
+}
+
+function FounderBlock({ name, age, role, tag, bio, mainPhoto, sidePhotos, reverse }: {
+  name: string;
+  age: string;
+  role: string;
+  tag: string;
+  bio: string[];
+  mainPhoto: string;
+  sidePhotos: [string, string];
+  reverse?: boolean;
+}) {
+  const text = (
+    <div>
+      <h3 className={anton.className} style={{ fontSize: "clamp(2.25rem, 4.5vw, 3rem)", color: "#1a1510", lineHeight: 1, marginBottom: "0.35rem", letterSpacing: "0.01em" }}>
+        {name}
+      </h3>
+      <p style={{ fontSize: "0.9rem", fontWeight: 700, color: "#b8891a", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>
+        {age.toUpperCase()} · {role}
+      </p>
+      <p style={{ color: "#7a6040", fontWeight: 700, fontSize: "0.85rem", fontStyle: "italic", marginBottom: "1.1rem" }}>{tag}</p>
+      {bio.map((p, i) => (
+        <p key={i} style={{ color: "#5a4a2a", fontSize: "0.975rem", lineHeight: 1.8, marginBottom: i < bio.length - 1 ? "0.9rem" : 0 }}>{p}</p>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="founder-block" style={{ display: "grid", gridTemplateColumns: reverse ? "1fr auto" : "auto 1fr", gap: "2.5rem", alignItems: "center", marginBottom: "3.5rem" }}>
+      {reverse ? (
+        <>
+          {text}
+          <FounderPhotos main={mainPhoto} side={sidePhotos} />
+        </>
+      ) : (
+        <>
+          <FounderPhotos main={mainPhoto} side={sidePhotos} />
+          {text}
+        </>
+      )}
     </div>
   );
 }

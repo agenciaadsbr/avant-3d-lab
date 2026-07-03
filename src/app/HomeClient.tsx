@@ -79,6 +79,35 @@ export default function HomeClient({
         </div>
       </section>
 
+      {/* Home Try-On */}
+      <section style={{ padding: isMobile ? "2rem 1rem" : "4.5rem 1.5rem", backgroundColor: "#fff", borderBottom: "1px solid rgba(140,100,20,0.08)" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", textAlign: "center" }}>
+          <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#b8891a", letterSpacing: "0.15em", marginBottom: "0.75rem" }}>COMO FUNCIONA</p>
+          <h2 style={{ fontSize: isMobile ? "1.4rem" : "2rem", fontWeight: 900, color: "#1a1510", marginBottom: "0.75rem" }}>
+            Experimente em casa. Compre só se amar.
+          </h2>
+          <p style={{ color: "#5a4a2a", fontSize: isMobile ? "0.85rem" : "1rem", lineHeight: 1.7, maxWidth: 560, margin: "0 auto 2.5rem" }}>
+            Escolha suas peças, receba em casa, experimente com calma — e leve só o que decidir ficar. Sem risco, sem pressa.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: isMobile ? "1rem" : "1.5rem", textAlign: isMobile ? "left" : "center" }}>
+            {[
+              { icon: "🛍️", title: "Escolha suas peças", desc: "Monte seu pedido com o que combina com você." },
+              { icon: "🏠", title: "Experimente em casa", desc: "No seu tempo, sem fila de provador e sem pressa." },
+              { icon: "💛", title: "Fique só com o que amar", desc: "Devolva o resto, sem burocracia." },
+            ].map(step => (
+              <div key={step.title} style={{ padding: isMobile ? "1rem" : "1.5rem", backgroundColor: "#FAF6EE", borderRadius: "1rem", border: "1px solid rgba(140,100,20,0.1)" }}>
+                <div style={{ fontSize: "1.75rem", marginBottom: "0.5rem" }}>{step.icon}</div>
+                <p style={{ fontWeight: 800, color: "#1a1510", fontSize: "0.95rem", marginBottom: "0.25rem" }}>{step.title}</p>
+                <p style={{ color: "#9a8060", fontSize: "0.82rem", lineHeight: 1.5 }}>{step.desc}</p>
+              </div>
+            ))}
+          </div>
+          <Link href="/sobre" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", marginTop: "2rem", color: "#b8891a", fontWeight: 700, fontSize: "0.9rem", textDecoration: "none" }}>
+            Como funciona o Home Try-On <ArrowRight size={15} />
+          </Link>
+        </div>
+      </section>
+
       {/* Categorias */}
       <section style={{ padding: isMobile ? "1.5rem 1rem" : "5rem 1.5rem", backgroundColor: "#FAF6EE" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
