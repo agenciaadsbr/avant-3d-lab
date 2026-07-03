@@ -4,9 +4,12 @@ import { useSearchParams } from "next/navigation";
 import { useAdmin } from "@/store/admin";
 import { useMobileView } from "@/hooks/useMediaQuery";
 import ProdutosSemCusto from "../ProdutosSemCusto";
+import OrderTimeline from "../../components/OrderTimeline";
+import { ORDER_STATUS_LABEL as STATUS_LABEL, ORDER_STATUS_COLOR as STATUS_COLOR } from "@/lib/orderStatus";
 
 type OrderItem = { id: string; quantity: number; price: number; size?: string; costPrice?: number | null; product: { id: string; name: string; costPrice?: number | null } };
 type Installment = { id: string; number: number; amount: number; dueDate: string; status: string; paidAt?: string | null };
+type StatusHistoryEntry = { status: string; createdAt: string };
 type Order = {
   id: string; status: string; paymentStatus: string; paymentMethod: string; amountPaid: number;
   total: number; subtotal: number; shipping: number; discount: number; notes?: string;
@@ -14,7 +17,14 @@ type Order = {
   user: { id: string; name: string; email: string; phone?: string };
   items: OrderItem[];
   installments: Installment[];
+  statusHistory: StatusHistoryEntry[];
 };
+
+// Adiciona uma entrada otimista no histórico local ao mudar o status (o servidor já grava de verdade)
+function withStatusChange(order: Order, status: string): Order {
+  if (status === order.status) return order;
+  return { ...order, status, statusHistory: [{ status, createdAt: new Date().toISOString() }, ...order.statusHistory] };
+}
 
 const PAY_LABEL: Record<string, string> = {
   paid: "Pago", partial: "Parcial", pending: "Pendente",
@@ -34,20 +44,6 @@ const METHOD_COLOR: Record<string, { bg: string; color: string }> = {
   dinheiro: { bg: "#e8f8e8", color: "#1a8a2a" },
   caderno:  { bg: "#fff3cd", color: "#856404" },
   link:     { bg: "#fce8ff", color: "#8a1ab8" },
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  "try-on":  "Home Try-On",
-  pending:   "Aguardando", confirmed: "Confirmado",
-  shipped:   "Enviado", delivered: "Entregue", cancelled: "Cancelado",
-};
-const STATUS_COLOR: Record<string, { bg: string; color: string }> = {
-  "try-on":  { bg: "#fce8ff", color: "#8a1ab8" },
-  pending:   { bg: "#fff8e1", color: "#b8891a" },
-  confirmed: { bg: "#e8f4fd", color: "#1a6a9a" },
-  shipped:   { bg: "#f0e8ff", color: "#6a30b8" },
-  delivered: { bg: "#e8f8e8", color: "#1a8a2a" },
-  cancelled: { bg: "#fee8e8", color: "#c04040" },
 };
 
 function fmt(n: number) {
@@ -78,6 +74,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const [filterPending, setFilterPending] = useState(false);
   const searchParams = useSearchParams();
   const [expanded, setExpanded] = useState<string | null>(searchParams.get("expand"));
+  const [activeTab, setActiveTab] = useState<"itens" | "pagamento" | "cliente" | "jornada">("itens");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [localOrders, setLocalOrders] = useState(orders);
 
@@ -169,7 +166,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
       method: "PUT", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
-    if (res.ok) setLocalOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+    if (res.ok) setLocalOrders(prev => prev.map(o => o.id === orderId ? withStatusChange(o, status) : o));
     setUpdatingId(null);
   };
 
@@ -448,7 +445,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                 return (
                   <>
                     <tr key={order.id} id={`order-${order.id}`} style={{ borderBottom: isExpanded ? "none" : "1px solid rgba(140,100,20,0.06)", cursor: "pointer", backgroundColor: isExpanded ? "#FDFAF4" : "transparent" }}
-                      onClick={() => setExpanded(isExpanded ? null : order.id)}>
+                      onClick={() => { setExpanded(isExpanded ? null : order.id); setActiveTab("itens"); }}>
                       <td style={{ padding: "0.875rem 1rem", fontFamily: "monospace", fontSize: "0.72rem", color: "#9a8060" }}>
                         {isExpanded ? "▼" : "▶"} #{order.id.slice(-8).toUpperCase()}
                       </td>
@@ -494,10 +491,105 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                     {isExpanded && (
                       <tr key={order.id + "-detail"} style={{ backgroundColor: "#FDFAF4", borderBottom: "1px solid rgba(140,100,20,0.06)" }}>
                         <td colSpan={isMobile ? 4 : 9} style={{ padding: isMobile ? "0.75rem 0.75rem" : "0 1rem 1rem 1rem" }}>
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                            {/* Itens */}
+                          <div>
+                            {/* Ações principais */}
+                            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.875rem" }}>
+                              {order.user.phone && (
+                                <a
+                                  href={(() => {
+                                    const itens = order.items.map(i =>
+                                      `- ${itemName({ product: i.product, size: i.size, componentName: (i as any).componentName })} x${i.quantity}  ${fmt(i.price * i.quantity)}`
+                                    ).join("\n");
+                                    const metodo: Record<string,string> = { pix:"Pix", cartao:"Cartão", dinheiro:"Dinheiro", caderno:"Caderno", link:"Link de Pagamento" };
+                                    const msg = [
+                                      `Olá ${order.user.name?.split(" ")[0]}!`,
+                                      ``,
+                                      `Segue o resumo do seu pedido na *Access Fit*:`,
+                                      ``,
+                                      itens,
+                                      ``,
+                                      `*Total: ${fmt(order.total)}*`,
+                                      `Pagamento: ${metodo[order.paymentMethod] || order.paymentMethod}`,
+                                      ``,
+                                      `Responda *SIM* para confirmar ou nos chame se tiver duvidas!`,
+                                    ].join("\n");
+                                    const phone = order.user.phone!.replace(/\D/g, "");
+                                    const ddi = phone.startsWith("55") ? phone : `55${phone}`;
+                                    return `https://wa.me/${ddi}?text=${encodeURIComponent(msg)}`;
+                                  })()}
+                                  target="_blank" rel="noopener noreferrer"
+                                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", backgroundColor: "#25D366", color: "#fff", fontWeight: 700, fontSize: "0.8rem", padding: "0.55rem 1rem", borderRadius: "0.625rem", textDecoration: "none", flex: "1 1 auto", minWidth: 170 }}>
+                                  📲 Enviar confirmação
+                                </a>
+                              )}
+                              <a href={`/admin/pedidos/${order.id}/nota`} target="_blank" rel="noopener noreferrer"
+                                style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "0.55rem 1rem", backgroundColor: "#fff8e1", color: "#b8891a", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", textDecoration: "none", flex: "1 1 auto", minWidth: 140 }}>
+                                🧾 Ver Nota
+                              </a>
+                              {order.status !== "cancelled" && (
+                                <button onClick={() => { if (confirm("Cancelar este pedido?")) updateStatus(order.id, "cancelled"); }}
+                                  style={{ padding: "0.55rem 1rem", backgroundColor: "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.2)", borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", flex: "1 1 auto", minWidth: 140 }}>
+                                  🚫 Cancelar Pedido
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Banner Home Try-On */}
+                            {order.status === "try-on" && (
+                              <div style={{ backgroundColor: "#fce8ff", border: "1px solid rgba(138,26,184,0.25)", borderRadius: "0.75rem", padding: "1rem", marginBottom: "0.875rem" }}>
+                                <p style={{ fontWeight: 800, color: "#5a0a7a", fontSize: "0.85rem", marginBottom: "0.625rem" }}>👗 Home Try-On — aguardando decisão</p>
+                                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                                  <button
+                                    onClick={async () => {
+                                      await fetch(`/api/admin/pedidos/${order.id}`, {
+                                        method: "PUT", headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ status: "delivered" }),
+                                      });
+                                      setLocalOrders(prev => prev.map(o => o.id === order.id ? withStatusChange(o, "delivered") : o));
+                                      startEditPayment(order);
+                                    }}
+                                    style={{ backgroundColor: "#1a8a2a", color: "#fff", border: "none", borderRadius: "0.5rem", padding: "0.45rem 0.875rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}>
+                                    ✅ Confirmou a compra
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      if (!confirm("Confirmar devolução? O estoque será restaurado.")) return;
+                                      await fetch(`/api/admin/pedidos/${order.id}`, {
+                                        method: "PUT", headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ status: "cancelled" }),
+                                      });
+                                      setLocalOrders(prev => prev.map(o => o.id === order.id ? withStatusChange(o, "cancelled") : o));
+                                    }}
+                                    style={{ backgroundColor: "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.25)", borderRadius: "0.5rem", padding: "0.45rem 0.875rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}>
+                                    ↩️ Devolveu
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Abas */}
+                            <div style={{ display: "flex", gap: "0.25rem", borderBottom: "1px solid rgba(140,100,20,0.15)", marginBottom: "1rem" }}>
+                              {([
+                                { key: "itens", label: "Itens" },
+                                { key: "pagamento", label: "Pagamento" },
+                                { key: "cliente", label: "Cliente" },
+                                { key: "jornada", label: "Jornada" },
+                              ] as const).map(t => (
+                                <button key={t.key} onClick={() => setActiveTab(t.key)}
+                                  style={{
+                                    padding: "0.5rem 1rem", border: "none", background: "none", cursor: "pointer",
+                                    fontWeight: 700, fontSize: "0.8rem",
+                                    color: activeTab === t.key ? "#b8891a" : "#9a8060",
+                                    borderBottom: activeTab === t.key ? "2px solid #b8891a" : "2px solid transparent",
+                                    marginBottom: "-1px",
+                                  }}>
+                                  {t.label}
+                                </button>
+                              ))}
+                            </div>
+
+                          {activeTab === "itens" && (
                             <div style={{ backgroundColor: "#fff", borderRadius: "0.75rem", padding: "1rem", border: "1px solid rgba(140,100,20,0.08)" }}>
-                              <p style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.8rem", marginBottom: "0.75rem" }}>Itens do Pedido</p>
                               {order.items.map(item => {
                                 const custo = item.costPrice ?? item.product.costPrice ?? null;
                                 const isEditingCost = editingItemCost === item.id;
@@ -620,73 +712,9 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                 </div>
                               )}
                             </div>
-                            {/* Info pagamento + cliente */}
-                            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                          )}
 
-                              {/* Botão confirmar pedido por WhatsApp */}
-                              {order.user.phone && (
-                                <a
-                                  href={(() => {
-                                    const itens = order.items.map(i =>
-                                      `- ${itemName({ product: i.product, size: i.size, componentName: (i as any).componentName })} x${i.quantity}  ${fmt(i.price * i.quantity)}`
-                                    ).join("\n");
-                                    const metodo: Record<string,string> = { pix:"Pix", cartao:"Cartão", dinheiro:"Dinheiro", caderno:"Caderno", link:"Link de Pagamento" };
-                                    const msg = [
-                                      `Olá ${order.user.name?.split(" ")[0]}!`,
-                                      ``,
-                                      `Segue o resumo do seu pedido na *Access Fit*:`,
-                                      ``,
-                                      itens,
-                                      ``,
-                                      `*Total: ${fmt(order.total)}*`,
-                                      `Pagamento: ${metodo[order.paymentMethod] || order.paymentMethod}`,
-                                      ``,
-                                      `Responda *SIM* para confirmar ou nos chame se tiver duvidas!`,
-                                    ].join("\n");
-                                    const phone = order.user.phone!.replace(/\D/g, "");
-                                    const ddi = phone.startsWith("55") ? phone : `55${phone}`;
-                                    return `https://wa.me/${ddi}?text=${encodeURIComponent(msg)}`;
-                                  })()}
-                                  target="_blank" rel="noopener noreferrer"
-                                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", backgroundColor: "#25D366", color: "#fff", fontWeight: 700, fontSize: "0.85rem", padding: "0.625rem 1rem", borderRadius: "0.75rem", textDecoration: "none" }}>
-                                  📲 Enviar confirmação ao cliente
-                                </a>
-                              )}
-
-                              {/* Banner Home Try-On */}
-                              {order.status === "try-on" && (
-                                <div style={{ backgroundColor: "#fce8ff", border: "1px solid rgba(138,26,184,0.25)", borderRadius: "0.75rem", padding: "1rem" }}>
-                                  <p style={{ fontWeight: 800, color: "#5a0a7a", fontSize: "0.85rem", marginBottom: "0.625rem" }}>👗 Home Try-On — aguardando decisão</p>
-                                  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                                    <button
-                                      onClick={async () => {
-                                        await fetch(`/api/admin/pedidos/${order.id}`, {
-                                          method: "PUT", headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({ status: "delivered" }),
-                                        });
-                                        setLocalOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: "delivered" } : o));
-                                        startEditPayment(order);
-                                      }}
-                                      style={{ backgroundColor: "#1a8a2a", color: "#fff", border: "none", borderRadius: "0.5rem", padding: "0.45rem 0.875rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}>
-                                      ✅ Confirmou a compra
-                                    </button>
-                                    <button
-                                      onClick={async () => {
-                                        if (!confirm("Confirmar devolução? O estoque será restaurado.")) return;
-                                        await fetch(`/api/admin/pedidos/${order.id}`, {
-                                          method: "PUT", headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({ status: "cancelled" }),
-                                        });
-                                        setLocalOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: "cancelled" } : o));
-                                      }}
-                                      style={{ backgroundColor: "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.25)", borderRadius: "0.5rem", padding: "0.45rem 0.875rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}>
-                                      ↩️ Devolveu
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Editar pagamento */}
+                          {activeTab === "pagamento" && (
                               <div style={{ backgroundColor: "#fff", borderRadius: "0.75rem", padding: "1rem", border: "1px solid rgba(140,100,20,0.08)" }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
                                   <p style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.8rem" }}>Pagamento</p>
@@ -775,7 +803,9 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                   </div>
                                 )}
                               </div>
-                              {/* Cliente */}
+                          )}
+
+                          {activeTab === "cliente" && (
                               <div style={{ backgroundColor: "#fff", borderRadius: "0.75rem", padding: "1rem", border: "1px solid rgba(140,100,20,0.08)" }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
                                   <p style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.8rem" }}>Cliente</p>
@@ -842,23 +872,18 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                     📝 {order.notes}
                                   </div>
                                 )}
-                                <a href={`/admin/pedidos/${order.id}/nota`} target="_blank" rel="noopener noreferrer"
-                                  style={{ marginTop: "0.875rem", display: "block", width: "100%", padding: "0.5rem", backgroundColor: "#fff8e1", color: "#b8891a", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer", textAlign: "center", textDecoration: "none" }}>
-                                  🧾 Ver Nota do Pedido
-                                </a>
                                 <button onClick={() => generateShareLink(order.id)}
-                                  style={{ marginTop: "0.5rem", width: "100%", padding: "0.5rem", backgroundColor: copyingLinkId === order.id ? "#e8f8e8" : "#e8f4fd", color: copyingLinkId === order.id ? "#1a8a2a" : "#1a6a9a", border: `1px solid ${copyingLinkId === order.id ? "rgba(26,138,42,0.2)" : "rgba(26,106,154,0.2)"}`, borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer" }}>
+                                  style={{ marginTop: "0.875rem", width: "100%", padding: "0.5rem", backgroundColor: copyingLinkId === order.id ? "#e8f8e8" : "#e8f4fd", color: copyingLinkId === order.id ? "#1a8a2a" : "#1a6a9a", border: `1px solid ${copyingLinkId === order.id ? "rgba(26,138,42,0.2)" : "rgba(26,106,154,0.2)"}`, borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer" }}>
                                   {copyingLinkId === order.id ? "✓ Link copiado!" : "📋 Gerar link para cliente"}
                                 </button>
-
-                                {order.status !== "cancelled" && (
-                                  <button onClick={() => { if (confirm("Cancelar este pedido?")) updateStatus(order.id, "cancelled"); }}
-                                    style={{ marginTop: "0.5rem", width: "100%", padding: "0.5rem", backgroundColor: "#fee8e8", color: "#c04040", border: "1px solid rgba(192,64,64,0.2)", borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer" }}>
-                                    🚫 Cancelar Pedido
-                                  </button>
-                                )}
                               </div>
-                            </div>
+                          )}
+
+                          {activeTab === "jornada" && (
+                              <div style={{ backgroundColor: "#fff", borderRadius: "0.75rem", padding: "1.25rem 1rem", border: "1px solid rgba(140,100,20,0.08)" }}>
+                                <OrderTimeline history={order.statusHistory} fallbackCreatedAt={order.createdAt} />
+                              </div>
+                          )}
                           </div>
                         </td>
                       </tr>

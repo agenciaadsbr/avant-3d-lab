@@ -55,6 +55,8 @@ export async function POST(req: Request) {
     },
   });
 
+  await prisma.orderStatusHistory.create({ data: { orderId: order.id, status: order.status } });
+
   // Incrementar usedCount do cupom
   if (couponCode) {
     await prisma.coupon.updateMany({

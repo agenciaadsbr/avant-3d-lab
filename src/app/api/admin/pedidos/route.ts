@@ -114,6 +114,8 @@ export async function POST(req: Request) {
       },
     });
 
+    await prisma.orderStatusHistory.create({ data: { orderId: order.id, status: order.status } });
+
     // Decrementar estoque dos componentes se foi vendido um componente de um Conjunto
     for (const item of items) {
       if (item.componentName) {

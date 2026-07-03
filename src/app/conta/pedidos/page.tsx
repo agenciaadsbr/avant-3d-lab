@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import CancelButton from "./CancelButton";
+import OrderTimeline from "@/app/components/OrderTimeline";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,10 @@ export default async function MeusPedidosPage() {
 
   const orders = await prisma.order.findMany({
     where: { userId: (session.user as any).id },
-    include: { items: { include: { product: { select: { name: true, images: true } } } } },
+    include: {
+      items: { include: { product: { select: { name: true, images: true } } } },
+      statusHistory: { orderBy: { createdAt: "desc" } },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -113,6 +117,13 @@ export default async function MeusPedidosPage() {
                     {order.status === "shipped" && (
                       <div style={{ marginTop: "0.75rem", padding: "0.625rem 0.875rem", backgroundColor: "#f0e8ff", borderRadius: "0.625rem", fontSize: "0.78rem", color: "#6a30b8" }}>
                         Seu pedido está a caminho!
+                      </div>
+                    )}
+
+                    {order.status !== "cancelled" && (
+                      <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid rgba(140,100,20,0.08)" }}>
+                        <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#9a8060", letterSpacing: "0.06em", marginBottom: "0.75rem" }}>ACOMPANHE SEU PEDIDO</p>
+                        <OrderTimeline history={order.statusHistory} fallbackCreatedAt={order.createdAt} />
                       </div>
                     )}
                   </div>

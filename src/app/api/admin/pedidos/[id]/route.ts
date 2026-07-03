@@ -51,6 +51,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const order = await prisma.order.update({ where: { id }, data });
 
+  // Registra a mudança de status na jornada do pedido
+  if (body.status !== undefined && body.status !== previousStatus) {
+    await prisma.orderStatusHistory.create({ data: { orderId: id, status: body.status } });
+  }
+
   // Notifica o cliente por push quando o status muda (não bloqueia a resposta em caso de falha)
   if (body.status !== undefined && body.status !== previousStatus) {
     const notification = STATUS_NOTIFICATION[body.status];
@@ -110,7 +115,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const updated = await prisma.order.findUnique({
     where: { id },
-    include: { installments: { orderBy: { number: "asc" } } },
+    include: {
+      installments: { orderBy: { number: "asc" } },
+      statusHistory: { orderBy: { createdAt: "desc" } },
+    },
   });
   return NextResponse.json(updated);
 }

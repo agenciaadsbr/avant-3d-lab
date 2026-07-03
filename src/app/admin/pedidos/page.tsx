@@ -16,6 +16,7 @@ export default async function PedidosPage() {
         user: { select: { id: true, name: true, email: true, phone: true } },
         items: { include: { product: { select: { id: true, name: true, costPrice: true } } } },
         installments: { orderBy: { number: "asc" } },
+        statusHistory: { orderBy: { createdAt: "desc" } },
       },
     }),
     prisma.user.findMany({

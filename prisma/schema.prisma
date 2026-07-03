@@ -270,16 +270,31 @@ model Order {
   discount      Float    @default(0)
   notes         String?
   couponCode    String?
-  deliveredAt    DateTime?
-  followUpSentAt DateTime?
+  deliveredAt      DateTime?
+  followUpSentAt   DateTime?
+  thanks24hSentAt  DateTime?
+  feedback7dSentAt DateTime?
+  reengage30dSentAt DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  user         User          @relation(fields: [userId], references: [id])
-  address      Address?      @relation(fields: [addressId], references: [id])
-  items        OrderItem[]
-  installments Installment[]
-  returns      Return[]
+  user          User                 @relation(fields: [userId], references: [id])
+  address       Address?             @relation(fields: [addressId], references: [id])
+  items         OrderItem[]
+  installments  Installment[]
+  returns       Return[]
+  statusHistory OrderStatusHistory[]
+}
+
+model OrderStatusHistory {
+  id        String   @id @default(cuid())
+  orderId   String
+  status    String
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
 }
 
 model Installment {
