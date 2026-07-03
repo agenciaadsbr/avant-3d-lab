@@ -38,7 +38,7 @@ export default function NotaPedidoClient({ order }: { order: any }) {
       {/* Estilos de impressão */}
       <style>{`
         @media print {
-          .no-print { display: none !important; }
+          .no-print, .admin-header, .admin-bottomnav { display: none !important; }
           body { margin: 0; background: white; }
           .nota-container { box-shadow: none !important; border: none !important; max-width: 100% !important; margin: 0 !important; padding: 1.5rem !important; }
         }
@@ -60,7 +60,7 @@ export default function NotaPedidoClient({ order }: { order: any }) {
             onClick={() => {
               const phone = order.user?.phone?.replace(/\D/g, "");
               if (!phone) return alert("Cliente sem telefone cadastrado.");
-              const url = `${window.location.origin}/nota/${order.id}`;
+              const url = `https://www.accessfit.com.br/nota/${order.id}`;
               const msg = encodeURIComponent(`Olá ${order.user?.name?.split(" ")[0] || ""}! Segue a nota do seu pedido:\n${url}`);
               window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
             }}
@@ -103,20 +103,6 @@ export default function NotaPedidoClient({ order }: { order: any }) {
               <div>
                 <span style={{ fontSize: "0.72rem", color: "#9a8060" }}>Telefone</span>
                 <p style={{ fontWeight: 700, color: "#1a1510", fontSize: "0.9rem", margin: "0.1rem 0 0" }}>{order.user.phone}</p>
-              </div>
-            )}
-            {order.user?.email && (
-              <div>
-                <span style={{ fontSize: "0.72rem", color: "#9a8060" }}>Email</span>
-                <p style={{ fontWeight: 600, color: "#3a2a10", fontSize: "0.82rem", margin: "0.1rem 0 0" }}>{order.user.email}</p>
-              </div>
-            )}
-            {order.address && (
-              <div>
-                <span style={{ fontSize: "0.72rem", color: "#9a8060" }}>Endereço</span>
-                <p style={{ fontWeight: 600, color: "#3a2a10", fontSize: "0.82rem", margin: "0.1rem 0 0" }}>
-                  {order.address.street}, {order.address.number}{order.address.complement ? `, ${order.address.complement}` : ""} — {order.address.city}/{order.address.state}
-                </p>
               </div>
             )}
           </div>
