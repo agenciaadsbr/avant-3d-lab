@@ -118,6 +118,9 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const [reassignSaving, setReassignSaving] = useState(false);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [copyingLinkId, setCopyingLinkId] = useState<string | null>(null);
+  const [trocaOrderId, setTrocaOrderId] = useState<string | null>(null);
+  const [trocaReason, setTrocaReason] = useState("");
+  const [trocaSaving, setTrocaSaving] = useState(false);
 
   const filtered = useMemo(() => {
     return localOrders.filter(o => {
@@ -168,6 +171,22 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
     });
     if (res.ok) setLocalOrders(prev => prev.map(o => o.id === orderId ? withStatusChange(o, status) : o));
     setUpdatingId(null);
+  };
+
+  const handleSolicitarTroca = async () => {
+    if (!trocaOrderId || !trocaReason.trim()) return;
+    setTrocaSaving(true);
+    const order = localOrders.find(o => o.id === trocaOrderId);
+    const res = await fetch("/api/admin/devolucoes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId: trocaOrderId, reason: trocaReason.trim(), amount: order?.total ?? 0 }),
+    });
+    if (res.ok) {
+      setTrocaOrderId(null);
+      setTrocaReason("");
+    }
+    setTrocaSaving(false);
   };
 
   const startEditPayment = (order: Order) => {
@@ -532,6 +551,10 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                   🚫 Cancelar Pedido
                                 </button>
                               )}
+                              <button onClick={() => { setTrocaOrderId(order.id); setTrocaReason(""); }}
+                                style={{ padding: "0.55rem 1rem", backgroundColor: "#fff3e0", color: "#b8891a", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", flex: "1 1 auto", minWidth: 140 }}>
+                                🔄 Solicitar Troca
+                              </button>
                             </div>
 
                             {/* Banner Home Try-On */}
@@ -895,6 +918,53 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
           </table>
         </div>
       </div>
+
+      {/* Modal Solicitar Troca */}
+      {trocaOrderId && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+          <div style={{ backgroundColor: "#FAF6EE", borderRadius: "1.25rem", padding: "2rem", width: "100%", maxWidth: 420, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+              <h2 style={{ color: "#1a1510", fontWeight: 900, fontSize: "1.1rem", margin: 0 }}>🔄 Solicitar Troca</h2>
+              <button onClick={() => setTrocaOrderId(null)} style={{ background: "none", border: "none", fontSize: "1.25rem", cursor: "pointer", color: "#9a8060" }}>
+                ✕
+              </button>
+            </div>
+            <p style={{ color: "#5a4a2a", fontSize: "0.85rem", marginBottom: "1.25rem" }}>
+              Pedido #{trocaOrderId.slice(-8).toUpperCase()} vai para a aba <strong>Devoluções</strong> com status &quot;Solicitado&quot;.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div>
+                <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", display: "block", marginBottom: "0.4rem" }}>
+                  Motivo da troca *
+                </label>
+                <textarea
+                  value={trocaReason}
+                  onChange={e => setTrocaReason(e.target.value)}
+                  placeholder="Ex: Tamanho errado, cliente pediu outra cor..."
+                  rows={3}
+                  autoFocus
+                  style={{ width: "100%", padding: "0.6rem", border: "1px solid rgba(140,100,20,0.2)", borderRadius: "0.5rem", fontFamily: "inherit", resize: "vertical" }}
+                />
+              </div>
+              <div style={{ display: "flex", gap: "0.75rem" }}>
+                <button
+                  onClick={() => setTrocaOrderId(null)}
+                  style={{ flex: 1, backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.2)", color: "#5a4a2a", fontWeight: 700, padding: "0.75rem", borderRadius: "0.75rem", cursor: "pointer" }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSolicitarTroca}
+                  disabled={trocaSaving || !trocaReason.trim()}
+                  style={{ flex: 1, backgroundColor: "#b8891a", color: "#fff", fontWeight: 700, padding: "0.75rem", borderRadius: "0.75rem", border: "none", cursor: trocaSaving || !trocaReason.trim() ? "not-allowed" : "pointer", opacity: trocaSaving || !trocaReason.trim() ? 0.7 : 1 }}
+                >
+                  {trocaSaving ? "Enviando..." : "Confirmar Troca"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
