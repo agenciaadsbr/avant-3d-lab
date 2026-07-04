@@ -19,37 +19,24 @@ export async function GET(req: Request) {
       const inicio = new Date(d.getFullYear(), d.getMonth(), 1);
       const fim = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
 
-      const [orders, despesas, cadernoAgg] = await Promise.all([
-        // Vendas normais (não caderno) pagas no mês
-        prisma.order.findMany({
+      const [pagamentos, despesas] = await Promise.all([
+        // Pagamentos recebidos no mês, de qualquer forma
+        prisma.payment.aggregate({
+          _sum: { amount: true },
           where: {
-            status: { not: "cancelled" },
-            paymentStatus: { in: ["paid", "partial"] },
-            paymentMethod: { not: "caderno" },
-            createdAt: { gte: inicio, lte: fim },
+            receivedAt: { gte: inicio, lte: fim },
+            order: { status: { not: "cancelled" } },
           },
-          select: { total: true, amountPaid: true, paymentStatus: true },
         }),
         // Despesas do mês
         prisma.expense.aggregate({
           _sum: { amount: true },
           where: { date: { gte: inicio, lte: fim } },
         }),
-        // Pagamentos de caderno recebidos no mês
-        prisma.cashInjection.aggregate({
-          _sum: { amount: true },
-          where: {
-            description: { startsWith: "Caderno —" },
-            date: { gte: inicio, lte: fim },
-          },
-        }),
       ]);
 
-      const totalVendas = orders.reduce((s, o) =>
-        s + (o.paymentStatus === "paid" ? o.total : o.amountPaid), 0);
-
       meses[mesKey] = {
-        receitas: totalVendas + (cadernoAgg._sum.amount || 0),
+        receitas: pagamentos._sum.amount || 0,
         despesas: despesas._sum.amount || 0,
       };
     }

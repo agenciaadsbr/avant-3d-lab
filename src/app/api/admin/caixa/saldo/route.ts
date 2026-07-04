@@ -13,9 +13,9 @@ export async function GET(req: Request) {
   const dateFilter = from ? { gte: new Date(from) } : undefined;
 
   const [receitas, todasDespesas, despesasEstoque, aportes, estoque, cadernoAberto] = await Promise.all([
-    prisma.order.aggregate({
-      _sum: { amountPaid: true },
-      where: { status: { not: "cancelled" }, ...(dateFilter ? { createdAt: dateFilter } : {}) },
+    prisma.payment.aggregate({
+      _sum: { amount: true },
+      where: { order: { status: { not: "cancelled" } }, ...(dateFilter ? { receivedAt: dateFilter } : {}) },
     }),
     // Todas as despesas (incluindo estoque)
     prisma.expense.aggregate({
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
     }),
   ]);
 
-  const receitasVal    = receitas._sum.amountPaid || 0;
+  const receitasVal    = receitas._sum.amount || 0;
   const despesasVal    = todasDespesas._sum.amount || 0;
   const despesasEstVal = despesasEstoque._sum.amount || 0;
   const aportesVal     = aportes._sum.amount || 0;

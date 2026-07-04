@@ -285,6 +285,7 @@ model Order {
   installments  Installment[]
   returns       Return[]
   statusHistory OrderStatusHistory[]
+  payments      Payment[]
 }
 
 model OrderStatusHistory {
@@ -298,6 +299,23 @@ model OrderStatusHistory {
   @@index([orderId])
 }
 
+model Payment {
+  id            String   @id @default(cuid())
+  orderId       String
+  installmentId String?
+  amount        Float
+  receivedAt    DateTime @default(now())
+  paymentMethod String
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  installment Installment? @relation(fields: [installmentId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([receivedAt])
+}
+
 model Installment {
   id        String    @id @default(cuid())
   orderId   String
@@ -309,7 +327,8 @@ model Installment {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order    Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  payments Payment[]
 }
 
 model OrderItem {

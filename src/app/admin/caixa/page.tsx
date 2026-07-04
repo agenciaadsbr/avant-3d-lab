@@ -16,21 +16,21 @@ export default async function CaixaPage() {
   const nextM2 = new Date(now.getFullYear(), now.getMonth() + 2, 10);
   const nextM3 = new Date(now.getFullYear(), now.getMonth() + 3, 10);
 
-  const [orders30, expenses30, ordersMonth, expensesMonth,
-    allOrdersPaid, allExpenses, cadernoAberto, cartaoFuturo] = await Promise.all([
-    prisma.order.findMany({
-      where: { status: { not: "cancelled" }, createdAt: { gte: start30 } },
-      select: { amountPaid: true, createdAt: true },
-      orderBy: { createdAt: "asc" },
+  const [payments30, expenses30, paymentsMonth, expensesMonth,
+    allPaymentsReceived, allExpenses, cadernoAberto, cartaoFuturo] = await Promise.all([
+    prisma.payment.findMany({
+      where: { order: { status: { not: "cancelled" } }, receivedAt: { gte: start30 } },
+      select: { amount: true, receivedAt: true },
+      orderBy: { receivedAt: "asc" },
     }),
     prisma.expense.findMany({
       where: { date: { gte: start30 } },
       select: { amount: true, date: true },
       orderBy: { date: "asc" },
     }),
-    prisma.order.aggregate({ _sum: { amountPaid: true }, where: { status: { not: "cancelled" }, createdAt: { gte: startMonth } } }),
+    prisma.payment.aggregate({ _sum: { amount: true }, where: { order: { status: { not: "cancelled" } }, receivedAt: { gte: startMonth } } }),
     prisma.expense.aggregate({ _sum: { amount: true }, where: { date: { gte: startMonth } } }),
-    prisma.order.aggregate({ _sum: { amountPaid: true }, where: { status: { not: "cancelled" } } }),
+    prisma.payment.aggregate({ _sum: { amount: true }, where: { order: { status: { not: "cancelled" } } } }),
     prisma.expense.aggregate({ _sum: { amount: true } }),
     prisma.order.findMany({
       where: { paymentStatus: { not: "paid" }, status: { not: "cancelled" } },
@@ -43,10 +43,10 @@ export default async function CaixaPage() {
     }),
   ]);
 
-  const receitaTotal = allOrdersPaid._sum.amountPaid || 0;
+  const receitaTotal = allPaymentsReceived._sum.amount || 0;
   const despesaTotal = allExpenses._sum.amount || 0;
   const saldoAtual = receitaTotal - despesaTotal;
-  const receitaMes = ordersMonth._sum.amountPaid || 0;
+  const receitaMes = paymentsMonth._sum.amount || 0;
   const despesaMes = expensesMonth._sum.amount || 0;
   const lucroMes = receitaMes - despesaMes;
   const aReceber = cadernoAberto.reduce((s, o) => s + (o.total - o.amountPaid), 0);
@@ -61,7 +61,7 @@ export default async function CaixaPage() {
   const days = Array.from({ length: 30 }, (_, i) => {
     const d = new Date(start30); d.setDate(d.getDate() + i);
     const label = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-    const entrada = orders30.filter(o => new Date(o.createdAt).toDateString() === d.toDateString()).reduce((s, o) => s + o.amountPaid, 0);
+    const entrada = payments30.filter(p => new Date(p.receivedAt).toDateString() === d.toDateString()).reduce((s, p) => s + p.amount, 0);
     const saida = expenses30.filter(e => new Date(e.date).toDateString() === d.toDateString()).reduce((s, e) => s + e.amount, 0);
     return { label, entrada, saida, saldo: entrada - saida };
   });

@@ -13,6 +13,8 @@ export async function POST(req: Request) {
   if (!clientId || !valor || valor <= 0)
     return NextResponse.json({ error: "clientId e valor obrigatórios" }, { status: 400 });
 
+  const paymentMethod = metodo || "pix";
+
   // Busca pedidos em aberto do mais antigo para o mais novo (FIFO)
   const pedidos = await prisma.order.findMany({
     where: {
@@ -46,6 +48,10 @@ export async function POST(req: Request) {
         amountPaid: novoAmountPaid,
         paymentStatus: quitado ? "paid" : "partial",
       },
+    });
+
+    await prisma.payment.create({
+      data: { orderId: p.id, amount: pagar, paymentMethod, notes: "Quitação de caderno" },
     });
 
     restante -= pagar;

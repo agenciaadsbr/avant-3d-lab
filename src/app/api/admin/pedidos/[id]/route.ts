@@ -19,9 +19,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const { id } = await params;
   const body = await req.json();
-  const previousStatus = body.status !== undefined
-    ? (await prisma.order.findUnique({ where: { id }, select: { status: true } }))?.status
-    : undefined;
+  const before = await prisma.order.findUnique({ where: { id }, select: { status: true, amountPaid: true, paymentMethod: true } });
+  const previousStatus = before?.status;
   const data: Record<string, unknown> = {};
   if (body.status !== undefined) data.status = body.status;
   if (body.paymentStatus !== undefined) data.paymentStatus = body.paymentStatus;
@@ -48,6 +47,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   }
 
   const order = await prisma.order.update({ where: { id }, data });
+
+  // Registra no razão de pagamentos o valor recebido nesta edição (se aumentou)
+  if (body.amountPaid !== undefined && before) {
+    const delta = body.amountPaid - before.amountPaid;
+    if (delta > 0.001) {
+      await prisma.payment.create({
+        data: { orderId: id, amount: delta, paymentMethod: body.paymentMethod ?? before.paymentMethod },
+      });
+    }
+  }
 
   // Registra a mudança de status na jornada do pedido
   if (body.status !== undefined && body.status !== previousStatus) {

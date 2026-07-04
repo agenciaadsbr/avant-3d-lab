@@ -324,7 +324,7 @@ export async function POST() {
           });
           results.clients++;
         }
-        await prisma.order.create({
+        const order = await prisma.order.create({
           data: {
             userId: user.id, status: "delivered",
             paymentMethod: s.method,
@@ -335,6 +335,11 @@ export async function POST() {
             items: { create: [{ productId: vendaManual.id, quantity: 1, price: s.total, size: s.product }] },
           },
         });
+        if (s.received > 0) {
+          await prisma.payment.create({
+            data: { orderId: order.id, amount: s.received, paymentMethod: s.method, receivedAt: order.createdAt },
+          });
+        }
         results.sales++;
       } catch (e: any) {
         results.errors.push(`Venda ${s.client}: ${e.message}`);

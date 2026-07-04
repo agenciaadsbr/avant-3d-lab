@@ -39,48 +39,45 @@ export async function GET(req: Request) {
       saldoAnterior = aberturaAmount;
     } else {
       // Há transações entre abertura e início do período
-      const [ordensInter, aportesInter] = await Promise.all([
-        prisma.order.findMany({
-          where: { status: { not: "cancelled" }, paymentStatus: { in: ["paid", "partial"] }, paymentMethod: { not: "caderno" }, createdAt: { gte: aberturaDate, lt: startDate } },
-          select: { total: true, amountPaid: true, paymentStatus: true },
+      const [pagamentosInter, aportesInter] = await Promise.all([
+        prisma.payment.aggregate({
+          _sum: { amount: true },
+          where: { receivedAt: { gte: aberturaDate, lt: startDate }, order: { status: { not: "cancelled" } } },
         }),
         prisma.cashInjection.aggregate({
           _sum: { amount: true },
           where: { date: { gte: aberturaDate, lt: startDate }, NOT: { description: { startsWith: MARKER } } },
         }),
       ]);
-      const receitasInter = ordensInter.reduce((s, o) => s + (o.paymentStatus === "paid" ? o.total : o.amountPaid), 0);
-      saldoAnterior = aberturaAmount + receitasInter + (aportesInter._sum.amount || 0);
+      saldoAnterior = aberturaAmount + (pagamentosInter._sum.amount || 0) + (aportesInter._sum.amount || 0);
     }
   } else {
     // Sem saldo de abertura: soma tudo antes do período
-    const ordensAntes = await prisma.order.findMany({
-      where: { status: { not: "cancelled" }, paymentStatus: { in: ["paid", "partial"] }, paymentMethod: { not: "caderno" }, createdAt: { lt: startDate } },
-      select: { total: true, amountPaid: true, paymentStatus: true },
-    });
-    const receitasAntesVal = ordensAntes.reduce((s, o) => s + (o.paymentStatus === "paid" ? o.total : o.amountPaid), 0);
-    const aportesAntes = await prisma.cashInjection.aggregate({
-      _sum: { amount: true },
-      where: { date: { lt: startDate }, NOT: { description: { startsWith: MARKER } } },
-    });
-    saldoAnterior = receitasAntesVal + (aportesAntes._sum.amount || 0);
+    const [pagamentosAntes, aportesAntes] = await Promise.all([
+      prisma.payment.aggregate({
+        _sum: { amount: true },
+        where: { receivedAt: { lt: startDate }, order: { status: { not: "cancelled" } } },
+      }),
+      prisma.cashInjection.aggregate({
+        _sum: { amount: true },
+        where: { date: { lt: startDate }, NOT: { description: { startsWith: MARKER } } },
+      }),
+    ]);
+    saldoAnterior = (pagamentosAntes._sum.amount || 0) + (aportesAntes._sum.amount || 0);
   }
 
   // Buscar movimentações do período (apenas entradas/saídas de caixa reais)
-  const [orders, aportes] = await Promise.all([
-    prisma.order.findMany({
+  const [payments, aportes] = await Promise.all([
+    prisma.payment.findMany({
       where: {
-        status: { not: "cancelled" },
-        paymentStatus: { in: ["paid", "partial"] },
-        paymentMethod: { not: "caderno" },
-        createdAt: { gte: startDate, lte: endDate },
+        receivedAt: { gte: startDate, lte: endDate },
+        order: { status: { not: "cancelled" } },
       },
       select: {
-        id: true, createdAt: true, amountPaid: true, total: true,
-        paymentMethod: true, paymentStatus: true,
-        user: { select: { name: true } },
+        id: true, receivedAt: true, amount: true, paymentMethod: true,
+        order: { select: { user: { select: { name: true } } } },
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { receivedAt: "asc" },
     }),
     prisma.cashInjection.findMany({
       where: { date: { gte: startDate, lte: endDate }, NOT: { description: { startsWith: MARKER } } },
@@ -92,13 +89,13 @@ export async function GET(req: Request) {
   type Mov = { id: string; date: Date; description: string; tipo: "entrada" | "saida"; categoria: string; valor: number };
 
   const movs: Mov[] = [
-    ...orders.map(o => ({
-      id: "order-" + o.id,
-      date: o.createdAt,
-      description: `Venda — ${o.user?.name || "cliente"}`,
+    ...payments.map(p => ({
+      id: "payment-" + p.id,
+      date: p.receivedAt,
+      description: `Venda — ${p.order?.user?.name || "cliente"}`,
       tipo: "entrada" as const,
       categoria: "venda",
-      valor: o.paymentStatus === "paid" ? o.total : o.amountPaid,
+      valor: p.amount,
     })),
     ...aportes.map(a => ({
       id: "aporte-" + a.id,
