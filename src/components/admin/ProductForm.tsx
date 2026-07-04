@@ -8,7 +8,7 @@ type Category = { id: string; name: string };
 type Product = {
   id: string; name: string; slug: string; description: string | null;
   price: number; costPrice: number | null; compareAt: number | null; images: string;
-  sizes: string; colors: string; stock: number;
+  sizes: string; colors: string; stock: number; sizeStock: string;
   featuredHero: boolean; featured: boolean; isConjunto: boolean; sellComponentsSeparately: boolean; active: boolean; categoryId: string;
 };
 type ConjuntoItemForm = { name: string; price: number; quantity: number; stock: number };
@@ -49,6 +49,10 @@ export default function ProductForm({ categories, product, kitItems: initialKitI
   const [newConjuntoName, setNewConjuntoName] = useState("");
   const [newConjuntoPrice, setNewConjuntoPrice] = useState("");
   const [newConjuntoStock, setNewConjuntoStock] = useState("0");
+
+  const [sizeStockMap, setSizeStockMap] = useState<Record<string, number>>(
+    product?.sizeStock ? JSON.parse(product.sizeStock) : {}
+  );
 
   const [form, setForm] = useState({
     name: product?.name || "",
@@ -127,14 +131,18 @@ export default function ProductForm({ categories, product, kitItems: initialKitI
     setError("");
     setLoading(true);
 
+    const sizesArr = form.sizes.split(",").map((s: string) => s.trim()).filter(Boolean);
+    const hasSizes = sizesArr.length > 0;
+
     const body = {
       ...form,
       price: parseFloat(form.price),
       costPrice: form.costPrice ? parseFloat(form.costPrice) : null,
       compareAt: form.compareAt ? parseFloat(form.compareAt) : null,
-      stock: parseInt(form.stock),
+      stock: hasSizes ? sizesArr.reduce((sum: number, s: string) => sum + (sizeStockMap[s] || 0), 0) : parseInt(form.stock),
+      sizeStock: hasSizes ? JSON.stringify(Object.fromEntries(sizesArr.map((s: string) => [s, sizeStockMap[s] || 0]))) : "{}",
       images: JSON.stringify(form.images.split("\n").map((s: string) => s.trim()).filter(Boolean)),
-      sizes: JSON.stringify(form.sizes.split(",").map((s: string) => s.trim()).filter(Boolean)),
+      sizes: JSON.stringify(sizesArr),
       colors: JSON.stringify(form.colors.split(",").map((s: string) => s.trim()).filter(Boolean)),
       ...(form.isConjunto && { conjuntoItems: conjuntoItems.map(k => ({ name: k.name, price: k.price, quantity: k.quantity, stock: k.stock })) }),
     };
@@ -151,6 +159,8 @@ export default function ProductForm({ categories, product, kitItems: initialKitI
   };
 
   const imageList = form.images.split("\n").map((s: string) => s.trim()).filter(Boolean);
+  const sizesList = form.sizes.split(",").map((s: string) => s.trim()).filter(Boolean);
+  const totalSizeStock = sizesList.reduce((sum: number, s: string) => sum + (sizeStockMap[s] || 0), 0);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
@@ -202,8 +212,12 @@ export default function ProductForm({ categories, product, kitItems: initialKitI
             <input type="number" step="0.01" value={form.compareAt} onChange={e => setForm({ ...form, compareAt: e.target.value })} placeholder="189.90" style={field} onFocus={focus} onBlur={blur} />
           </div>
           <div>
-            <label style={label}>Qtd em Estoque</label>
-            <input type="number" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} style={field} onFocus={focus} onBlur={blur} />
+            <label style={label}>Qtd em Estoque{sizesList.length > 0 && " (soma dos tamanhos)"}</label>
+            <input type="number" value={sizesList.length > 0 ? totalSizeStock : form.stock}
+              onChange={e => setForm({ ...form, stock: e.target.value })}
+              readOnly={sizesList.length > 0}
+              style={{ ...field, ...(sizesList.length > 0 && { backgroundColor: "#F0E8D0", color: "#7a5a20", fontWeight: 700, cursor: "default" }) }}
+              onFocus={focus} onBlur={blur} />
           </div>
         </div>
       </div>
@@ -221,6 +235,26 @@ export default function ProductForm({ categories, product, kitItems: initialKitI
             <input type="text" value={form.colors} onChange={e => setForm({ ...form, colors: e.target.value })} placeholder="Preto, Rosa, Branco" style={field} onFocus={focus} onBlur={blur} />
           </div>
         </div>
+
+        {sizesList.length > 0 && (
+          <div style={{ marginTop: "1.25rem", paddingTop: "1.25rem", borderTop: "1px solid rgba(140,100,20,0.1)" }}>
+            <label style={label}>Estoque por Tamanho</label>
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(sizesList.length, 4)}, 1fr)`, gap: "0.75rem" }}>
+              {sizesList.map((s: string) => (
+                <div key={s}>
+                  <label style={{ ...label, fontSize: "0.7rem", marginBottom: "0.25rem" }}>{s}</label>
+                  <input type="number" min="0" value={sizeStockMap[s] ?? 0}
+                    onChange={e => setSizeStockMap({ ...sizeStockMap, [s]: Math.max(0, parseInt(e.target.value) || 0) })}
+                    style={field} onFocus={focus} onBlur={blur} />
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: "0.75rem", color: "#9a8060", marginTop: "0.625rem" }}>
+              Total: <strong style={{ color: "#5a4a2a" }}>{totalSizeStock} un</strong>
+              {product && !product.sizeStock?.includes(":") && " · produto antigo — confira se a quantidade por tamanho está correta abaixo"}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Fotos */}

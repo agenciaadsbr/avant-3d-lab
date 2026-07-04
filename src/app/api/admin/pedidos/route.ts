@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { decrementProductStock } from "@/lib/stock";
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -72,13 +73,10 @@ export async function POST(req: Request) {
   const paid = parseFloat(amountPaid) || 0;
 
   try {
-    // Decrementar estoque dos produtos vinculados
+    // Decrementar estoque dos produtos vinculados (por tamanho, quando configurado)
     for (const item of items) {
       if (item.productId) {
-        await prisma.product.updateMany({
-          where: { id: item.productId },
-          data: { stock: { decrement: item.quantity } },
-        });
+        await decrementProductStock(item.productId, item.quantity, item.size);
       }
     }
 

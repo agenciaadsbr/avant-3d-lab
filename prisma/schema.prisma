@@ -103,6 +103,7 @@ model Product {
   sizes       String   @default("[]")
   sizeRange   String?  // Para tamanho único: "PM" (P/M), "GGG" (G/GG), etc
   colors      String   @default("[]")
+  sizeStock    String   @default("{}") // Estoque por tamanho: {"P/M": 2, "G/GG": 1}. "stock" abaixo é sempre a soma.
   stock        Int      @default(0)
   sku          String?  @unique
   supplierCode String?

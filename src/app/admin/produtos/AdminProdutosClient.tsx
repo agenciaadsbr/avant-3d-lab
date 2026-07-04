@@ -6,7 +6,7 @@ import BulkEditModal from "./BulkEditModal";
 type Category = { id: string; name: string; slug: string };
 type Product = {
   id: string; name: string; price: number; costPrice: number | null;
-  stock: number; active: boolean; images: string; sizes: string;
+  stock: number; active: boolean; images: string; sizes: string; colors: string;
   category: Category;
 };
 
@@ -144,7 +144,7 @@ export default function AdminProdutosClient({ products, categories }: { products
                   }} checked={selected.size === filtered.length && filtered.length > 0}
                     style={{ cursor: "pointer" }} />
                 </th>
-                {["Produto", "Categoria", "Tamanhos", "Custo", "Preço", "Estoque", "Valor Est.", "Status", ""].map(h => (
+                {["Produto", "Categoria", "Tamanhos", "Cor", "Custo", "Preço", "Estoque", "Valor Est.", "Status", ""].map(h => (
                   <th key={h} style={{ textAlign: "left", padding: "0.875rem 1rem", color: "#9a8060", fontWeight: 700, fontSize: "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.1)", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
@@ -189,6 +189,16 @@ export default function AdminProdutosClient({ products, categories }: { products
                         }
                       </div>
                     </td>
+                    <td style={{ padding: "0.875rem 1rem" }}>
+                      <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap", maxWidth: 140 }}>
+                        {parseJson<string[]>(p.colors, []).length > 0
+                          ? parseJson<string[]>(p.colors, []).map(c => (
+                              <span key={c} style={{ fontSize: "0.68rem", backgroundColor: "#fff", color: "#5a4a2a", fontWeight: 700, padding: "0.2rem 0.5rem", borderRadius: 999, whiteSpace: "nowrap", border: "1px solid rgba(140,100,20,0.2)" }}>{c}</span>
+                            ))
+                          : <span style={{ color: "#b8a080", fontSize: "0.75rem" }}>—</span>
+                        }
+                      </div>
+                    </td>
                     <td style={{ padding: "0.875rem 1rem", color: "#9a8060", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
                       {p.costPrice ? formatCurrency(p.costPrice) : "—"}
                     </td>
@@ -217,7 +227,7 @@ export default function AdminProdutosClient({ products, categories }: { products
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={10} style={{ textAlign: "center", padding: "3rem", color: "#b8a080" }}>
+                  <td colSpan={11} style={{ textAlign: "center", padding: "3rem", color: "#b8a080" }}>
                     {products.length === 0
                       ? <><span>Nenhum produto cadastrado. </span><a href="/admin/importar" style={{ color: "#b8891a", fontWeight: 700 }}>Importar Excel</a></>
                       : "Nenhum produto encontrado com esses filtros."

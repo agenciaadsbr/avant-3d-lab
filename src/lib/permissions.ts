@@ -16,7 +16,7 @@ export const ALLOWED_PATHS: Record<AdminRole, string[]> = {
     "/admin/produtos/novo",
     "/admin/caderno",
     "/admin/clientes",
-    "/admin/pos-venda",
+    "/admin/followup",
   ],
 };
 
@@ -29,7 +29,7 @@ export const NAV_LINKS: Record<AdminRole, string[]> = {
     "/admin/produtos",
     "/admin/caderno",
     "/admin/clientes",
-    "/admin/pos-venda",
+    "/admin/followup",
   ],
 };
 

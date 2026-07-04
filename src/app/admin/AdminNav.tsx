@@ -10,7 +10,7 @@ const ALL_LINKS = [
   { href: "/admin/produtos",    label: "Produtos",    emoji: "👗" },
   { href: "/admin/caderno",     label: "Caderno",     emoji: "📒" },
   { href: "/admin/clientes",    label: "Clientes",    emoji: "👥" },
-  { href: "/admin/pos-venda",   label: "Pós-venda",   emoji: "💬" },
+  { href: "/admin/followup",    label: "Follow-up",   emoji: "📩" },
   { href: "/admin/financeiro",  label: "Financeiro",  emoji: "💳" },
   { href: "/admin/analytics",   label: "Analytics",   emoji: "📊" },
   { href: "/admin/metricas",    label: "Métricas",    emoji: "📈" },

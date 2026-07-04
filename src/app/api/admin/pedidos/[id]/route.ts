@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendPushToUser } from "@/lib/firebase-admin";
+import { restoreProductStock } from "@/lib/stock";
 
 const STATUS_NOTIFICATION: Record<string, { title: string; body: string }> = {
   confirmed: { title: "Pedido confirmado ✅", body: "Já estamos preparando tudo para você." },
@@ -35,10 +36,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const current = await prisma.order.findUnique({ where: { id }, include: { items: true } });
     if (current && current.status !== "cancelled") {
       for (const item of current.items) {
-        await prisma.product.updateMany({
-          where: { id: item.productId },
-          data: { stock: { increment: item.quantity } },
-        });
+        await restoreProductStock(item.productId, item.quantity, item.size);
       }
     }
   }
@@ -135,12 +133,9 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     where: { id },
     include: { items: true },
   });
-  if (order) {
+  if (order && order.status !== "cancelled") {
     for (const item of order.items) {
-      await prisma.product.updateMany({
-        where: { id: item.productId },
-        data: { stock: { increment: item.quantity } },
-      });
+      await restoreProductStock(item.productId, item.quantity, item.size);
     }
   }
 

@@ -13,7 +13,7 @@ type ConjuntoItem = { id: string; name: string; price: number; quantity: number;
 type Product = {
   id: string; name: string; slug: string; description: string | null;
   price: number; compareAt: number | null; images: string;
-  sizes: string; sizeRange: string | null; colors: string; stock: number; sku: string | null;
+  sizes: string; sizeRange: string | null; colors: string; stock: number; sku: string | null; sizeStock: string;
   isConjunto: boolean; sellComponentsSeparately: boolean; conjuntoItems: ConjuntoItem[];
   category: { name: string; slug: string };
 };
@@ -41,7 +41,10 @@ export default function ProductPageClient() {
         if (!data) return;
         setProduct(data);
         const sizes = parseJson<string[]>(data.sizes, []);
-        if (sizes[0]) setSelectedSize(sizes[0]);
+        const sizeStock = parseJson<Record<string, number>>(data.sizeStock, {});
+        const hasSizeStock = Object.keys(sizeStock).length > 0;
+        const firstAvailable = hasSizeStock ? sizes.find(s => (sizeStock[s] ?? 0) > 0) : sizes[0];
+        setSelectedSize(firstAvailable || sizes[0] || "");
         setLoading(false);
       });
   }, [params.slug]);
@@ -62,6 +65,10 @@ export default function ProductPageClient() {
 
   const images = parseJson<string[]>(product.images, []);
   const sizes = parseJson<string[]>(product.sizes, []);
+  const sizeStock = parseJson<Record<string, number>>(product.sizeStock, {});
+  const hasSizeStock = Object.keys(sizeStock).length > 0;
+  const isSizeAvailable = (size: string) => !hasSizeStock || (sizeStock[size] ?? 0) > 0;
+  const selectedSizeAvailable = !selectedSize || isSizeAvailable(selectedSize);
   const discount = product.compareAt ? Math.round((1 - product.price / product.compareAt) * 100) : null;
   // Para conjuntos com componentes separados: esgotado só se o conjunto E todos os componentes estiverem sem estoque
   // stock >= 0 = disponível (0 = padrão/nunca vendido), stock < 0 = esgotado (foi vendido)
@@ -92,6 +99,7 @@ export default function ProductPageClient() {
       if (comp && (comp.stock ?? 0) < 0) return;
     }
     if (outOfStock) return;
+    if (!selectedSizeAvailable) return;
 
     let itemName = product.name;
     let itemPrice = product.price;
@@ -234,13 +242,19 @@ export default function ProductPageClient() {
                   Tamanho: <span style={{ color: "#b8891a" }}>{selectedSize}</span>
                 </p>
                 <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                  {sizes.map(size => (
-                    <button key={size} onClick={() => setSelectedSize(size)}
-                      style={{ padding: "0.55rem 1.1rem", borderRadius: "0.625rem", border: `2px solid ${selectedSize === size ? "#b8891a" : "rgba(140,100,20,0.2)"}`, backgroundColor: selectedSize === size ? "#b8891a" : "#fff", color: selectedSize === size ? "#fff" : "#5a4a2a", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", transition: "all 0.15s" }}>
-                      {size}
-                    </button>
-                  ))}
+                  {sizes.map(size => {
+                    const available = isSizeAvailable(size);
+                    return (
+                      <button key={size} onClick={() => available && setSelectedSize(size)} disabled={!available}
+                        style={{ position: "relative", padding: "0.55rem 1.1rem", borderRadius: "0.625rem", border: `2px solid ${!available ? "rgba(140,100,20,0.1)" : selectedSize === size ? "#b8891a" : "rgba(140,100,20,0.2)"}`, backgroundColor: !available ? "#f5f5f5" : selectedSize === size ? "#b8891a" : "#fff", color: !available ? "#b8a080" : selectedSize === size ? "#fff" : "#5a4a2a", fontWeight: 700, fontSize: "0.9rem", cursor: available ? "pointer" : "not-allowed", transition: "all 0.15s", textDecoration: !available ? "line-through" : "none" }}>
+                        {size}
+                      </button>
+                    );
+                  })}
                 </div>
+                {selectedSize && !selectedSizeAvailable && (
+                  <p style={{ fontSize: "0.78rem", color: "#c04040", marginTop: "0.5rem" }}>Esgotado nesse tamanho.</p>
+                )}
               </div>
             )}
 
@@ -298,7 +312,7 @@ export default function ProductPageClient() {
                 ? product.conjuntoItems.find(c => c.id === selectedComponent) : null;
               const selectedCompSoldOut = selectedComponent === "completo" ? product.stock === 0
                 : selectedComp ? (selectedComp.stock ?? 0) < 0 : false;
-              const btnDisabled = outOfStock || selectedCompSoldOut;
+              const btnDisabled = outOfStock || selectedCompSoldOut || !selectedSizeAvailable;
               return (
                 <button onClick={handleAddToCart} disabled={btnDisabled}
                   style={{ width: "100%", marginTop: "2rem", padding: "1rem 1.5rem", backgroundColor: added ? "#2a6a2a" : btnDisabled ? "#e8e0d0" : "#1a1510", color: added ? "#fff" : btnDisabled ? "#9a8060" : "#FAF6EE", fontWeight: 900, fontSize: "1rem", border: "none", borderRadius: "0.875rem", cursor: btnDisabled ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", transition: "background-color 0.3s", letterSpacing: "0.03em", boxShadow: btnDisabled ? "none" : "0 4px 14px rgba(26,21,16,0.25)" }}>

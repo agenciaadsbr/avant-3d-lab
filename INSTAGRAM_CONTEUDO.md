@@ -4,6 +4,62 @@ Conteúdo pronto para copiar e postar. Foco: Home Try-On como diferencial de con
 
 ---
 
+## CARROSSEL — Site novo: funcionalidades
+
+**Objetivo:** apresentar o site novo e educar sobre tudo que facilita a compra (Home Try-On, tamanho, notificações, cupom, pagamento, troca). Pensado pra ficar fixado/destacado no perfil por um tempo, já que é conteúdo de referência.
+
+**Slide 1 (capa):**
+> Site novo no ar. 🖤
+> Tudo mais fácil pra você comprar sem medo.
+> Arrasta pro lado →
+
+**Slide 2 — Home Try-On:**
+> 🏠 Experimente em casa
+> Recebe, veste com calma, decide se fica. Sem compromisso na hora da compra.
+
+**Slide 3 — Guia de Tamanho Inteligente:**
+> 📏 Não sabe seu tamanho?
+> O site recomenda o tamanho ideal pra você com base no seu perfil — e mostra o que clientes parecidas com você escolheram.
+
+**Slide 4 — Notificações no celular:**
+> 🔔 Ative as notificações
+> Ao aceitar no site, você acompanha seu pedido em tempo real: confirmado, a caminho, entregue — direto no seu celular, sem precisar perguntar.
+
+**Slide 5 — Cupom:**
+> 🎁 Cupom pra você
+> [preencher: código e % de desconto da campanha ativa]. Use na primeira compra pelo site.
+
+**Slide 6 — Formas de pagamento:**
+> 💳 Paga do seu jeito
+> Pix, cartão (à vista ou parcelado), dinheiro ou caderno — você escolhe o que for melhor.
+
+**Slide 7 — Lista de espera:**
+> ⏳ Esgotou? Não perde essa
+> Entra na lista de espera do produto e a gente te avisa assim que voltar ao estoque.
+
+**Slide 8 — Troca e entrega:**
+> 🔄 Troca em até 7 dias
+> 🚚 Entregamos pra todo o Brasil
+> Compra tranquila, do jeito que tem que ser.
+
+**Slide 9 (fechamento):**
+> Isso é Access Fit. 🖤
+> Link na bio ou chama no WhatsApp — o site já está no ar.
+
+**Legenda:**
+> O site novo da Access Fit já está no ar — e vem com tudo pra você comprar sem insegurança. 👆 Arrasta e conhece cada detalhe: Home Try-On, guia de tamanho inteligente, notificação de pedido em tempo real, cupom, formas de pagamento flexíveis e muito mais.
+> Ativa as notificações no site pra acompanhar seu pedido de pertinho. 🔔
+> Link na bio pra conferir a coleção completa.
+
+**Hashtags (primeiro comentário):** #accessfit #modafitnessfeminina #hometryon #sitenovo #modafitnesspoa #leggingfeminina #compraconsciente #portoalegre
+
+**Notas:**
+- Preencher o Slide 5 com o cupom real ativo antes de postar (código + valor).
+- Considerar salvar como destaque ("Como Funciona") no perfil, já que é conteúdo evergreen.
+- Complementa o Reel 1 (Home Try-On) e o Post 2 (carrossel Home Try-On) já existentes acima — pode postar em sequência ou dias alternados pra não repetir o mesmo ângulo.
+
+---
+
 ## REELS
 
 ### Reel 1 — Apresentação da marca / Home Try-On

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 type Customer = { id: string; name: string; email: string; phone?: string };
-type Product = { id: string; name: string; price: number; stock: number; sizes: string; images: string; isConjunto?: boolean; sellComponentsSeparately?: boolean; conjuntoItems?: Array<{ id: string; name: string; price: number }> };
+type Product = { id: string; name: string; price: number; stock: number; sizes: string; sizeStock?: string; colors: string; images: string; isConjunto?: boolean; sellComponentsSeparately?: boolean; conjuntoItems?: Array<{ id: string; name: string; price: number }> };
 type Item = { productId?: string; description: string; price: number; quantity: number; size?: string; componentName?: string; product?: Product };
 
 const inp = {
@@ -284,12 +284,17 @@ export default function NovoPedidoPage() {
                                 <div style={{ fontWeight: 600, fontSize: "0.875rem", color: "#1a1510" }}>{p.name}</div>
                                 <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap", marginTop: "0.2rem" }}>
                                   {szs.length > 0
-                                    ? szs.map(s => (
-                                        <span key={s} style={{ fontSize: "0.65rem", backgroundColor: "#EDE4CC", color: "#6a4a10", fontWeight: 700, padding: "0.1rem 0.4rem", borderRadius: 999 }}>{s}</span>
-                                      ))
+                                    ? szs.map(s => {
+                                        const sst = JSON.parse(p.sizeStock || "{}") as Record<string, number>;
+                                        const qty = sst[s];
+                                        return (
+                                          <span key={s} style={{ fontSize: "0.65rem", backgroundColor: qty === 0 ? "#fee8e8" : "#EDE4CC", color: qty === 0 ? "#c04040" : "#6a4a10", fontWeight: 700, padding: "0.1rem 0.4rem", borderRadius: 999, textDecoration: qty === 0 ? "line-through" : "none" }}>{s}{qty !== undefined ? ` (${qty})` : ""}</span>
+                                        );
+                                      })
                                     : <span style={{ fontSize: "0.72rem", color: "#9a8060" }}>Estoque: {p.stock} un</span>
                                   }
                                   {szs.length > 0 && <span style={{ fontSize: "0.72rem", color: "#9a8060" }}>· {p.stock} un</span>}
+                                  {(() => { const cls = JSON.parse(p.colors || "[]") as string[]; return cls.length > 0 ? cls.map(c => <span key={c} style={{ fontSize: "0.65rem", backgroundColor: "#e8f0fe", color: "#3a5a9a", fontWeight: 700, padding: "0.1rem 0.4rem", borderRadius: 999 }}>{c}</span>) : null; })()}
                                 </div>
                               </div>
                               {/* Preço */}
@@ -339,9 +344,11 @@ export default function NovoPedidoPage() {
                     {item.productId && JSON.parse(productResults[i]?.find(p => p.id === item.productId)?.sizes || "[]").length > 0 && (
                       <select style={inp} value={item.size || ""}
                         onChange={e => updateItem(i, "size", e.target.value)}>
-                        {(JSON.parse(productResults[i]?.find(p => p.id === item.productId)?.sizes || "[]") as string[]).map(s => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
+                        {(JSON.parse(productResults[i]?.find(p => p.id === item.productId)?.sizes || "[]") as string[]).map(s => {
+                          const sst = JSON.parse(productResults[i]?.find(p => p.id === item.productId)?.sizeStock || "{}") as Record<string, number>;
+                          const qty = sst[s];
+                          return <option key={s} value={s}>{s}{qty !== undefined ? ` (${qty} un)` : ""}</option>;
+                        })}
                       </select>
                     )}
                     <input style={inp} type="number" placeholder="Qtd" min="1" value={item.quantity}
