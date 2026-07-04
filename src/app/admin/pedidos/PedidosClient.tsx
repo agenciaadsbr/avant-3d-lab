@@ -120,6 +120,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const [copyingLinkId, setCopyingLinkId] = useState<string | null>(null);
   const [trocaOrderId, setTrocaOrderId] = useState<string | null>(null);
   const [trocaReason, setTrocaReason] = useState("");
+  const [trocaItemIds, setTrocaItemIds] = useState<string[]>([]);
   const [trocaSaving, setTrocaSaving] = useState(false);
 
   const filtered = useMemo(() => {
@@ -174,17 +175,21 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   };
 
   const handleSolicitarTroca = async () => {
-    if (!trocaOrderId || !trocaReason.trim()) return;
+    if (!trocaOrderId || !trocaReason.trim() || trocaItemIds.length === 0) return;
     setTrocaSaving(true);
     const order = localOrders.find(o => o.id === trocaOrderId);
+    const trocaItems = order?.items.filter(i => trocaItemIds.includes(i.id)) ?? [];
+    const amount = trocaItems.reduce((s, i) => s + i.price * i.quantity, 0);
+    const itensResumo = trocaItems.map(i => itemName(i)).join(", ");
     const res = await fetch("/api/admin/devolucoes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId: trocaOrderId, reason: trocaReason.trim(), amount: order?.total ?? 0 }),
+      body: JSON.stringify({ orderId: trocaOrderId, reason: `Item(s): ${itensResumo}\n\n${trocaReason.trim()}`, amount }),
     });
     if (res.ok) {
       setTrocaOrderId(null);
       setTrocaReason("");
+      setTrocaItemIds([]);
     }
     setTrocaSaving(false);
   };
@@ -551,7 +556,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                   🚫 Cancelar Pedido
                                 </button>
                               )}
-                              <button onClick={() => { setTrocaOrderId(order.id); setTrocaReason(""); }}
+                              <button onClick={() => { setTrocaOrderId(order.id); setTrocaReason(""); setTrocaItemIds([]); }}
                                 style={{ padding: "0.55rem 1rem", backgroundColor: "#fff3e0", color: "#b8891a", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "0.625rem", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer", flex: "1 1 auto", minWidth: 140 }}>
                                 🔄 Solicitar Troca
                               </button>
@@ -933,6 +938,36 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
               Pedido #{trocaOrderId.slice(-8).toUpperCase()} vai para a aba <strong>Devoluções</strong> com status &quot;Solicitado&quot;.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {(() => {
+                const trocaOrder = localOrders.find(o => o.id === trocaOrderId);
+                if (!trocaOrder) return null;
+                const trocaAmount = trocaOrder.items.filter(i => trocaItemIds.includes(i.id)).reduce((s, i) => s + i.price * i.quantity, 0);
+                return (
+                  <div>
+                    <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", display: "block", marginBottom: "0.4rem" }}>
+                      Quais itens estão na troca? *
+                    </label>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.2)", borderRadius: "0.5rem", padding: "0.6rem" }}>
+                      {trocaOrder.items.map(item => (
+                        <label key={item.id} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem", color: "#3a2a10", cursor: "pointer" }}>
+                          <input
+                            type="checkbox"
+                            checked={trocaItemIds.includes(item.id)}
+                            onChange={e => setTrocaItemIds(prev => e.target.checked ? [...prev, item.id] : prev.filter(id => id !== item.id))}
+                          />
+                          <span style={{ flex: 1 }}>{itemName(item)}</span>
+                          <span style={{ fontWeight: 700 }}>{fmt(item.price * item.quantity)}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {trocaItemIds.length > 0 && (
+                      <p style={{ fontSize: "0.78rem", color: "#7a6030", marginTop: "0.4rem" }}>
+                        Valor da troca: <strong>{fmt(trocaAmount)}</strong>
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
               <div>
                 <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", display: "block", marginBottom: "0.4rem" }}>
                   Motivo da troca *
@@ -955,8 +990,8 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                 </button>
                 <button
                   onClick={handleSolicitarTroca}
-                  disabled={trocaSaving || !trocaReason.trim()}
-                  style={{ flex: 1, backgroundColor: "#b8891a", color: "#fff", fontWeight: 700, padding: "0.75rem", borderRadius: "0.75rem", border: "none", cursor: trocaSaving || !trocaReason.trim() ? "not-allowed" : "pointer", opacity: trocaSaving || !trocaReason.trim() ? 0.7 : 1 }}
+                  disabled={trocaSaving || !trocaReason.trim() || trocaItemIds.length === 0}
+                  style={{ flex: 1, backgroundColor: "#b8891a", color: "#fff", fontWeight: 700, padding: "0.75rem", borderRadius: "0.75rem", border: "none", cursor: trocaSaving || !trocaReason.trim() || trocaItemIds.length === 0 ? "not-allowed" : "pointer", opacity: trocaSaving || !trocaReason.trim() || trocaItemIds.length === 0 ? 0.7 : 1 }}
                 >
                   {trocaSaving ? "Enviando..." : "Confirmar Troca"}
                 </button>
