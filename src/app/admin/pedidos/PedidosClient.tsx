@@ -305,6 +305,9 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
         const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
         return { ...o, items, total, subtotal: total };
       }));
+    } else {
+      const data = await res.json().catch(() => null);
+      alert(data?.error || "Não foi possível alterar o preço.");
     }
     setEditingItemPrice(null);
   };
@@ -645,13 +648,16 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                 const custo = item.costPrice ?? item.product.costPrice ?? null;
                                 const isEditingCost = editingItemCost === item.id;
                                 const isEditingPrice = editingItemPrice === item.id;
+                                const canEditPrice = order.status !== "delivered";
                                 return (
                                   <div key={item.id} style={{ padding: "0.4rem 0", borderBottom: "1px solid rgba(140,100,20,0.06)", fontSize: "0.8rem" }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
                                       <span style={{ color: "#3a2a10", flex: 1 }}>
                                         {itemName({ product: item.product, size: item.size, componentName: (item as any).componentName })}
                                       </span>
-                                      {isEditingPrice ? (
+                                      {!canEditPrice ? (
+                                        <span style={{ color: "#1a1510", fontWeight: 700 }}>{fmt(item.price)}</span>
+                                      ) : isEditingPrice ? (
                                         <>
                                           <input type="number" step="0.01" autoFocus value={itemPriceValue}
                                             onChange={e => setItemPriceValue(e.target.value)}
