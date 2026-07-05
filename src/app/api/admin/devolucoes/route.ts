@@ -43,12 +43,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Faltam campos" }, { status: 400 });
   }
 
+  // Guarda uma foto dos itens devolvidos (produto/tamanho/quantidade) antes de qualquer troca de produto
+  const items = itemIds?.length
+    ? await prisma.orderItem.findMany({ where: { id: { in: itemIds } } })
+    : [];
+  const returnedItemsSnapshot = items.map(i => ({ productId: i.productId, size: i.size, quantity: i.quantity }));
+
   const devolution = await prisma.return.create({
     data: {
       orderId,
       reason,
       amount,
       orderItemIds: JSON.stringify(itemIds || []),
+      returnedItemsSnapshot: JSON.stringify(returnedItemsSnapshot),
     },
     include: { order: true },
   });
@@ -81,6 +88,25 @@ export async function PUT(req: Request) {
 
     if (replacementProductId) {
       await decrementProductStock(replacementProductId, quantity, replacementSize);
+
+      // Atualiza o item do pedido para refletir o produto de troca (quando há exatamente 1 item vinculado)
+      if (items.length === 1) {
+        const newProduct = await prisma.product.findUnique({ where: { id: replacementProductId } });
+        if (newProduct) {
+          await prisma.orderItem.update({
+            where: { id: items[0].id },
+            data: {
+              productId: replacementProductId,
+              size: replacementSize || null,
+              price: newProduct.price,
+              costPrice: newProduct.costPrice ?? null,
+            },
+          });
+          const remaining = await prisma.orderItem.findMany({ where: { orderId: items[0].orderId } });
+          const newTotal = remaining.reduce((s, i) => s + i.price * i.quantity, 0);
+          await prisma.order.update({ where: { id: items[0].orderId }, data: { total: newTotal, subtotal: newTotal } });
+        }
+      }
     }
 
     const devolution = await prisma.return.update({
@@ -108,12 +134,20 @@ export async function PUT(req: Request) {
       include: { order: { include: { items: true } } },
     });
     if (current && !current.stockRestored) {
-      const itemIds: string[] = JSON.parse(current.orderItemIds || "[]");
-      const items = itemIds.length
-        ? current.order.items.filter(i => itemIds.includes(i.id))
-        : current.order.items; // devoluções antigas sem itemIds: restaura o pedido todo
-      for (const item of items) {
-        await restoreProductStock(item.productId, item.quantity, item.size);
+      const snapshot: { productId: string; size: string | null; quantity: number }[] = JSON.parse(current.returnedItemsSnapshot || "[]");
+      if (snapshot.length) {
+        // Usa a foto tirada na solicitação — continua correta mesmo se o item do pedido já foi trocado por outro produto
+        for (const s of snapshot) {
+          await restoreProductStock(s.productId, s.quantity, s.size);
+        }
+      } else {
+        const itemIds: string[] = JSON.parse(current.orderItemIds || "[]");
+        const items = itemIds.length
+          ? current.order.items.filter(i => itemIds.includes(i.id))
+          : current.order.items; // devoluções antigas sem itemIds/snapshot: restaura o pedido todo
+        for (const item of items) {
+          await restoreProductStock(item.productId, item.quantity, item.size);
+        }
       }
     }
   }
