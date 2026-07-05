@@ -122,6 +122,7 @@ model Product {
   orderItems    OrderItem[]
   conjuntoItems ConjuntoItem[]
   waitlist      Waitlist[]
+  returnReplacements Return[]  @relation("ReturnReplacement")
 }
 
 model ConjuntoItem {
@@ -350,7 +351,7 @@ model OrderItem {
 model Return {
   id              String   @id @default(cuid())
   orderId         String
-  status          String   @default("solicitado") // solicitado | aprovado | recebido | reembolsado
+  status          String   @default("solicitado") // solicitado | aprovado | rejeitado | recebido | reembolsado
   reason          String?
   amount          Float
   requestedAt     DateTime @default(now())
@@ -358,10 +359,16 @@ model Return {
   returnedAt      DateTime?
   reimbursedAt    DateTime?
   notes           String?
+  orderItemIds         String    @default("[]") // JSON com os IDs de OrderItem trocados/devolvidos
+  stockRestored        Boolean   @default(false) // Estoque dos itens devolvidos já foi restaurado?
+  replacementProductId String?
+  replacementSize      String?
+  replacementSentAt    DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order              Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  replacementProduct Product? @relation("ReturnReplacement", fields: [replacementProductId], references: [id])
 }
 
 model UserSizePreference {

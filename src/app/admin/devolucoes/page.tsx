@@ -11,12 +11,16 @@ interface OrderUser {
 interface Product {
   id: string;
   name: string;
+  sizes?: string;
+  sizeStock?: string;
+  stock?: number;
 }
 
 interface OrderItem {
   id: string;
   quantity: number;
   price: number;
+  size?: string;
   product: Product;
 }
 
@@ -39,6 +43,12 @@ interface Return {
   returnedAt?: string;
   reimbursedAt?: string;
   order: Order;
+  orderItemIds?: string;
+  stockRestored?: boolean;
+  replacementProductId?: string | null;
+  replacementSize?: string | null;
+  replacementSentAt?: string | null;
+  replacementProduct?: Product | null;
 }
 
 interface Data {
@@ -48,6 +58,7 @@ interface Data {
 const statusConfig: { [key: string]: { label: string; color: string; bg: string } } = {
   solicitado: { label: "Solicitado", color: "#ff9800", bg: "#fff3e0" },
   aprovado: { label: "Aprovado", color: "#2196f3", bg: "#e3f2fd" },
+  rejeitado: { label: "Rejeitado", color: "#666", bg: "#f5f5f5" },
   recebido: { label: "Recebido", color: "#4caf50", bg: "#e8f5e9" },
   reembolsado: { label: "Reembolsado", color: "#2e7d32", bg: "#c8e6c9" },
 };
@@ -61,6 +72,12 @@ export default function DevolucoesPage() {
   const [reason, setReason] = useState("");
   const [amount, setAmount] = useState("");
   const [saving, setSaving] = useState(false);
+  const [replacingId, setReplacingId] = useState<string | null>(null);
+  const [productQuery, setProductQuery] = useState("");
+  const [productResults, setProductResults] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [replacingSaving, setReplacingSaving] = useState(false);
 
   const loadDevolucoes = async (status?: string) => {
     setLoading(true);
@@ -106,6 +123,48 @@ export default function DevolucoesPage() {
     }
   };
 
+  const openReplacement = (dev: Return) => {
+    setReplacingId(dev.id);
+    setProductQuery("");
+    setProductResults([]);
+    setSelectedProduct(dev.replacementProduct || null);
+    setSelectedSize(dev.replacementSize || "");
+  };
+
+  useEffect(() => {
+    if (!replacingId || !productQuery.trim()) return;
+    const t = setTimeout(async () => {
+      const res = await fetch(`/api/admin/produtos?q=${encodeURIComponent(productQuery)}`);
+      if (res.ok) setProductResults(await res.json());
+    }, 300);
+    return () => clearTimeout(t);
+  }, [productQuery, replacingId]);
+
+  const productSizes = (p: Product | null): string[] => {
+    if (!p?.sizeStock) return [];
+    try {
+      return Object.keys(JSON.parse(p.sizeStock));
+    } catch {
+      return [];
+    }
+  };
+
+  const handleSetReplacement = async () => {
+    if (!replacingId || !selectedProduct) return;
+    setReplacingSaving(true);
+    const res = await fetch("/api/admin/devolucoes", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: replacingId, replacementProductId: selectedProduct.id, replacementSize: selectedSize || null }),
+    });
+    if (res.ok) {
+      setReplacingId(null);
+      setSelectedProduct(null);
+      loadDevolucoes(filter || undefined);
+    }
+    setReplacingSaving(false);
+  };
+
   if (loading)
     return (
       <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#FAF6EE" }}>
@@ -131,7 +190,7 @@ export default function DevolucoesPage() {
 
         {/* Filtros */}
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
-          {["", "solicitado", "aprovado", "recebido", "reembolsado"].map(status => (
+          {["", "solicitado", "aprovado", "rejeitado", "recebido", "reembolsado"].map(status => (
             <button
               key={status}
               onClick={() => setFilter(status)}
@@ -209,7 +268,7 @@ export default function DevolucoesPage() {
                           ✓ Aprovar
                         </button>
                         <button
-                          onClick={() => handleStatusChange(dev.id, "receber")}
+                          onClick={() => handleStatusChange(dev.id, "rejeitar")}
                           style={{ backgroundColor: "#f5f5f5", color: "#666", border: "none", borderRadius: "0.4rem", padding: "0.4rem 0.8rem", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}
                         >
                           ✗ Rejeitar
@@ -235,10 +294,34 @@ export default function DevolucoesPage() {
                   </div>
 
                   {dev.reason && (
-                    <p style={{ fontSize: "0.8rem", color: "#6a4a10", marginTop: "0.75rem", fontStyle: "italic", margin: "0.75rem 0 0 0" }}>
+                    <p style={{ fontSize: "0.8rem", color: "#6a4a10", marginTop: "0.75rem", fontStyle: "italic", margin: "0.75rem 0 0 0", whiteSpace: "pre-line" }}>
                       💬 {dev.reason}
                     </p>
                   )}
+
+                  {dev.status !== "solicitado" && (
+                    <p style={{ fontSize: "0.78rem", marginTop: "0.6rem", color: dev.stockRestored ? "#2e7d32" : "#9a8060" }}>
+                      {dev.stockRestored ? "✅ Estoque do item devolvido já restaurado" : "⏳ Estoque será restaurado ao marcar como Recebida"}
+                    </p>
+                  )}
+
+                  {/* Produto substituto */}
+                  <div style={{ marginTop: "0.75rem", padding: "0.75rem", backgroundColor: "#FAF6EE", borderRadius: "0.5rem" }}>
+                    {dev.replacementProduct ? (
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
+                        <p style={{ fontSize: "0.8rem", color: "#1a1510", margin: 0 }}>
+                          🔄 Produto de troca: <strong>{dev.replacementProduct.name}</strong>{dev.replacementSize ? ` (${dev.replacementSize})` : ""}
+                        </p>
+                        <button onClick={() => openReplacement(dev)} style={{ background: "none", border: "none", color: "#b8891a", fontWeight: 700, fontSize: "0.78rem", cursor: "pointer" }}>
+                          Trocar produto
+                        </button>
+                      </div>
+                    ) : (
+                      <button onClick={() => openReplacement(dev)} style={{ backgroundColor: "#fff3e0", color: "#b8891a", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "0.4rem", padding: "0.4rem 0.8rem", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>
+                        + Escolher produto de troca
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })
@@ -307,6 +390,81 @@ export default function DevolucoesPage() {
                   style={{ flex: 1, backgroundColor: "#b8891a", color: "#fff", fontWeight: 700, padding: "0.75rem", borderRadius: "0.75rem", border: "none", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1 }}
                 >
                   {saving ? "Salvando..." : "Criar Devolução"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal produto de troca */}
+      {replacingId && (
+        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
+          <div style={{ backgroundColor: "#FAF6EE", borderRadius: "1.25rem", padding: "2rem", width: "100%", maxWidth: 420, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+              <h2 style={{ color: "#1a1510", fontWeight: 900, fontSize: "1.1rem", margin: 0 }}>🔄 Produto de troca</h2>
+              <button onClick={() => setReplacingId(null)} style={{ background: "none", border: "none", fontSize: "1.25rem", cursor: "pointer", color: "#9a8060" }}>
+                ✕
+              </button>
+            </div>
+            <p style={{ color: "#5a4a2a", fontSize: "0.8rem", marginBottom: "1rem" }}>
+              O estoque do produto escolhido é descontado automaticamente.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div>
+                <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", display: "block", marginBottom: "0.4rem" }}>
+                  Buscar produto
+                </label>
+                <input
+                  type="text"
+                  value={selectedProduct ? selectedProduct.name : productQuery}
+                  onChange={e => { setSelectedProduct(null); setSelectedSize(""); setProductQuery(e.target.value); }}
+                  placeholder="Digite o nome do produto..."
+                  autoFocus
+                  style={{ width: "100%", padding: "0.6rem", border: "1px solid rgba(140,100,20,0.2)", borderRadius: "0.5rem", fontFamily: "inherit" }}
+                />
+                {!selectedProduct && productQuery.trim() && productResults.length > 0 && (
+                  <div style={{ marginTop: "0.4rem", border: "1px solid rgba(140,100,20,0.15)", borderRadius: "0.5rem", overflow: "hidden", maxHeight: 180, overflowY: "auto" }}>
+                    {productResults.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => { setSelectedProduct(p); setProductQuery(""); setSelectedSize(""); }}
+                        style={{ display: "block", width: "100%", textAlign: "left", padding: "0.5rem 0.75rem", border: "none", borderBottom: "1px solid rgba(140,100,20,0.08)", backgroundColor: "#fff", cursor: "pointer", fontSize: "0.85rem" }}
+                      >
+                        {p.name} <span style={{ color: "#9a8060", fontSize: "0.72rem" }}>({p.stock ?? 0} un.)</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {selectedProduct && productSizes(selectedProduct).length > 0 && (
+                <div>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#5a4a2a", display: "block", marginBottom: "0.4rem" }}>
+                    Tamanho *
+                  </label>
+                  <select
+                    value={selectedSize}
+                    onChange={e => setSelectedSize(e.target.value)}
+                    style={{ width: "100%", padding: "0.6rem", border: "1px solid rgba(140,100,20,0.2)", borderRadius: "0.5rem", fontFamily: "inherit" }}
+                  >
+                    <option value="">Selecione...</option>
+                    {productSizes(selectedProduct).map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              )}
+              <div style={{ display: "flex", gap: "0.75rem" }}>
+                <button
+                  onClick={() => setReplacingId(null)}
+                  style={{ flex: 1, backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.2)", color: "#5a4a2a", fontWeight: 700, padding: "0.75rem", borderRadius: "0.75rem", cursor: "pointer" }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSetReplacement}
+                  disabled={replacingSaving || !selectedProduct || (productSizes(selectedProduct).length > 0 && !selectedSize)}
+                  style={{ flex: 1, backgroundColor: "#b8891a", color: "#fff", fontWeight: 700, padding: "0.75rem", borderRadius: "0.75rem", border: "none", cursor: replacingSaving ? "not-allowed" : "pointer", opacity: replacingSaving || !selectedProduct ? 0.7 : 1 }}
+                >
+                  {replacingSaving ? "Salvando..." : "Confirmar"}
                 </button>
               </div>
             </div>

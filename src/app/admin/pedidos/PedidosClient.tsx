@@ -184,7 +184,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
     const res = await fetch("/api/admin/devolucoes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId: trocaOrderId, reason: `Item(s): ${itensResumo}\n\n${trocaReason.trim()}`, amount }),
+      body: JSON.stringify({ orderId: trocaOrderId, reason: `Item(s): ${itensResumo}\n\n${trocaReason.trim()}`, amount, itemIds: trocaItemIds }),
     });
     if (res.ok) {
       setTrocaOrderId(null);
