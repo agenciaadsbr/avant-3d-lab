@@ -9,12 +9,28 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
   const { id } = await params;
-  const { costPrice } = await req.json();
+  const { costPrice, price } = await req.json();
 
-  const item = await prisma.orderItem.update({
-    where: { id },
-    data: { costPrice: costPrice !== null && costPrice !== "" ? parseFloat(costPrice) : null },
-  });
+  const data: { costPrice?: number | null; price?: number } = {};
+  if (costPrice !== undefined) {
+    data.costPrice = costPrice !== null && costPrice !== "" ? parseFloat(costPrice) : null;
+  }
+  if (price !== undefined && price !== null && price !== "") {
+    data.price = parseFloat(price);
+  }
+
+  const item = await prisma.orderItem.update({ where: { id }, data });
+
+  // Preço de venda mudou: recalcula o total do pedido
+  if (data.price !== undefined) {
+    const remaining = await prisma.orderItem.findMany({ where: { orderId: item.orderId } });
+    const newTotal = remaining.reduce((s, i) => s + i.price * i.quantity, 0);
+    await prisma.order.update({
+      where: { id: item.orderId },
+      data: { total: newTotal, subtotal: newTotal },
+    });
+  }
+
   return NextResponse.json(item);
 }
 

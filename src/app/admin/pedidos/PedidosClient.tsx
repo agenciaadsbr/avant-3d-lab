@@ -109,6 +109,8 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const [togglingInstallment, setTogglingInstallment] = useState<string | null>(null);
   const [editingItemCost, setEditingItemCost] = useState<string | null>(null);
   const [itemCostValue, setItemCostValue] = useState("");
+  const [editingItemPrice, setEditingItemPrice] = useState<string | null>(null);
+  const [itemPriceValue, setItemPriceValue] = useState("");
   const [removingItemId, setRemovingItemId] = useState<string | null>(null);
   const [editingInstallmentId, setEditingInstallmentId] = useState<string | null>(null);
   const [editInstallmentDate, setEditInstallmentDate] = useState("");
@@ -287,6 +289,24 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
       } : o));
     }
     setEditingItemCost(null);
+  };
+
+  const saveItemPrice = async (orderId: string, itemId: string) => {
+    const newPrice = parseFloat(itemPriceValue);
+    if (isNaN(newPrice) || newPrice < 0) { setEditingItemPrice(null); return; }
+    const res = await fetch(`/api/admin/order-items/${itemId}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ price: newPrice }),
+    });
+    if (res.ok) {
+      setLocalOrders(prev => prev.map(o => {
+        if (o.id !== orderId) return o;
+        const items = o.items.map(i => i.id === itemId ? { ...i, price: newPrice } : i);
+        const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
+        return { ...o, items, total, subtotal: total };
+      }));
+    }
+    setEditingItemPrice(null);
   };
 
   const toggleInstallment = async (orderId: string, installmentId: string, currentStatus: string) => {
@@ -624,13 +644,34 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                               {order.items.map(item => {
                                 const custo = item.costPrice ?? item.product.costPrice ?? null;
                                 const isEditingCost = editingItemCost === item.id;
+                                const isEditingPrice = editingItemPrice === item.id;
                                 return (
                                   <div key={item.id} style={{ padding: "0.4rem 0", borderBottom: "1px solid rgba(140,100,20,0.06)", fontSize: "0.8rem" }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
                                       <span style={{ color: "#3a2a10", flex: 1 }}>
                                         {itemName({ product: item.product, size: item.size, componentName: (item as any).componentName })}
                                       </span>
-                                      <span style={{ color: "#1a1510", fontWeight: 700 }}>{fmt(item.price)}</span>
+                                      {isEditingPrice ? (
+                                        <>
+                                          <input type="number" step="0.01" autoFocus value={itemPriceValue}
+                                            onChange={e => setItemPriceValue(e.target.value)}
+                                            style={{ ...inp, fontSize: "0.75rem", padding: "0.2rem 0.4rem", width: 80 }} />
+                                          <button onClick={() => saveItemPrice(order.id, item.id)}
+                                            style={{ fontSize: "0.65rem", fontWeight: 700, padding: "0.2rem 0.5rem", backgroundColor: "#b8891a", color: "#fff", border: "none", borderRadius: "0.4rem", cursor: "pointer" }}>
+                                            Salvar
+                                          </button>
+                                          <button onClick={() => setEditingItemPrice(null)}
+                                            style={{ fontSize: "0.65rem", color: "#9a8060", background: "none", border: "none", cursor: "pointer" }}>
+                                            ✕
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <button onClick={() => { setEditingItemPrice(item.id); setItemPriceValue(String(item.price)); }}
+                                          title="Editar preço"
+                                          style={{ color: "#1a1510", fontWeight: 700, background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: "0.8rem" }}>
+                                          {fmt(item.price)} ✎
+                                        </button>
+                                      )}
                                       <button onClick={() => removeItem(order.id, item.id)} disabled={removingItemId === item.id}
                                         style={{ background: "none", border: "none", cursor: "pointer", color: "#c04040", fontSize: "0.9rem", padding: "0 2px", lineHeight: 1, opacity: removingItemId === item.id ? 0.4 : 1 }}
                                         title="Remover item">✕</button>
