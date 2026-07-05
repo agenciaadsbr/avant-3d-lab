@@ -106,9 +106,11 @@ export default function NovoPedidoPage() {
 
   const selectProduct = (i: number, product: Product) => {
     const sizes = JSON.parse(product.sizes || "[]") as string[];
+    // Só preenche o tamanho sozinho quando não há escolha real (0 ou 1 opção) —
+    // com mais de um tamanho, obriga o admin a escolher pra dar baixa no estoque certo
     setItems(p => p.map((it, idx) => idx === i ? {
       ...it, productId: product.id, description: product.name,
-      price: product.price, size: sizes[0] || undefined, componentName: undefined, product,
+      price: product.price, size: sizes.length === 1 ? sizes[0] : undefined, componentName: undefined, product,
     } : it));
     setProductSearch(p => p.map((v, idx) => idx === i ? product.name : v));
     setShowProductDropdown(p => p.map((v, idx) => idx === i ? false : v));
@@ -118,6 +120,7 @@ export default function NovoPedidoPage() {
   const handleAddToExisting = async () => {
     setError("");
     if (items.some(i => !i.description || i.price <= 0)) { setError("Preencha descrição e valor de todos os itens."); return; }
+    if (items.some(i => (JSON.parse(i.product?.sizes || "[]") as string[]).length > 0 && !i.size)) { setError("Selecione o tamanho de todos os itens."); return; }
     setSaving(true);
     const res = await fetch(`/api/admin/pedidos/${existingCadernoOrder.id}`, {
       method: "PUT",
@@ -133,6 +136,7 @@ export default function NovoPedidoPage() {
     setError("");
     if (!selectedCustomer && !newCustomer.name) { setError("Selecione ou cadastre um cliente."); return; }
     if (items.some(i => !i.description || i.price <= 0)) { setError("Preencha descrição e valor de todos os itens."); return; }
+    if (items.some(i => (JSON.parse(i.product?.sizes || "[]") as string[]).length > 0 && !i.size)) { setError("Selecione o tamanho de todos os itens."); return; }
 
     setSaving(true);
     const res = await fetch("/api/admin/pedidos", {
@@ -141,8 +145,10 @@ export default function NovoPedidoPage() {
       body: JSON.stringify({
         userId: selectedCustomer?.id,
         newCustomer: isNewCustomer ? newCustomer : null,
-        items, status: orderStatus, paymentMethod, paymentStatus,
-        amountPaid: paymentStatus === "paid" ? subtotal : paid,
+        items, status: orderStatus,
+        paymentMethod: orderStatus === "try-on" ? "pix" : paymentMethod,
+        paymentStatus: orderStatus === "try-on" ? "pending" : paymentStatus,
+        amountPaid: orderStatus === "try-on" ? 0 : (paymentStatus === "paid" ? subtotal : paid),
         notes, createdAt: date, dueDate: dueDate || null, installments,
       }),
     });
@@ -338,14 +344,15 @@ export default function NovoPedidoPage() {
                   )}
 
                   {/* Tamanho, preço e quantidade */}
-                  <div style={{ display: "grid", gridTemplateColumns: item.productId && JSON.parse(productResults[i]?.find(p => p.id === item.productId)?.sizes || "[]").length > 0 ? "1fr 110px 70px" : "1fr 70px", gap: "0.5rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: item.productId && JSON.parse(item.product?.sizes || "[]").length > 0 ? "1fr 110px 70px" : "1fr 70px", gap: "0.5rem" }}>
                     <input style={inp} type="number" placeholder="R$ preço" min="0" step="0.01" value={item.price || ""}
                       onChange={e => updateItem(i, "price", parseFloat(e.target.value) || 0)} />
-                    {item.productId && JSON.parse(productResults[i]?.find(p => p.id === item.productId)?.sizes || "[]").length > 0 && (
-                      <select style={inp} value={item.size || ""}
+                    {item.productId && JSON.parse(item.product?.sizes || "[]").length > 0 && (
+                      <select style={{ ...inp, ...(item.size ? {} : { borderColor: "#c04040", color: "#c04040" }) }} value={item.size || ""}
                         onChange={e => updateItem(i, "size", e.target.value)}>
-                        {(JSON.parse(productResults[i]?.find(p => p.id === item.productId)?.sizes || "[]") as string[]).map(s => {
-                          const sst = JSON.parse(productResults[i]?.find(p => p.id === item.productId)?.sizeStock || "{}") as Record<string, number>;
+                        <option value="" disabled>Selecione o tamanho</option>
+                        {(JSON.parse(item.product?.sizes || productResults[i]?.find(p => p.id === item.productId)?.sizes || "[]") as string[]).map(s => {
+                          const sst = JSON.parse(item.product?.sizeStock || productResults[i]?.find(p => p.id === item.productId)?.sizeStock || "{}") as Record<string, number>;
                           const qty = sst[s];
                           return <option key={s} value={s}>{s}{qty !== undefined ? ` (${qty} un)` : ""}</option>;
                         })}
