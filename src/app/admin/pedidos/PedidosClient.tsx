@@ -190,6 +190,9 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
       setTrocaOrderId(null);
       setTrocaReason("");
       setTrocaItemIds([]);
+    } else {
+      const data = await res.json().catch(() => null);
+      alert(data?.error || "Não foi possível solicitar a troca.");
     }
     setTrocaSaving(false);
   };

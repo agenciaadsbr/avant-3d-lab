@@ -43,6 +43,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Faltam campos" }, { status: 400 });
   }
 
+  // Bloqueia duplicidade: não deixa abrir uma segunda devolução para um item que já tem uma em andamento
+  if (itemIds?.length) {
+    const existing = await prisma.return.findMany({
+      where: { orderId, status: { not: "rejeitado" } },
+    });
+    const jaEmDevolucao = existing.some(r => {
+      const existingIds: string[] = JSON.parse(r.orderItemIds || "[]");
+      return existingIds.some(id => itemIds.includes(id));
+    });
+    if (jaEmDevolucao) {
+      return NextResponse.json({ error: "Já existe uma devolução em andamento para um desses itens." }, { status: 409 });
+    }
+  }
+
   // Guarda uma foto dos itens devolvidos (produto/tamanho/quantidade) antes de qualquer troca de produto
   const items = itemIds?.length
     ? await prisma.orderItem.findMany({ where: { id: { in: itemIds } } })
