@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Fragment } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAdmin } from "@/store/admin";
 import { useMobileView } from "@/hooks/useMediaQuery";
@@ -467,8 +467,8 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                   : "—";
                 const maisItens = order.items.length > 1 ? ` +${order.items.length - 1}` : "";
                 return (
-                  <>
-                    <tr key={order.id} id={`order-${order.id}`} style={{ borderBottom: isExpanded ? "none" : "1px solid rgba(140,100,20,0.06)", cursor: "pointer", backgroundColor: isExpanded ? "#FDFAF4" : "transparent" }}
+                  <Fragment key={order.id}>
+                    <tr id={`order-${order.id}`} style={{ borderBottom: isExpanded ? "none" : "1px solid rgba(140,100,20,0.06)", cursor: "pointer", backgroundColor: isExpanded ? "#FDFAF4" : "transparent" }}
                       onClick={() => { setExpanded(isExpanded ? null : order.id); setActiveTab("itens"); }}>
                       <td style={{ padding: "0.875rem 1rem", fontFamily: "monospace", fontSize: "0.72rem", color: "#9a8060" }}>
                         {isExpanded ? "▼" : "▶"} #{order.id.slice(-8).toUpperCase()}
@@ -916,7 +916,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>
