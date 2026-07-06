@@ -16,10 +16,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     data.costPrice = costPrice !== null && costPrice !== "" ? parseFloat(costPrice) : null;
   }
   if (price !== undefined && price !== null && price !== "") {
-    // Pedido já entregue = já pago/fechado, não deixa mais mudar o preço de venda
+    // Pedido já pago não pode ter o preço de venda alterado
     const current = await prisma.orderItem.findUnique({ where: { id }, include: { order: true } });
-    if (current?.order.status === "delivered") {
-      return NextResponse.json({ error: "Pedido já entregue não pode ter o preço alterado" }, { status: 409 });
+    if (current?.order.paymentStatus === "paid") {
+      return NextResponse.json({ error: "Pedido já pago não pode ter o preço alterado" }, { status: 409 });
     }
     data.price = parseFloat(price);
   }
