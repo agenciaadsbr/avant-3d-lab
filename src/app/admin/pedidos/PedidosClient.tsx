@@ -917,6 +917,24 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                                         📅 Vence {new Date(order.dueDate).toLocaleDateString("pt-BR")}
                                       </span>
                                     )}
+                                    {order.paymentMethod === "link" && (
+                                      <div style={{ width: "100%", marginTop: "0.4rem", display: "flex", flexDirection: "column", gap: "0.15rem" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                                          <span style={{ color: "#9a8060" }}>Total do link</span>
+                                          <span style={{ color: "#1a1510", fontWeight: 700 }}>{fmt(order.total)}</span>
+                                        </div>
+                                        {order.amountPaid > 0 && order.amountPaid < order.total && (
+                                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                                            <span style={{ color: "#c04040" }}>Taxa da operadora</span>
+                                            <span style={{ color: "#c04040", fontWeight: 700 }}>-{fmt(order.total - order.amountPaid)}</span>
+                                          </div>
+                                        )}
+                                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
+                                          <span style={{ color: "#1a8a2a", fontWeight: 700 }}>Valor recebido (líquido)</span>
+                                          <span style={{ color: "#1a8a2a", fontWeight: 900 }}>{fmt(order.amountPaid)}</span>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>

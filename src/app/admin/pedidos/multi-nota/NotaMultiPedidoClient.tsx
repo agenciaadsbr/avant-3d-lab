@@ -22,8 +22,10 @@ export default function NotaMultiPedidoClient({ orders }: { orders: any[] }) {
   const cliente = orders[0].user;
   const grandTotal = orders.reduce((s, o) => s + o.total, 0);
   const totalPago = orders.reduce((s, o) => s + o.amountPaid, 0);
-  const saldoTotal = grandTotal - totalPago;
   const metodos = Array.from(new Set(orders.map(o => o.paymentMethod)));
+  const totalTaxaOperadora = orders.reduce((s, o) => s + (o.paymentMethod === "link" && o.amountPaid > 0 && o.amountPaid < o.total ? o.total - o.amountPaid : 0), 0);
+  // Saldo real devido pela cliente — pedidos já pagos não entram, mesmo com diferença por taxa de operadora
+  const saldoTotal = orders.reduce((s, o) => s + (o.paymentStatus === "paid" ? 0 : Math.max(0, o.total - o.amountPaid)), 0);
 
   useEffect(() => {
     document.title = `Nota Unificada — ${cliente?.name || "Cliente"}`;
@@ -135,10 +137,16 @@ export default function NotaMultiPedidoClient({ orders }: { orders: any[] }) {
                   <span style={{ color: "#1a8a2a", fontWeight: 700 }}>-{fmt(order.amountPaid)}</span>
                 </div>
               )}
-              {saldoPedido > 0.01 && order.amountPaid > 0 && (
+              {saldoPedido > 0.01 && order.amountPaid > 0 && order.paymentStatus !== "paid" && (
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem" }}>
                   <span style={{ color: "#c04040" }}>Saldo do pedido</span>
                   <span style={{ color: "#c04040", fontWeight: 700 }}>{fmt(saldoPedido)}</span>
+                </div>
+              )}
+              {order.paymentMethod === "link" && order.amountPaid > 0 && order.amountPaid < order.total && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", marginTop: "0.15rem" }}>
+                  <span style={{ color: "#9a8060" }}>↳ Taxa da operadora (Link)</span>
+                  <span style={{ color: "#9a8060" }}>-{fmt(order.total - order.amountPaid)}</span>
                 </div>
               )}
             </div>
@@ -152,6 +160,12 @@ export default function NotaMultiPedidoClient({ orders }: { orders: any[] }) {
               <span style={{ color: "#9a8060" }}>Total geral ({orders.length} pedidos)</span>
               <span style={{ color: "#1a1510", fontWeight: 700 }}>{fmt(grandTotal)}</span>
             </div>
+            {totalTaxaOperadora > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "0.3rem 0", fontSize: "0.9rem" }}>
+                <span style={{ color: "#c04040" }}>Taxa da operadora (Link)</span>
+                <span style={{ color: "#c04040", fontWeight: 700 }}>-{fmt(totalTaxaOperadora)}</span>
+              </div>
+            )}
             {totalPago > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between", padding: "0.3rem 0", fontSize: "0.9rem" }}>
                 <span style={{ color: "#9a8060" }}>Total já pago</span>

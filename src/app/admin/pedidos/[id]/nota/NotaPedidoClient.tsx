@@ -175,8 +175,26 @@ export default function NotaPedidoClient({ order }: { order: any }) {
               </div>
             </div>
 
-            {/* Saldo pendente */}
-            {saldoPendente > 0.01 && (
+            {/* Taxa da operadora (Link de Pagamento) */}
+            {order.paymentMethod === "link" && order.amountPaid > 0 && order.amountPaid < order.total && (
+              <div style={{ marginTop: "0.875rem", padding: "0.625rem 0.875rem", backgroundColor: "#fff8e1", borderRadius: "0.5rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", marginBottom: "0.25rem" }}>
+                  <span style={{ color: "#9a8060" }}>Total do link</span>
+                  <span style={{ color: "#1a1510", fontWeight: 700 }}>{fmt(order.total)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", marginBottom: "0.25rem" }}>
+                  <span style={{ color: "#c04040" }}>Taxa da operadora</span>
+                  <span style={{ color: "#c04040", fontWeight: 700 }}>-{fmt(order.total - order.amountPaid)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem" }}>
+                  <span style={{ color: "#1a8a2a", fontWeight: 700 }}>Valor recebido (líquido)</span>
+                  <span style={{ color: "#1a8a2a", fontWeight: 900 }}>{fmt(order.amountPaid)}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Saldo pendente (não mostra se já está pago — a diferença é só a taxa da operadora, não uma dívida do cliente) */}
+            {saldoPendente > 0.01 && order.paymentStatus !== "paid" && (
               <div style={{ marginTop: "0.875rem", padding: "0.625rem 0.875rem", backgroundColor: "#fee8e8", borderRadius: "0.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: "0.82rem", color: "#c04040", fontWeight: 700 }}>Saldo a pagar</span>
                 <span style={{ fontSize: "1rem", fontWeight: 900, color: "#c04040" }}>{fmt(saldoPendente)}</span>
