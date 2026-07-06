@@ -77,6 +77,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
   const [activeTab, setActiveTab] = useState<"itens" | "pagamento" | "cliente" | "jornada">("itens");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [localOrders, setLocalOrders] = useState(orders);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
     const id = searchParams.get("expand");
@@ -142,6 +143,9 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
       return true;
     });
   }, [localOrders, statusFilter, payFilter, methodFilter, filterPending, dateFrom, dateTo, search]);
+
+  const selectedOrders = localOrders.filter(o => selectedIds.includes(o.id));
+  const selectedSameCustomer = selectedOrders.length > 0 && selectedOrders.every(o => o.user.id === selectedOrders[0].user.id);
 
   const activeFiltered = filtered.filter(o => o.status !== "cancelled");
   const totalReceita = activeFiltered.reduce((s, o) => s + o.total, 0);
@@ -466,12 +470,41 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
         )}
       </div>
 
+      {selectedIds.length > 0 && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem", backgroundColor: "#FAF6EE", border: "1px solid rgba(184,137,26,0.3)", borderRadius: "0.875rem", padding: "0.75rem 1rem", marginBottom: "1rem" }}>
+          <span style={{ fontSize: "0.85rem", color: "#5a4a2a" }}>
+            <strong>{selectedIds.length}</strong> pedido{selectedIds.length > 1 ? "s" : ""} selecionado{selectedIds.length > 1 ? "s" : ""}
+            {selectedOrders.length > 0 && !selectedSameCustomer && (
+              <span style={{ color: "#c04040", fontWeight: 700 }}> — precisam ser do mesmo cliente</span>
+            )}
+          </span>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button onClick={() => setSelectedIds([])}
+              style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.2)", color: "#9a8060", fontWeight: 700, fontSize: "0.78rem", padding: "0.5rem 0.875rem", borderRadius: "0.625rem", cursor: "pointer" }}>
+              Limpar seleção
+            </button>
+            {selectedIds.length > 1 && selectedSameCustomer && (
+              <a href={`/admin/pedidos/multi-nota?ids=${selectedIds.join(",")}`} target="_blank" rel="noopener noreferrer"
+                style={{ backgroundColor: "#b8891a", color: "#fff", fontWeight: 700, fontSize: "0.78rem", padding: "0.5rem 1rem", borderRadius: "0.625rem", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+                🧾 Gerar Nota Unificada
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Tabela */}
       <div style={{ backgroundColor: "#fff", border: "1px solid rgba(140,100,20,0.1)", borderRadius: "1rem", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
             <thead>
               <tr style={{ backgroundColor: "#FAF6EE" }}>
+                <th style={{ padding: isMobile ? "0.625rem 0.5rem" : "0.875rem 0.75rem", borderBottom: "1px solid rgba(140,100,20,0.1)" }}>
+                  <input type="checkbox"
+                    checked={filtered.length > 0 && filtered.every(o => selectedIds.includes(o.id))}
+                    onChange={e => setSelectedIds(e.target.checked ? filtered.map(o => o.id) : [])}
+                    style={{ cursor: "pointer" }} />
+                </th>
                 {["Pedido", "Cliente", ...(isMobile ? [] : ["Produtos"]), "Total", ...(isMobile ? [] : ["Entrega", "Pagamento", "Forma", "Data", "Ações"])].map(h => (
                   <th key={h} style={{ textAlign: "left", padding: isMobile ? "0.625rem 0.75rem" : "0.875rem 1rem", color: "#9a8060", fontWeight: 700, fontSize: isMobile ? "0.7rem" : "0.75rem", borderBottom: "1px solid rgba(140,100,20,0.1)", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
@@ -479,7 +512,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={9} style={{ textAlign: "center", padding: "3rem", color: "#b8a080" }}>Nenhum pedido encontrado.</td></tr>
+                <tr><td colSpan={10} style={{ textAlign: "center", padding: "3rem", color: "#b8a080" }}>Nenhum pedido encontrado.</td></tr>
               ) : filtered.map(order => {
                 const sc = STATUS_COLOR[order.status] || { bg: "#f0f0f0", color: "#666" };
                 const pc = PAY_COLOR[order.paymentStatus] || { bg: "#f0f0f0", color: "#666" };
@@ -496,6 +529,12 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                   <Fragment key={order.id}>
                     <tr id={`order-${order.id}`} style={{ borderBottom: isExpanded ? "none" : "1px solid rgba(140,100,20,0.06)", cursor: "pointer", backgroundColor: isExpanded ? "#FDFAF4" : "transparent" }}
                       onClick={() => { setExpanded(isExpanded ? null : order.id); setActiveTab("itens"); }}>
+                      <td style={{ padding: isMobile ? "0.625rem 0.5rem" : "0.875rem 0.75rem" }} onClick={e => e.stopPropagation()}>
+                        <input type="checkbox"
+                          checked={selectedIds.includes(order.id)}
+                          onChange={e => setSelectedIds(prev => e.target.checked ? [...prev, order.id] : prev.filter(id => id !== order.id))}
+                          style={{ cursor: "pointer" }} />
+                      </td>
                       <td style={{ padding: "0.875rem 1rem", fontFamily: "monospace", fontSize: "0.72rem", color: "#9a8060" }}>
                         {isExpanded ? "▼" : "▶"} #{order.id.slice(-8).toUpperCase()}
                       </td>
@@ -540,7 +579,7 @@ export default function PedidosClient({ orders, customers = [] }: { orders: Orde
                     </tr>
                     {isExpanded && (
                       <tr key={order.id + "-detail"} style={{ backgroundColor: "#FDFAF4", borderBottom: "1px solid rgba(140,100,20,0.06)" }}>
-                        <td colSpan={isMobile ? 4 : 9} style={{ padding: isMobile ? "0.75rem 0.75rem" : "0 1rem 1rem 1rem" }}>
+                        <td colSpan={isMobile ? 5 : 10} style={{ padding: isMobile ? "0.75rem 0.75rem" : "0 1rem 1rem 1rem" }}>
                           <div>
                             {/* Ações principais */}
                             <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.875rem" }}>
