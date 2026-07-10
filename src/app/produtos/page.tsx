@@ -68,7 +68,7 @@ export default async function ProdutosPage({
       </div>
 
       {/* Mobile: filtros em scroll horizontal */}
-      <div className="hide-desktop" style={{ borderBottom: "1px solid rgba(140,100,20,0.08)" }}>
+      <div className="hide-desktop" style={{ flexDirection: "column", borderBottom: "1px solid rgba(140,100,20,0.08)" }}>
         {/* Categorias */}
         <div style={{ display: "flex", gap: "0.5rem", overflowX: "auto", padding: "0.75rem 1.25rem 0", WebkitOverflowScrolling: "touch" }}>
           <Link href={buildUrl({ categoria: undefined })}
@@ -182,18 +182,6 @@ export default async function ProdutosPage({
 
         {/* Grid */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Tamanhos mobile */}
-          {allSizes.length > 0 && (
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "1rem" }} className="hide-desktop">
-              {allSizes.map(s => (
-                <Link key={s} href={buildUrl({ tamanho: tamanho === s ? undefined : s })}
-                  style={{ padding: "0.3rem 0.7rem", borderRadius: "0.5rem", fontSize: "0.75rem", fontWeight: 700, textDecoration: "none", backgroundColor: tamanho === s ? "#1a1510" : "#fff", color: tamanho === s ? "#FAF6EE" : "#5a4a2a", border: `1px solid ${tamanho === s ? "#1a1510" : "rgba(140,100,20,0.2)"}` }}>
-                  {s}
-                </Link>
-              ))}
-            </div>
-          )}
-
           {products.length === 0 ? (
             <div style={{ textAlign: "center", padding: "5rem 1rem", backgroundColor: "#fff", borderRadius: "1rem", border: "1px solid rgba(140,100,20,0.1)" }}>
               <p style={{ color: "#9a8060", fontSize: "1rem", fontWeight: 600, marginBottom: "1rem" }}>Nenhum produto encontrado</p>
